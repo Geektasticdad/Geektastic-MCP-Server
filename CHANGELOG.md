@@ -6,6 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Fixed
+- Docker build failing on `pnpm install` inside Portainer with
+  `process "/bin/sh -c pnpm install --frozen-lockfile || pnpm install" did not
+  complete successfully: exit code: 1`:
+  - Upgraded Corepack before enabling it (`npm install -g corepack@latest`) —
+    `node:22-alpine`'s bundled Corepack can predate npm's signing-key rotation,
+    causing `pnpm install` to fail with "Cannot find matching keyid".
+  - Pinned `"packageManager": "pnpm@11.10.0"` in the root `package.json` so
+    Corepack installs a known version instead of resolving "latest" itself.
+  - Installed `openssl` in the Alpine base image, required by Prisma's query
+    engine binaries on musl.
+
 ### Added
 - Initial project scaffold implementing Phases 1–5 of [ROADMAP.md](ROADMAP.md):
   - pnpm monorepo: `apps/server`, `apps/web`, `packages/shared`, `packages/connectors`.
