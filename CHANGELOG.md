@@ -26,6 +26,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
     `pnpm install` with bumped `fetch-retries`/`fetch-timeout` for resilience
     against flaky registry access. If the build still fails, the log will now
     show one unambiguous error instead of two conflated attempts.
+  - After the Corepack upgrade was confirmed live (via a later build log that
+    got past the earlier `apk add openssl` / `npm install -g corepack@latest`
+    steps) and still failed at `pnpm install`, replaced Corepack-managed pnpm
+    activation with a direct `npm install -g pnpm@11.10.0` in the Alpine base
+    image. Corepack's fetch-then-verify-signature flow for activating a
+    pinned package manager was still failing even with an upgraded Corepack;
+    installing pnpm as a plain global npm package bypasses that verification
+    path entirely.
 
 ### Added
 - Initial project scaffold implementing Phases 1–5 of [ROADMAP.md](ROADMAP.md):

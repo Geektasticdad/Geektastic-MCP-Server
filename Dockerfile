@@ -4,10 +4,12 @@ FROM node:22-alpine AS base
 # Prisma's query engine binaries need OpenSSL on musl-based Alpine (both at
 # `prisma generate`/postinstall time and at runtime).
 RUN apk add --no-cache openssl
-# node:22-alpine can ship an outdated Corepack whose bundled signing keys predate
-# npm's key rotation, causing `pnpm install` to fail with "Cannot find matching
-# keyid". Upgrading Corepack first avoids that signature verification failure.
-RUN npm install -g corepack@latest && corepack enable
+# Install pnpm directly via npm instead of via Corepack. Corepack's
+# fetch-then-verify-signature flow for activating a package manager kept
+# failing here even after upgrading Corepack itself (see CHANGELOG.md) —
+# installing pnpm as a plain global npm package bypasses that verification
+# path entirely.
+RUN npm install -g pnpm@11.10.0
 WORKDIR /app
 
 # ---- deps: install once, cached across builds ----
