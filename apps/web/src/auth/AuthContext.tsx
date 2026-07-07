@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import type { PublicUser } from "@geektastic/shared";
-import { api, ApiError } from "../api/client";
+import { api, ApiError, setCsrfToken } from "../api/client";
 
 interface AuthContextValue {
   user: PublicUser | null;
@@ -37,7 +37,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   async function login(username: string, password: string) {
-    const data = await api.post<{ user: PublicUser }>("/api/auth/login", { username, password });
+    const data = await api.post<{ user: PublicUser; csrfToken: string }>("/api/auth/login", { username, password });
+    // Login regenerates the session (invalidating whatever CSRF token was cached
+    // before it), so the fresh one comes back directly in this response instead
+    // of requiring a follow-up /api/auth/csrf round trip.
+    setCsrfToken(data.csrfToken);
     setUser(data.user);
   }
 

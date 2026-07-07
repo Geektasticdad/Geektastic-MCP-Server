@@ -9,6 +9,12 @@ export class ApiError extends Error {
 
 let cachedCsrfToken: string | null = null;
 
+/** Updates the cached CSRF token directly, e.g. with the fresh one returned by login
+ * (whose session regenerate() invalidates whatever was cached before it). */
+export function setCsrfToken(token: string): void {
+  cachedCsrfToken = token;
+}
+
 async function getCsrfToken(): Promise<string> {
   if (cachedCsrfToken) return cachedCsrfToken;
   const res = await fetch("/api/auth/csrf", { credentials: "same-origin" });

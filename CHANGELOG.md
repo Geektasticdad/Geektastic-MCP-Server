@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Fixed
+- `POST /api/auth/login` calls `req.session.regenerate()` (correctly, to prevent
+  session fixation), which wipes the session's `csrfToken` along with everything
+  else — but the frontend kept using its old cached CSRF token, so the very first
+  CSRF-protected request after a login (e.g. the Testing Playground, or approving
+  an OAuth consent screen reached via the post-login redirect) failed with
+  "Invalid or missing CSRF token" until the page was reloaded. The login response
+  now includes a freshly-generated `csrfToken` for the new session
+  (`apps/server/src/api/auth.routes.ts`), and the client updates its cached token
+  from that response immediately (`apps/web/src/api/client.ts`'s new
+  `setCsrfToken`, called from `AuthContext.login()`) instead of waiting for a
+  request to fail first.
+
 ## [1.0.1] - 2026-07-06
 
 ### Fixed

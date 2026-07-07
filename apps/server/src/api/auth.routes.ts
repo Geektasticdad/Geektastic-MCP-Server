@@ -78,7 +78,12 @@ authRouter.post("/login", loginRateLimiter, async (req, res) => {
     }
     req.session.userId = user.id;
     req.session.role = user.role;
-    res.json({ user: toPublicUser(user) });
+    // regenerate() wipes the prior session (including its csrfToken) to prevent
+    // session fixation, so a fresh one is established here and handed back
+    // directly -- otherwise the client keeps using its now-stale cached token
+    // and every CSRF-protected request fails until the page is reloaded.
+    const csrfToken = ensureCsrfToken(req.session);
+    res.json({ user: toPublicUser(user), csrfToken });
   });
 });
 
