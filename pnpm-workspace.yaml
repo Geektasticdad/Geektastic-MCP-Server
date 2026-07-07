@@ -1,3 +1,13 @@
 packages:
   - "apps/*"
   - "packages/*"
+
+# pnpm 10+ blocks dependency postinstall/build scripts by default (e.g. Prisma's
+# query-engine download, esbuild's binary fetch via vite/tsx) unless explicitly
+# approved. There's no interactive `pnpm approve-builds` prompt available in a
+# Docker build, so `pnpm install` fails outright without this. This is a
+# private, self-hosted single-operator deployment, not a published package, so
+# blanket-allowing is an acceptable tradeoff here; tighten to an explicit
+# `allowBuilds:` allowlist (see https://pnpm.io/settings#allowbuilds) if this
+# ever needs to be more locked down.
+dangerouslyAllowAllBuilds: true

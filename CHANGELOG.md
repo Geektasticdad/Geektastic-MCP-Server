@@ -34,6 +34,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
     pinned package manager was still failing even with an upgraded Corepack;
     installing pnpm as a plain global npm package bypasses that verification
     path entirely.
+  - Bypassing Corepack still hit the identical `pnpm install` failure, which
+    finally pointed at the real cause: pnpm 10+ blocks dependency
+    postinstall/build scripts by default (Prisma's query-engine download,
+    esbuild's binary fetch via vite/tsx) unless approved via
+    `pnpm approve-builds` — a prompt that can't run in a non-interactive
+    Docker build, so `pnpm install` fails outright. Added
+    `dangerouslyAllowAllBuilds: true` to `pnpm-workspace.yaml` (acceptable for
+    this private, self-hosted, single-operator deployment; can be tightened to
+    an explicit `allowBuilds:` allowlist later).
 
 ### Added
 - Initial project scaffold implementing Phases 1–5 of [ROADMAP.md](ROADMAP.md):
