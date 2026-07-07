@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.0.2] - 2026-07-06
+
 ### Fixed
 - `POST /api/auth/login` calls `req.session.regenerate()` (correctly, to prevent
   session fixation), which wipes the session's `csrfToken` along with everything
