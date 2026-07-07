@@ -23,7 +23,12 @@ export const sessionMiddleware = session({
   saveUninitialized: false,
   cookie: {
     httpOnly: true,
-    secure: env.NODE_ENV === "production",
+    // Tied to TRUST_PROXY, not NODE_ENV: a `Secure` cookie is silently dropped
+    // by browsers over a plain HTTP connection, which is the default for a
+    // direct Portainer deployment with no reverse proxy in front of it. Set
+    // TRUST_PROXY=true (and put a TLS-terminating reverse proxy in front) to
+    // re-enable secure cookies.
+    secure: env.TRUST_PROXY,
     sameSite: "lax",
     maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
   },

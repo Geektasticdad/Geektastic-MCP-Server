@@ -1,17 +1,18 @@
 import { useState, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { api } from "../api/client";
+import { api, ApiError } from "../api/client";
 import type { McpTokenSummary } from "@geektastic/shared";
 
 export function Tokens() {
   const queryClient = useQueryClient();
-  const { data } = useQuery({
+  const { data, error: listError } = useQuery({
     queryKey: ["tokens"],
     queryFn: () => api.get<{ tokens: McpTokenSummary[] }>("/api/tokens"),
   });
 
   const [name, setName] = useState("");
   const [newRawToken, setNewRawToken] = useState<string | null>(null);
+  const [createError, setCreateError] = useState<string | null>(null);
 
   const createMutation = useMutation({
     mutationFn: (tokenName: string) =>
@@ -19,8 +20,10 @@ export function Tokens() {
     onSuccess: (result) => {
       setNewRawToken(result.rawToken);
       setName("");
+      setCreateError(null);
       void queryClient.invalidateQueries({ queryKey: ["tokens"] });
     },
+    onError: (err) => setCreateError(err instanceof ApiError ? err.message : "Failed to create token"),
   });
 
   const revokeMutation = useMutation({
@@ -50,25 +53,34 @@ export function Tokens() {
         </div>
       )}
 
-      <form onSubmit={onSubmit} className="flex max-w-lg items-end gap-3">
-        <div className="flex-1">
-          <label className="mb-1 block text-sm text-slate-300">Token name</label>
-          <input
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            required
-            placeholder="e.g. Claude Desktop"
-            className="w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white"
-          />
+      <form onSubmit={onSubmit} className="max-w-lg space-y-3">
+        {createError && <div className="rounded-md bg-red-950 px-3 py-2 text-sm text-red-300">{createError}</div>}
+        <div className="flex items-end gap-3">
+          <div className="flex-1">
+            <label className="mb-1 block text-sm text-slate-300">Token name</label>
+            <input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
+              placeholder="e.g. Claude Desktop"
+              className="w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white"
+            />
+          </div>
+          <button
+            type="submit"
+            disabled={createMutation.isPending}
+            className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500 disabled:opacity-50"
+          >
+            Create token
+          </button>
         </div>
-        <button
-          type="submit"
-          disabled={createMutation.isPending}
-          className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500 disabled:opacity-50"
-        >
-          Create token
-        </button>
       </form>
+
+      {listError && (
+        <div className="max-w-2xl rounded-md bg-red-950 px-3 py-2 text-sm text-red-300">
+          {listError instanceof ApiError ? listError.message : "Failed to load tokens"}
+        </div>
+      )}
 
       <div className="overflow-hidden rounded-md border border-slate-800">
         <table className="w-full text-left text-sm">

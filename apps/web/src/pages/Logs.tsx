@@ -1,13 +1,13 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { api } from "../api/client";
+import { api, ApiError } from "../api/client";
 import type { ToolCallLogEntry } from "@geektastic/shared";
 
 export function Logs() {
   const [status, setStatus] = useState<"" | "success" | "error">("");
   const [toolName, setToolName] = useState("");
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, error } = useQuery({
     queryKey: ["logs", status, toolName],
     queryFn: () => {
       const params = new URLSearchParams();
@@ -39,6 +39,12 @@ export function Logs() {
           className="rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white"
         />
       </div>
+
+      {error && (
+        <div className="max-w-2xl rounded-md bg-red-950 px-3 py-2 text-sm text-red-300">
+          {error instanceof ApiError ? error.message : "Failed to load logs"}
+        </div>
+      )}
 
       {isLoading ? (
         <p className="text-slate-400">Loading...</p>

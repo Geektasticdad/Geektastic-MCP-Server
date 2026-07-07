@@ -7,6 +7,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Fixed
+- Session cookie never persisted after login (refresh required re-login; token
+  creation, password change, and the logs page all failed with
+  "Not authenticated"). The cookie's `secure` flag was tied to
+  `NODE_ENV === "production"`, but the deployed stack sets `NODE_ENV=production`
+  while exposing the app over plain HTTP with no TLS-terminating reverse proxy
+  in front — browsers silently refuse to store or send back a `Secure` cookie
+  over an insecure connection, so every request after login looked
+  unauthenticated. Tied `cookie.secure` to `TRUST_PROXY` instead
+  (`apps/server/src/auth/session.ts`): set `TRUST_PROXY=true` once a
+  TLS-terminating reverse proxy is actually in front of the server to
+  re-enable secure cookies.
+- `Tokens.tsx` and `Logs.tsx` silently swallowed request errors (no visible
+  feedback on a failed token creation or logs fetch), which is what made the
+  cookie bug above look like nothing was happening. Both now surface the
+  actual error message.
+
 - Docker build failing on `pnpm install` inside Portainer with
   `process "/bin/sh -c pnpm install --frozen-lockfile || pnpm install" did not
   complete successfully: exit code: 1`:
