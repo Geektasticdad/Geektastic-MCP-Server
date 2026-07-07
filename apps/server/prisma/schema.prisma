@@ -31,6 +31,10 @@ model User {
 
   createdConnections AppConnection[] @relation("ConnectionCreatedBy")
   createdTokens      McpToken[]      @relation("TokenCreatedBy")
+  createdOAuthClients OAuthClient[]           @relation("OAuthClientCreatedBy")
+  oauthCodes          OAuthAuthorizationCode[] @relation("OAuthCodeIssuedTo")
+  oauthAccessTokens   OAuthAccessToken[]       @relation("OAuthAccessTokenIssuedTo")
+  oauthRefreshTokens  OAuthRefreshToken[]      @relation("OAuthRefreshTokenIssuedTo")
 
   @@map("users")
 }
@@ -85,16 +89,18 @@ enum ToolCallStatus {
 }
 
 model ToolCallLog {
-  id           String         @id @default(uuid())
-  tokenId      String?
-  token        McpToken?      @relation(fields: [tokenId], references: [id], onDelete: SetNull)
-  connectionId String?
-  connection   AppConnection? @relation(fields: [connectionId], references: [id], onDelete: SetNull)
-  toolName     String
-  status       ToolCallStatus
-  durationMs   Int
-  errorSummary String?
-  createdAt    DateTime       @default(now())
+  id                 String            @id @default(uuid())
+  tokenId            String?
+  token              McpToken?         @relation(fields: [tokenId], references: [id], onDelete: SetNull)
+  oauthAccessTokenId String?
+  oauthAccessToken   OAuthAccessToken? @relation(fields: [oauthAccessTokenId], references: [id], onDelete: SetNull)
+  connectionId       String?
+  connection         AppConnection?    @relation(fields: [connectionId], references: [id], onDelete: SetNull)
+  toolName           String
+  status             ToolCallStatus
+  durationMs         Int
+  errorSummary       String?
+  createdAt          DateTime          @default(now())
 
   @@index([createdAt])
   @@map("tool_call_logs")
@@ -105,4 +111,78 @@ model Setting {
   value String
 
   @@map("settings")
+}
+
+enum OAuthClientAuthMethod {
+  none // public clients only for v1 — PKCE required, no client secret
+}
+
+model OAuthClient {
+  id                      String                 @id @default(uuid())
+  clientName              String
+  redirectUris            String[]
+  tokenEndpointAuthMethod OAuthClientAuthMethod  @default(none)
+  grantTypes              String[]               @default(["authorization_code", "refresh_token"])
+  registrationSource      String // "dcr" | "manual"
+  createdAt               DateTime               @default(now())
+  revokedAt               DateTime?
+  createdById             String?
+  createdBy               User?                  @relation("OAuthClientCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+
+  authorizationCodes      OAuthAuthorizationCode[]
+  accessTokens            OAuthAccessToken[]
+  refreshTokens           OAuthRefreshToken[]
+
+  @@map("oauth_clients")
+}
+
+model OAuthAuthorizationCode {
+  id                  String      @id @default(uuid())
+  codeHash            String      @unique
+  clientId            String
+  client              OAuthClient @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  userId              String
+  user                User        @relation("OAuthCodeIssuedTo", fields: [userId], references: [id], onDelete: Cascade)
+  redirectUri         String
+  codeChallenge       String
+  codeChallengeMethod String      @default("S256")
+  resource            String?
+  scopes              String[]    @default([])
+  expiresAt           DateTime
+  consumedAt          DateTime?
+
+  @@map("oauth_authorization_codes")
+}
+
+model OAuthAccessToken {
+  id         String    @id @default(uuid())
+  tokenHash  String    @unique
+  clientId   String
+  client     OAuthClient @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  userId     String
+  user       User      @relation("OAuthAccessTokenIssuedTo", fields: [userId], references: [id], onDelete: Cascade)
+  scopes     String[]  @default([])
+  expiresAt  DateTime
+  revokedAt  DateTime?
+  createdAt  DateTime  @default(now())
+  lastUsedAt DateTime?
+
+  toolCallLogs ToolCallLog[]
+
+  @@map("oauth_access_tokens")
+}
+
+model OAuthRefreshToken {
+  id        String    @id @default(uuid())
+  tokenHash String    @unique
+  clientId  String
+  client    OAuthClient @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User      @relation("OAuthRefreshTokenIssuedTo", fields: [userId], references: [id], onDelete: Cascade)
+  scopes    String[]  @default([])
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
+
+  @@map("oauth_refresh_tokens")
 }

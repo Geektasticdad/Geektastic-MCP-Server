@@ -1,7 +1,8 @@
 import { prisma } from "../db.js";
 
 interface LogToolCallInput {
-  tokenId: string | null;
+  mcpTokenId?: string | null;
+  oauthAccessTokenId?: string | null;
   connectionId: string | null;
   toolName: string;
   status: "success" | "error";
@@ -12,7 +13,8 @@ interface LogToolCallInput {
 export async function logToolCall(input: LogToolCallInput): Promise<void> {
   await prisma.toolCallLog.create({
     data: {
-      tokenId: input.tokenId,
+      tokenId: input.mcpTokenId ?? null,
+      oauthAccessTokenId: input.oauthAccessTokenId ?? null,
       connectionId: input.connectionId,
       toolName: input.toolName,
       status: input.status,

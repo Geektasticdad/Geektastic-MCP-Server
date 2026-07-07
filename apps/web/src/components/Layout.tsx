@@ -35,6 +35,9 @@ export function Layout() {
               <NavLink to="/tokens" className={({ isActive }) => `${navItem} ${isActive ? navItemActive : navItemInactive}`}>
                 Tokens
               </NavLink>
+              <NavLink to="/oauth-clients" className={({ isActive }) => `${navItem} ${isActive ? navItemActive : navItemInactive}`}>
+                OAuth Clients
+              </NavLink>
               <NavLink to="/users" className={({ isActive }) => `${navItem} ${isActive ? navItemActive : navItemInactive}`}>
                 Users
               </NavLink>

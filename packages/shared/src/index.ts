@@ -38,6 +38,15 @@ export interface McpTokenSummary {
   revokedAt: string | null;
 }
 
+export interface OAuthClientSummary {
+  id: string;
+  clientName: string;
+  redirectUris: string[];
+  registrationSource: "dcr" | "manual";
+  createdAt: string;
+  revokedAt: string | null;
+}
+
 export type ToolCallStatus = "success" | "error";
 
 export interface ToolCallLogEntry {

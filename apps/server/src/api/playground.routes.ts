@@ -50,7 +50,7 @@ playgroundRouter.post("/invoke", requireCsrf, async (req, res) => {
   try {
     const result = await match.definition.handler(input, connections.find((c) => c.connectionId === connectionId)!.config);
     await logToolCall({
-      tokenId: null,
+      mcpTokenId: null,
       connectionId,
       toolName,
       status: result.isError ? "error" : "success",
@@ -61,7 +61,7 @@ playgroundRouter.post("/invoke", requireCsrf, async (req, res) => {
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     await logToolCall({
-      tokenId: null,
+      mcpTokenId: null,
       connectionId,
       toolName,
       status: "error",

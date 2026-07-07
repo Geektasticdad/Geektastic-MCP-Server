@@ -21,7 +21,7 @@ mcpRouter.use(mcpRateLimiter);
 // availability always reflects the latest Web UI connection/toggle state.
 mcpRouter.post("/", authenticateMcpToken, async (req, res) => {
   try {
-    const server = await buildMcpServer(req.mcpTokenId!);
+    const server = await buildMcpServer({ mcpTokenId: req.mcpTokenId, oauthAccessTokenId: req.oauthAccessTokenId });
     const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined });
     res.on("close", () => {
       void transport.close();

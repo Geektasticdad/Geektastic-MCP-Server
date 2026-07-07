@@ -9,6 +9,13 @@ const schema = z.object({
   ADMIN_USERNAME: z.string().min(1).default("admin"),
   ADMIN_EMAIL: z.string().email().default("admin@example.com"),
   ADMIN_PASSWORD: z.string().min(8),
+  // The server's own externally-reachable origin (no trailing slash), e.g.
+  // https://mcp.example.com. Required for OAuth 2.1 discovery metadata
+  // (RFC 8414/9728) and the `iss` parameter, which must be absolute URLs.
+  PUBLIC_BASE_URL: z
+    .string()
+    .url()
+    .transform((v) => v.replace(/\/+$/, "")),
   PORT: z.coerce.number().int().positive().default(8080),
   NODE_ENV: z.enum(["development", "production", "test"]).default("production"),
   TRUST_PROXY: z

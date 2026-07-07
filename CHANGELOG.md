@@ -6,6 +6,41 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+- **OAuth 2.1 authorization server support**, so the MCP endpoint can be added as a
+  Claude.ai / Claude Desktop "Custom Connector" (which requires OAuth — unlike Claude
+  Code CLI, which already worked via a manually-configured static Bearer token and
+  continues to work unchanged).
+  - New endpoints: `/.well-known/oauth-authorization-server` and
+    `/.well-known/oauth-protected-resource` (discovery), `POST /oauth/register`
+    (Dynamic Client Registration, RFC 7591 — lets Claude self-register with no manual
+    Client ID needed), `GET /oauth/authorize` + `POST /oauth/authorize/decision`
+    (login + consent screen), `POST /oauth/token` (authorization_code and
+    refresh_token grants, RFC 6749-shaped errors, form-urlencoded body).
+  - PKCE (S256) is mandatory; public clients only for v1 (no client secret storage),
+    matching how Claude's DCR/CIMD clients authenticate.
+  - Missing/invalid MCP tokens now get a `WWW-Authenticate: Bearer
+    resource_metadata="..."` header on the `401`, which Claude needs to auto-discover
+    the OAuth flow — this is the one visible change to the existing static-token path
+    and is harmless/additive (Claude Code CLI ignores headers it doesn't use).
+  - New admin **OAuth Clients** page (mirrors the existing Tokens page) for manually
+    pre-registering a client and getting a Client ID to paste into a connector's
+    advanced settings, for cases where DCR doesn't apply.
+  - New required env var `PUBLIC_BASE_URL` (the server's own externally-reachable
+    origin) — needed for the discovery metadata and `iss` parameter, which must be
+    absolute URLs. Added to `.env.example` and `docker-compose.yml`.
+  - New Prisma models: `OAuthClient`, `OAuthAuthorizationCode`, `OAuthAccessToken`,
+    `OAuthRefreshToken`; added `oauthAccessTokenId` to `ToolCallLog` (its existing
+    `tokenId` column is FK'd to `McpToken` only and can't hold an OAuth token's id).
+  - Added `scripts/verify-oauth.sh` — simulates the full DCR → authorize → consent →
+    token exchange → `/mcp` call → refresh-rotation dance via curl, without needing a
+    real Claude.ai account.
+  - Verified with a local build (portable Node + full 4-package build chain + web
+    typecheck, all exit 0) and a runtime smoke test of the compiled server (env
+    validation and all new module imports resolve; fails only at the expected point —
+    no local Postgres available here to run the full curl-based flow end-to-end, see
+    `scripts/verify-oauth.sh` for that against a real deployment).
+
 ### Changed
 - Replaced the placeholder Geektastic Realms connector with a real
   implementation against `geektastic-realms/Docs/API.md`. Built on top of a

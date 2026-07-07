@@ -15,6 +15,7 @@ services:
       PORT: 8080
       NODE_ENV: production
       TRUST_PROXY: ${TRUST_PROXY:-false}
+      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL}
     depends_on:
       postgres:
         condition: service_healthy

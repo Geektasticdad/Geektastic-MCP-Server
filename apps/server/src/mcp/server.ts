@@ -13,12 +13,17 @@ function toRawShape(schema: z.ZodType): ZodRawShape {
   return {};
 }
 
+export interface McpAuthContext {
+  mcpTokenId?: string;
+  oauthAccessTokenId?: string;
+}
+
 /**
  * Builds a fresh McpServer with tools drawn from currently enabled connections.
  * Called once per incoming MCP HTTP request (stateless transport, see mcp/http.ts)
  * so that toggling a tool or connection in the Web UI takes effect immediately.
  */
-export async function buildMcpServer(tokenId: string): Promise<McpServer> {
+export async function buildMcpServer(auth: McpAuthContext): Promise<McpServer> {
   const server = new McpServer({ name: "geektastic-mcp-server", version: "0.1.0" });
 
   const connections = await loadActiveConnections();
@@ -36,7 +41,8 @@ export async function buildMcpServer(tokenId: string): Promise<McpServer> {
           const connectionConfig = connections.find((c) => c.connectionId === connectionId)!.config;
           const result = await definition.handler(args, connectionConfig);
           await logToolCall({
-            tokenId,
+            mcpTokenId: auth.mcpTokenId,
+            oauthAccessTokenId: auth.oauthAccessTokenId,
             connectionId,
             toolName: definition.name,
             status: result.isError ? "error" : "success",
@@ -47,7 +53,8 @@ export async function buildMcpServer(tokenId: string): Promise<McpServer> {
         } catch (err) {
           const message = err instanceof Error ? err.message : String(err);
           await logToolCall({
-            tokenId,
+            mcpTokenId: auth.mcpTokenId,
+            oauthAccessTokenId: auth.oauthAccessTokenId,
             connectionId,
             toolName: definition.name,
             status: "error",

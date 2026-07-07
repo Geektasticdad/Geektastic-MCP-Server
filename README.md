@@ -40,7 +40,9 @@ packages/connectors/ AppConnector abstraction + the Geektastic Realms connector
    ```
    Generate `APP_ENCRYPTION_KEY` with `openssl rand -hex 32`, and a long random
    `SESSION_SECRET`. Set a real `ADMIN_PASSWORD` — it's only used to seed the first
-   admin account on first run.
+   admin account on first run. Set `PUBLIC_BASE_URL` to this server's own
+   externally-reachable origin (e.g. `https://mcp.example.com`) — required for OAuth
+   discovery metadata (see "Connecting an MCP client" below).
 
 2. Install dependencies (requires Node 22+ and pnpm; `corepack enable` will provide pnpm):
    ```
@@ -82,13 +84,27 @@ persist across redeploys.
 
 ## Connecting an MCP client
 
-1. Log in to the Web UI with the bootstrap admin, add a Geektastic Realms connection
-   under **Connections**, and create a token under **Tokens** (shown once, copy it).
-2. Point a client at the server, e.g.:
-   ```
-   claude mcp add --transport http geektastic https://<host>/mcp \
-     --header "Authorization: Bearer <token>"
-   ```
+First, log in to the Web UI with the bootstrap admin and add a Geektastic Realms
+connection under **Connections**.
+
+**Claude Code CLI** — uses a static Bearer token. Create one under **Tokens** (shown
+once, copy it), then:
+```
+claude mcp add --transport http geektastic https://<host>/mcp \
+  --header "Authorization: Bearer <token>"
+```
+
+**Claude Desktop / Claude.ai (Custom Connector)** — these only support OAuth 2.1, not a
+raw header. Add a Custom Connector pointed at `https://<host>/mcp`; the server supports
+Dynamic Client Registration, so Claude should register itself automatically and prompt
+you to log in and approve access — no manual "OAuth Client ID" needed in the common
+case. If a connector's setup screen doesn't attempt DCR and asks you to fill in a Client
+ID manually, create one under **OAuth Clients** (name + Claude's redirect URI,
+`https://claude.ai/api/mcp/auth_callback`) and paste the generated Client ID in.
+
+`scripts/verify-oauth.sh <host> <admin-username> <admin-password>` simulates the full
+OAuth flow via curl if you want to sanity-check the server side without a Claude.ai
+account.
 
 ## Known gaps / next steps
 
