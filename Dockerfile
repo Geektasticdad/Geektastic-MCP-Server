@@ -19,12 +19,9 @@ COPY apps/server/package.json apps/server/package.json
 COPY apps/web/package.json apps/web/package.json
 COPY packages/shared/package.json packages/shared/package.json
 COPY packages/connectors/package.json packages/connectors/package.json
-# No pnpm-lock.yaml is committed yet, so --frozen-lockfile would always fail;
-# install directly instead. Retries/timeout are bumped defensively in case the
-# build environment has a flaky path to the npm registry.
 RUN pnpm config set fetch-retries 5 \
  && pnpm config set fetch-timeout 300000 \
- && pnpm install
+ && pnpm install --frozen-lockfile
 
 # ---- build: compile shared -> connectors -> web -> server ----
 FROM deps AS build
@@ -38,13 +35,13 @@ RUN pnpm --filter @geektastic/shared build \
 # ---- runtime: only what's needed to run the server ----
 FROM base AS runtime
 ENV NODE_ENV=production
-COPY --from=build /app/pnpm-workspace.yaml /app/package.json ./
+COPY --from=build /app/pnpm-workspace.yaml /app/package.json /app/pnpm-lock.yaml ./
 COPY --from=build /app/apps/server/package.json apps/server/package.json
 COPY --from=build /app/packages/shared/package.json packages/shared/package.json
 COPY --from=build /app/packages/connectors/package.json packages/connectors/package.json
 RUN pnpm config set fetch-retries 5 \
  && pnpm config set fetch-timeout 300000 \
- && pnpm install --prod
+ && pnpm install --prod --frozen-lockfile
 
 COPY --from=build /app/apps/server/dist apps/server/dist
 COPY --from=build /app/apps/server/public apps/server/public

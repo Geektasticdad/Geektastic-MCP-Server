@@ -2,9 +2,11 @@ import type { NextFunction, Request, Response } from "express";
 import { prisma } from "../db.js";
 import { hashMcpToken } from "../auth/tokens.js";
 
-declare module "express-serve-static-core" {
-  interface Request {
-    mcpTokenId?: string;
+declare global {
+  namespace Express {
+    interface Request {
+      mcpTokenId?: string;
+    }
   }
 }
 

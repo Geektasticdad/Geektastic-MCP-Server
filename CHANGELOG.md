@@ -44,6 +44,48 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
     this private, self-hosted, single-operator deployment; can be tightened to
     an explicit `allowBuilds:` allowlist later).
 
+- Docker build failing at the `tsc`/`vite` build step (`pnpm --filter
+  @geektastic/shared build && ...`, exit code 2). Installed a local, portable
+  Node.js to actually run the build and see real compiler errors instead of
+  guessing further, which surfaced several genuine bugs never caught before
+  since this code had never been compiled:
+  - Removed the unnecessary TypeScript `references` field from
+    `packages/connectors/tsconfig.json` and `apps/server/tsconfig.json`
+    (`TS6306: Referenced project ... must have setting "composite": true`).
+    Project references require `composite: true` on every referenced project
+    and are only meaningful for `tsc --build` orchestration; our build script
+    invokes `tsc -p` per package directly in dependency order, so cross-package
+    types already resolve fine via each package's compiled `dist/index.d.ts`.
+  - Added `@types/node` to `packages/connectors` (needed for the global
+    `fetch`/`RequestInit` types used in the Geektastic Realms REST client).
+  - Added `@types/pg` to `apps/server`.
+  - Set `"declaration": false` on `apps/server`'s `tsconfig.json` — it's an
+    application, not a library other packages import, so it doesn't need to
+    emit `.d.ts` files. This also fixed a batch of
+    `TS2742: The inferred type of 'X' cannot be named` errors on every
+    exported Express `Router`, caused by pnpm's nested `node_modules` layout
+    making some transitive `@types` packages unnameable in declaration output.
+  - Fixed `ensureCsrfToken`'s parameter type in `apps/server/src/auth/session.ts`:
+    `express-session`'s `Session` class does not itself extend `SessionData`
+    (only `req.session`, typed as the intersection `Session &
+    Partial<SessionData>`, does) — the augmented `csrfToken` field wasn't
+    visible through the bare `Session` type.
+  - Fixed the Express `Request` augmentation in `apps/server/src/mcp/auth.ts`:
+    augmenting `"express-serve-static-core"` by module name failed to resolve
+    (`TS2664`) since it's only a transitive dependency; switched to the
+    standard `declare global { namespace Express { interface Request {...} } }`
+    pattern.
+  - Added an index signature to `ToolResult` in `packages/shared/src/index.ts`
+    so it structurally matches the MCP SDK's expected tool-handler return type
+    (`TS2345`/`TS2742` on `server.registerTool`'s callback).
+  - Generated and committed `pnpm-lock.yaml` (there wasn't one before) and
+    switched the Dockerfile back to `pnpm install --frozen-lockfile` in both
+    the `deps` and `runtime` stages for reproducible builds.
+  - Verified end-to-end: a clean `pnpm install`, `prisma generate`, and the
+    exact four-package build chain from the Dockerfile all complete with exit
+    code 0, and the compiled server starts up and fails only at the expected
+    point (no local Postgres available) rather than on any code/import error.
+
 ### Added
 - Initial project scaffold implementing Phases 1–5 of [ROADMAP.md](ROADMAP.md):
   - pnpm monorepo: `apps/server`, `apps/web`, `packages/shared`, `packages/connectors`.

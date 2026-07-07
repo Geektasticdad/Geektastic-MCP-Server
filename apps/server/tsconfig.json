@@ -3,8 +3,8 @@
   "compilerOptions": {
     "outDir": "dist",
     "rootDir": "src",
-    "types": ["node"]
+    "types": ["node"],
+    "declaration": false
   },
-  "include": ["src"],
-  "references": [{ "path": "../../packages/shared" }, { "path": "../../packages/connectors" }]
+  "include": ["src"]
 }

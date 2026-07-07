@@ -29,7 +29,7 @@ export const sessionMiddleware = session({
   },
 });
 
-export function ensureCsrfToken(sessionData: session.Session): string {
+export function ensureCsrfToken(sessionData: session.Session & Partial<session.SessionData>): string {
   if (!sessionData.csrfToken) {
     sessionData.csrfToken = randomBytes(24).toString("hex");
   }
