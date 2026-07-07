@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.0.1] - 2026-07-06
+
+### Fixed
+- `GET /oauth/consent` returned "Cannot GET /oauth/consent" instead of loading the
+  consent screen. The page is client-side (React Router, `apps/web`), reached via a
+  redirect from `GET /oauth/authorize`, but the server's SPA catch-all in
+  `apps/server/src/index.ts` blanket-excluded every `/oauth/*` path (reserving that
+  prefix for the OAuth API routes), so the request fell through to Express's default
+  404 instead of serving `index.html`. Added an explicit `GET /oauth/consent` route
+  ahead of that exclusion.
+
 ## [1.0.0] - 2026-07-06
 
 ### Added

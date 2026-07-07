@@ -39,6 +39,14 @@ async function main() {
   app.use(express.urlencoded({ extended: false }), oauthRouter);
   app.use("/api", apiRouter);
 
+  // /oauth/consent is a client-side React page (reached via redirect from
+  // GET /oauth/authorize), not a server route — it isn't registered on
+  // oauthRouter above, so without this it would fall into the catch-all's
+  // "/oauth" exclusion below and 404 instead of loading the SPA.
+  app.get("/oauth/consent", (_req, res) => {
+    res.sendFile(path.join(publicDir, "index.html"));
+  });
+
   app.use(express.static(publicDir));
   app.get(/^(?!\/api|\/mcp|\/oauth|\/\.well-known).*/, (_req, res) => {
     res.sendFile(path.join(publicDir, "index.html"));
