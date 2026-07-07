@@ -87,6 +87,54 @@ const statblockSchema = z.object({
   items: z.array(itemSchema).optional().default([]),
 });
 
+/** gr-entry-v1 — custom_fields is a category-specific bag; Realms validates it server-side. */
+const entrySchema = z.object({
+  title: z.string().min(1),
+  summary: z.string().optional(),
+  body_html: z.string().optional(),
+  status: z.enum(["draft", "published", "archived"]).optional(),
+  visibility: z.enum(["private", "members", "public"]).optional(),
+  parent_id: z.number().int().nullable().optional(),
+  tags: z.array(z.string()).optional(),
+  custom_fields: z.record(z.string(), z.unknown()).optional(),
+});
+
+/** gr-module-v1's own (non-nested) fields — the section tree is read-only via gr_get_module. */
+const moduleSchema = z.object({
+  title: z.string().min(1),
+  summary: z.string().optional(),
+  overview: z.string().optional(),
+  level_range: z.string().optional(),
+  party_size: z.string().optional(),
+  status: z.enum(["draft", "published", "archived"]).optional(),
+  visibility: z.enum(["private", "members", "public"]).optional(),
+  campaign_id: z.number().int().nullable().optional(),
+});
+
+const sectionSchema = z.object({
+  type: z.enum(["act", "chapter", "scene", "appendix"]),
+  title: z.string().min(1),
+  body_html: z.string().nullable().optional(),
+  parent_id: z.number().int().nullable().optional(),
+});
+
+const handoutSchema = z.object({
+  title: z.string().min(1),
+  body_html: z.string().nullable().optional(),
+  section_id: z.number().int().nullable().optional(),
+  media_id: z.number().int().nullable().optional(),
+});
+
+const encounterSchema = z.object({
+  name: z.string().min(1),
+  encounter_type: z.enum(["combat", "social", "exploration", "puzzle", "trap", "other"]).optional(),
+  difficulty: z.string().nullable().optional(),
+  setup: z.string().nullable().optional(),
+  tactics: z.string().nullable().optional(),
+  rewards: z.string().nullable().optional(),
+  notes: z.string().nullable().optional(),
+});
+
 function toResult(data: unknown) {
   return { content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }] };
 }
@@ -182,6 +230,250 @@ const tools: ToolDefinition[] = [
       const { id } = z.object({ id: z.coerce.number().int() }).parse(input);
       try {
         return toResult(await client(cfg).getCampaign(id));
+      } catch (err) {
+        return toErrorResult(err);
+      }
+    },
+  },
+  {
+    name: "gr_search_entries",
+    description:
+      "Search this world's lore entries (any category — NPCs, locations, items, etc.) by title, or " +
+      "list every entry in one category. gr-entry-v1 format; distinct from statblocks (an entry can " +
+      "have both a statblock and generic custom fields).",
+    inputSchema: z.object({ category_id: z.coerce.number().int().optional(), query: z.string().optional() }),
+    async handler(input, cfg) {
+      const { category_id, query } = z
+        .object({ category_id: z.coerce.number().int().optional(), query: z.string().optional() })
+        .parse(input);
+      try {
+        return toResult(await client(cfg).searchEntries(category_id, query));
+      } catch (err) {
+        return toErrorResult(err);
+      }
+    },
+  },
+  {
+    name: "gr_get_entry",
+    description: "Fetch a single Geektastic Realms lore entry by id, in gr-entry-v1 format (with custom_fields and tags).",
+    inputSchema: z.object({ entry_id: z.coerce.number().int() }),
+    async handler(input, cfg) {
+      const { entry_id } = z.object({ entry_id: z.coerce.number().int() }).parse(input);
+      try {
+        return toResult(await client(cfg).getEntry(entry_id));
+      } catch (err) {
+        return toErrorResult(err);
+      }
+    },
+  },
+  {
+    name: "gr_create_entry",
+    description:
+      "Create a new lore entry in any category (gr-entry-v1 format). custom_fields is keyed by each " +
+      "field's stable key (see the category's field definitions), not its numeric id. " +
+      "image/gallery/map fields are read-only via this API.",
+    inputSchema: z.object({ category_id: z.coerce.number().int(), entry: entrySchema }),
+    async handler(input, cfg) {
+      const { category_id, entry } = z
+        .object({ category_id: z.coerce.number().int(), entry: entrySchema })
+        .parse(input);
+      try {
+        return toResult(await client(cfg).createEntry(category_id, entry));
+      } catch (err) {
+        return toErrorResult(err);
+      }
+    },
+  },
+  {
+    name: "gr_update_entry",
+    description: "Update an existing Geektastic Realms lore entry by id.",
+    inputSchema: z.object({ entry_id: z.coerce.number().int(), entry: entrySchema }),
+    async handler(input, cfg) {
+      const { entry_id, entry } = z
+        .object({ entry_id: z.coerce.number().int(), entry: entrySchema })
+        .parse(input);
+      try {
+        return toResult(await client(cfg).updateEntry(entry_id, entry));
+      } catch (err) {
+        return toErrorResult(err);
+      }
+    },
+  },
+  {
+    name: "gr_list_modules",
+    description: "List adventure modules in this world.",
+    inputSchema: z.object({}),
+    async handler(_input, cfg) {
+      try {
+        return toResult(await client(cfg).listModules());
+      } catch (err) {
+        return toErrorResult(err);
+      }
+    },
+  },
+  {
+    name: "gr_get_module",
+    description:
+      "Fetch a single Geektastic Realms adventure module by id, in gr-module-v1 format — the nested " +
+      "Act/Chapter/Scene/Appendix section tree, each with its Encounters and Handouts.",
+    inputSchema: z.object({ module_id: z.coerce.number().int() }),
+    async handler(input, cfg) {
+      const { module_id } = z.object({ module_id: z.coerce.number().int() }).parse(input);
+      try {
+        return toResult(await client(cfg).getModule(module_id));
+      } catch (err) {
+        return toErrorResult(err);
+      }
+    },
+  },
+  {
+    name: "gr_create_module",
+    description: "Create a new adventure module in this world (gr-module-v1's own fields; no sections yet).",
+    inputSchema: z.object({ module: moduleSchema }),
+    async handler(input, cfg) {
+      const { module } = z.object({ module: moduleSchema }).parse(input);
+      try {
+        return toResult(await client(cfg).createModule(module));
+      } catch (err) {
+        return toErrorResult(err);
+      }
+    },
+  },
+  {
+    name: "gr_update_module",
+    description: "Update an existing Geektastic Realms adventure module by id.",
+    inputSchema: z.object({ module_id: z.coerce.number().int(), module: moduleSchema }),
+    async handler(input, cfg) {
+      const { module_id, module } = z
+        .object({ module_id: z.coerce.number().int(), module: moduleSchema })
+        .parse(input);
+      try {
+        return toResult(await client(cfg).updateModule(module_id, module));
+      } catch (err) {
+        return toErrorResult(err);
+      }
+    },
+  },
+  {
+    name: "gr_create_section",
+    description:
+      "Create an Act, Chapter, Scene, or Appendix within a module. parent_id, if given, must be another " +
+      "section already in the same module (e.g. a Chapter's parent_id is its Act's section id).",
+    inputSchema: z.object({ module_id: z.coerce.number().int(), section: sectionSchema }),
+    async handler(input, cfg) {
+      const { module_id, section } = z
+        .object({ module_id: z.coerce.number().int(), section: sectionSchema })
+        .parse(input);
+      try {
+        return toResult(await client(cfg).createSection(module_id, section));
+      } catch (err) {
+        return toErrorResult(err);
+      }
+    },
+  },
+  {
+    name: "gr_update_section",
+    description: "Update an existing Act/Chapter/Scene/Appendix section by id.",
+    inputSchema: z.object({
+      module_id: z.coerce.number().int(),
+      section_id: z.coerce.number().int(),
+      section: sectionSchema,
+    }),
+    async handler(input, cfg) {
+      const { module_id, section_id, section } = z
+        .object({
+          module_id: z.coerce.number().int(),
+          section_id: z.coerce.number().int(),
+          section: sectionSchema,
+        })
+        .parse(input);
+      try {
+        return toResult(await client(cfg).updateSection(module_id, section_id, section));
+      } catch (err) {
+        return toErrorResult(err);
+      }
+    },
+  },
+  {
+    name: "gr_create_handout",
+    description:
+      "Create a handout in a module — module-level (omit section_id) or attributed to a specific section.",
+    inputSchema: z.object({ module_id: z.coerce.number().int(), handout: handoutSchema }),
+    async handler(input, cfg) {
+      const { module_id, handout } = z
+        .object({ module_id: z.coerce.number().int(), handout: handoutSchema })
+        .parse(input);
+      try {
+        return toResult(await client(cfg).createHandout(module_id, handout));
+      } catch (err) {
+        return toErrorResult(err);
+      }
+    },
+  },
+  {
+    name: "gr_update_handout",
+    description: "Update an existing handout by id.",
+    inputSchema: z.object({
+      module_id: z.coerce.number().int(),
+      handout_id: z.coerce.number().int(),
+      handout: handoutSchema,
+    }),
+    async handler(input, cfg) {
+      const { module_id, handout_id, handout } = z
+        .object({
+          module_id: z.coerce.number().int(),
+          handout_id: z.coerce.number().int(),
+          handout: handoutSchema,
+        })
+        .parse(input);
+      try {
+        return toResult(await client(cfg).updateHandout(module_id, handout_id, handout));
+      } catch (err) {
+        return toErrorResult(err);
+      }
+    },
+  },
+  {
+    name: "gr_create_encounter",
+    description: "Create an encounter within a specific section (Scene, typically) of a module.",
+    inputSchema: z.object({
+      module_id: z.coerce.number().int(),
+      section_id: z.coerce.number().int(),
+      encounter: encounterSchema,
+    }),
+    async handler(input, cfg) {
+      const { module_id, section_id, encounter } = z
+        .object({
+          module_id: z.coerce.number().int(),
+          section_id: z.coerce.number().int(),
+          encounter: encounterSchema,
+        })
+        .parse(input);
+      try {
+        return toResult(await client(cfg).createEncounter(module_id, section_id, encounter));
+      } catch (err) {
+        return toErrorResult(err);
+      }
+    },
+  },
+  {
+    name: "gr_update_encounter",
+    description: "Update an existing encounter by id.",
+    inputSchema: z.object({
+      module_id: z.coerce.number().int(),
+      encounter_id: z.coerce.number().int(),
+      encounter: encounterSchema,
+    }),
+    async handler(input, cfg) {
+      const { module_id, encounter_id, encounter } = z
+        .object({
+          module_id: z.coerce.number().int(),
+          encounter_id: z.coerce.number().int(),
+          encounter: encounterSchema,
+        })
+        .parse(input);
+      try {
+        return toResult(await client(cfg).updateEncounter(module_id, encounter_id, encounter));
       } catch (err) {
         return toErrorResult(err);
       }

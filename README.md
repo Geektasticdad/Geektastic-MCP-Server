@@ -18,10 +18,13 @@ delivery plan.
 
 ## Status
 
-Initial scaffold in place (Phases 1–5 of the roadmap): monorepo, Docker/Postgres stack,
-auth + roles, connector abstraction with a Geektastic Realms connector, the MCP endpoint,
-and the admin Web UI. **Nothing has been installed or run yet** — dependencies need
-`pnpm install`, and the code hasn't been type-checked or tested against a real database.
+Deployed and running (see [CHANGELOG.md](CHANGELOG.md) for the release history: the
+initial scaffold, OAuth 2.1 support for Claude Desktop/Claude.ai, and a CSRF/session
+fix). The Geektastic Realms connector is implemented against the real `/api/v1/*` API
+(see `geektastic-realms/Docs/API.md`) — statblocks, campaigns, generic lore entries
+(any category, with custom fields), and adventure modules (Acts/Chapters/Scenes/
+Appendices, Encounters, Handouts). See **[ROADMAP.md](ROADMAP.md)** for the full tool
+list and what's still ahead (Roll Tables aren't exposed yet).
 
 ## Repository layout
 

@@ -51,6 +51,86 @@ export interface GrCampaignSummary {
   status: string;
 }
 
+export interface GrEntrySummary {
+  entry_id: number;
+  title: string;
+  category_id: number;
+}
+
+export interface GrEntryDetail {
+  ok: true;
+  entry_id: number;
+  category_id: number;
+  /** gr-entry-v1 — custom_fields shape is category-specific, not knowable ahead of time. */
+  entry: Record<string, unknown>;
+}
+
+export interface GrModuleSummary {
+  module_id: number;
+  title: string;
+  slug: string;
+  summary: string;
+  status: string;
+  campaign_id: number | null;
+}
+
+export interface GrModuleDetail {
+  ok: true;
+  module_id: number;
+  /** gr-module-v1 — nested Act/Chapter/Scene tree, see Docs/API.md. */
+  module: Record<string, unknown>;
+}
+
+export interface GrSection {
+  id: number;
+  type: string;
+  title: string;
+  body_html: string;
+  parent_id: number | null;
+  sort_order: number;
+}
+
+export interface GrSectionDetail {
+  ok: true;
+  module_id: number;
+  section_id: number;
+  section: GrSection;
+}
+
+export interface GrHandout {
+  id: number;
+  title: string;
+  body_html: string;
+  media_id: number | null;
+  section_id: number | null;
+}
+
+export interface GrHandoutDetail {
+  ok: true;
+  module_id: number;
+  handout_id: number;
+  handout: GrHandout;
+}
+
+export interface GrEncounter {
+  id: number;
+  name: string;
+  encounter_type: string;
+  difficulty: string;
+  setup: string;
+  tactics: string;
+  rewards: string;
+  notes: string;
+}
+
+export interface GrEncounterDetail {
+  ok: true;
+  module_id: number;
+  section_id: number;
+  encounter_id: number;
+  encounter: GrEncounter;
+}
+
 /**
  * Client for Geektastic Realms' "General-Purpose API" — see
  * geektastic-realms/Docs/API.md. All routes live under `/api/v1/` on the
@@ -122,5 +202,86 @@ export class GeektasticRealmsClient {
 
   getCampaign(id: number): Promise<{ ok: true; campaign: GrCampaignSummary }> {
     return this.request(`/campaigns/${id}`);
+  }
+
+  searchEntries(categoryId?: number, query?: string): Promise<{ ok: true; entries: GrEntrySummary[] }> {
+    const params = new URLSearchParams();
+    if (categoryId !== undefined) params.set("category_id", String(categoryId));
+    if (query) params.set("q", query);
+    const qs = params.toString();
+    return this.request(`/entries${qs ? `?${qs}` : ""}`);
+  }
+
+  getEntry(entryId: number): Promise<GrEntryDetail> {
+    return this.request(`/entries/${entryId}`);
+  }
+
+  createEntry(categoryId: number, entry: Record<string, unknown>): Promise<GrEntryDetail> {
+    return this.request("/entries", {
+      method: "POST",
+      body: JSON.stringify({ category_id: categoryId, entry }),
+    });
+  }
+
+  updateEntry(entryId: number, entry: Record<string, unknown>): Promise<GrEntryDetail> {
+    return this.request(`/entries/${entryId}`, { method: "PATCH", body: JSON.stringify({ entry }) });
+  }
+
+  listModules(): Promise<{ ok: true; modules: GrModuleSummary[] }> {
+    return this.request("/modules");
+  }
+
+  getModule(moduleId: number): Promise<GrModuleDetail> {
+    return this.request(`/modules/${moduleId}`);
+  }
+
+  createModule(module: Record<string, unknown>): Promise<GrModuleDetail> {
+    return this.request("/modules", { method: "POST", body: JSON.stringify({ module }) });
+  }
+
+  updateModule(moduleId: number, module: Record<string, unknown>): Promise<GrModuleDetail> {
+    return this.request(`/modules/${moduleId}`, { method: "PATCH", body: JSON.stringify({ module }) });
+  }
+
+  createSection(moduleId: number, section: Record<string, unknown>): Promise<GrSectionDetail> {
+    return this.request(`/modules/${moduleId}/sections`, {
+      method: "POST",
+      body: JSON.stringify({ section }),
+    });
+  }
+
+  updateSection(moduleId: number, sectionId: number, section: Record<string, unknown>): Promise<GrSectionDetail> {
+    return this.request(`/modules/${moduleId}/sections/${sectionId}`, {
+      method: "PATCH",
+      body: JSON.stringify({ section }),
+    });
+  }
+
+  createHandout(moduleId: number, handout: Record<string, unknown>): Promise<GrHandoutDetail> {
+    return this.request(`/modules/${moduleId}/handouts`, {
+      method: "POST",
+      body: JSON.stringify({ handout }),
+    });
+  }
+
+  updateHandout(moduleId: number, handoutId: number, handout: Record<string, unknown>): Promise<GrHandoutDetail> {
+    return this.request(`/modules/${moduleId}/handouts/${handoutId}`, {
+      method: "PATCH",
+      body: JSON.stringify({ handout }),
+    });
+  }
+
+  createEncounter(moduleId: number, sectionId: number, encounter: Record<string, unknown>): Promise<GrEncounterDetail> {
+    return this.request(`/modules/${moduleId}/sections/${sectionId}/encounters`, {
+      method: "POST",
+      body: JSON.stringify({ encounter }),
+    });
+  }
+
+  updateEncounter(moduleId: number, encounterId: number, encounter: Record<string, unknown>): Promise<GrEncounterDetail> {
+    return this.request(`/modules/${moduleId}/encounters/${encounterId}`, {
+      method: "PATCH",
+      body: JSON.stringify({ encounter }),
+    });
   }
 }

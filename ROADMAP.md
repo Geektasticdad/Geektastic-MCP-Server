@@ -133,10 +133,16 @@ automatically.
 
 ### Geektastic Realms tools (backed by `/api/v1/*`, see Docs/API.md in the GR repo)
 Concrete tools, implemented in `packages/connectors/src/geektastic/index.ts` and
-`client.ts` against the real `gr-statblock-v1` format:
+`client.ts` against the real `gr-statblock-v1`/`gr-entry-v1`/`gr-module-v1` formats:
 - `gr_search_statblocks` / `gr_get_statblock` / `gr_create_statblock` / `gr_update_statblock`
 - `gr_list_campaigns` / `gr_get_campaign`
-- Extend to encounters, settlements, items, etc., as GR's API grows.
+- `gr_search_entries` / `gr_get_entry` / `gr_create_entry` / `gr_update_entry` — any
+  category's lore entries, with a category-specific `custom_fields` bag
+- `gr_list_modules` / `gr_get_module` / `gr_create_module` / `gr_update_module`
+- `gr_create_section` / `gr_update_section` — Acts/Chapters/Scenes/Appendices
+- `gr_create_handout` / `gr_update_handout`
+- `gr_create_encounter` / `gr_update_encounter`
+- Extend further as GR's API grows (Roll Tables not yet exposed).
 
 ---
 

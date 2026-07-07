@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.0.3] - 2026-07-07
+
+### Added
+- **14 new tools** covering generic lore entries and adventure modules, against the
+  Geektastic Realms API's new `gr-entry-v1`/`gr-module-v1` endpoints:
+  - `gr_search_entries` / `gr_get_entry` / `gr_create_entry` / `gr_update_entry` —
+    any category's lore entries (not just statblocks), with a `custom_fields`
+    object keyed by each field's stable `key`. Zod schema uses a loose
+    `z.record(z.string(), z.unknown())` for `custom_fields` since a category's
+    field set is arbitrary and unknown at connector-build-time.
+  - `gr_list_modules` / `gr_get_module` / `gr_create_module` / `gr_update_module`
+  - `gr_create_section` / `gr_update_section` — Acts, Chapters, Scenes, Appendices
+  - `gr_create_handout` / `gr_update_handout`
+  - `gr_create_encounter` / `gr_update_encounter`
+  - `client.ts` gained matching typed methods/interfaces (`GrEntryDetail`,
+    `GrModuleDetail`, `GrSection`, `GrHandout`, `GrEncounter`, ...); `index.ts`
+    gained typed Zod schemas for entry/module/section/handout/encounter (the
+    fixed fields are fully known ahead of time, unlike `custom_fields`).
+- Roll Tables remain unexposed — noted as a gap in `ROADMAP.md`.
+
 ## [1.0.2] - 2026-07-06
 
 ### Fixed
