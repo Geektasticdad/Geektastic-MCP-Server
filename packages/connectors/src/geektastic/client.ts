@@ -35,27 +35,28 @@ export class GeektasticRealmsClient {
   }
 
   ping(): Promise<unknown> {
-    // TODO: replace with the real health/status endpoint once the GR OpenAPI
-    // spec is available. Assumed to exist at GET /health for now.
-    return this.request("/health");
+    return this.request("/ping");
   }
 
   searchStatblocks(query: string): Promise<unknown> {
     return this.request(`/statblocks?q=${encodeURIComponent(query)}`);
   }
 
-  getStatblock(id: string): Promise<unknown> {
-    return this.request(`/statblocks/${encodeURIComponent(id)}`);
+  getStatblock(entryId: string): Promise<unknown> {
+    return this.request(`/statblocks/${encodeURIComponent(entryId)}`);
   }
 
-  createStatblock(data: unknown): Promise<unknown> {
-    return this.request("/statblocks", { method: "POST", body: JSON.stringify(data) });
+  createStatblock(categoryId: number, statblock: unknown): Promise<unknown> {
+    return this.request("/statblocks", {
+      method: "POST",
+      body: JSON.stringify({ category_id: categoryId, statblock }),
+    });
   }
 
-  updateStatblock(id: string, data: unknown): Promise<unknown> {
-    return this.request(`/statblocks/${encodeURIComponent(id)}`, {
+  updateStatblock(entryId: string, statblock: unknown): Promise<unknown> {
+    return this.request(`/statblocks/${encodeURIComponent(entryId)}`, {
       method: "PATCH",
-      body: JSON.stringify(data),
+      body: JSON.stringify({ statblock }),
     });
   }
 

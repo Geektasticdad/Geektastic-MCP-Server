@@ -12,7 +12,7 @@ applications can be plugged in over time.
 
 | Area              | Decision                                                                 |
 |-------------------|--------------------------------------------------------------------------|
-| GR integration    | REST/HTTP API (GR API already exists; OpenAPI spec/docs to be supplied)   |
+| GR integration    | REST/HTTP API — `/api/v1/*`, documented in Docs/API.md (geektastic-realms repo) |
 | Tech stack        | TypeScript full-stack (Node backend + React UI)                           |
 | MCP transport     | Streamable HTTP (remote clients over the network)                         |
 | Storage           | PostgreSQL (official container)                                           |
@@ -131,16 +131,12 @@ Adding a new app later = a new folder under `packages/connectors/src/<app>/` imp
 `AppConnector`, then registering it. UI, tokens, logging, and enable/disable all work
 automatically.
 
-### Geektastic Realms tools (from the GR OpenAPI spec)
-Concrete tools are mapped from the GR API. Representative examples (aligned with the
-`gr-statblock-v1` export format used by the D&D toolkit):
+### Geektastic Realms tools (backed by `/api/v1/*`, see Docs/API.md in the GR repo)
+Concrete tools, implemented in `packages/connectors/src/geektastic/index.ts` and
+`client.ts` against the real `gr-statblock-v1` format:
 - `gr_search_statblocks` / `gr_get_statblock` / `gr_create_statblock` / `gr_update_statblock`
 - `gr_list_campaigns` / `gr_get_campaign`
-- Extend to encounters, settlements, items, etc., per available endpoints.
-
-> **Build-time input needed:** the Geektastic Realms OpenAPI spec / endpoint docs + auth
-> scheme (API key vs. token vs. basic), so the GR connector's concrete tools and types can
-> be implemented precisely.
+- Extend to encounters, settlements, items, etc., as GR's API grows.
 
 ---
 
@@ -253,8 +249,9 @@ volumes:
 
 ### Phase 3 — Connector layer
 - [x] `AppConnector` / `ToolDefinition` interfaces + registry
-- [x] Geektastic Realms connector scaffolded — REST client endpoint paths are placeholders
-      pending the real GR OpenAPI spec (see `packages/connectors/src/geektastic/client.ts`)
+- [x] Geektastic Realms connector implemented against the real `/api/v1/*` endpoints
+      and `gr-statblock-v1` schema (see `packages/connectors/src/geektastic/client.ts`
+      and Docs/API.md in the geektastic-realms repo)
 - [x] `healthCheck` for dashboard status
 
 ### Phase 4 — MCP endpoint
@@ -299,5 +296,8 @@ volumes:
 ---
 
 ## Open Item
-- Provide the **Geektastic Realms OpenAPI spec / endpoint docs + auth scheme** so the GR connector's
-  concrete tools and request/response types can be implemented in Phase 3.
+- ~~Provide the Geektastic Realms OpenAPI spec / endpoint docs + auth scheme~~ — resolved.
+  See **Docs/API.md** in the geektastic-realms repo: `/api/v1/*`, `grapi_...` bearer
+  tokens (generated from a world's General API Access panel), and the full
+  `gr-statblock-v1` field mapping. The connector in `packages/connectors/src/geektastic/`
+  is implemented against it.

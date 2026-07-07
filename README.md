@@ -100,7 +100,4 @@ persist across redeploys.
 - **Nothing has been `pnpm install`ed, type-checked, or run.** Expect some rough edges
   (dependency versions, minor type errors) on the first real build — this was scaffolded
   without running installers, per the plan.
-- **Geektastic Realms connector is a stub.** `packages/connectors/src/geektastic/client.ts`
-  has placeholder endpoint paths (`/statblocks`, `/campaigns`, `/health`). Provide the real
-  GR OpenAPI spec / endpoint docs + auth scheme to fill these in correctly.
 - **No automated tests yet.**
