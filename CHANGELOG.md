@@ -2,9 +2,12 @@
 
 All notable changes to this project are documented in this file.
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
+
+## [1.0.0] - 2026-07-06
 
 ### Added
 - **OAuth 2.1 authorization server support**, so the MCP endpoint can be added as a
@@ -40,6 +43,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
     validation and all new module imports resolve; fails only at the expected point —
     no local Postgres available here to run the full curl-based flow end-to-end, see
     `scripts/verify-oauth.sh` for that against a real deployment).
+- Initial project scaffold implementing Phases 1–5 of [ROADMAP.md](ROADMAP.md):
+  - pnpm monorepo: `apps/server`, `apps/web`, `packages/shared`, `packages/connectors`.
+  - `AppConnector` / `ToolDefinition` abstraction and registry (`packages/connectors`) for
+    plugging in applications beyond Geektastic Realms.
+  - Geektastic Realms connector with a REST client and initial tool set (`gr_search_statblocks`,
+    `gr_get_statblock`, `gr_create_statblock`, `gr_update_statblock`, `gr_list_campaigns`,
+    `gr_get_campaign`) — later replaced with a real implementation, see "Changed" below.
+  - Express backend (`apps/server`) with Prisma/PostgreSQL: session-based multi-user auth with
+    `admin`/`member` roles, admin-managed user accounts, AES-256-GCM secret encryption, CSRF
+    protection, and rate limiting on login and the MCP endpoint.
+  - MCP Streamable HTTP endpoint (`/mcp`) with bearer-token auth, dynamic tool aggregation from
+    enabled connections/tools, and tool-call logging.
+  - Management REST API (`/api`) covering auth, users, connections, tools, tokens, logs,
+    dashboard summary, and a testing playground that reuses the same tool-handler path as `/mcp`.
+  - React + Vite + Tailwind admin UI (`apps/web`): login, dashboard, connections, tools,
+    tokens, testing playground, logs, users, and profile pages, with role-based visibility.
+  - Multi-stage `Dockerfile` (`node:22-alpine`) and `docker-compose.yml` (app + official
+    `postgres:16-alpine`) for Portainer-based deployment.
+  - `ROADMAP.md` and `README.md` documenting architecture, decisions, setup, and known gaps.
 
 ### Changed
 - Replaced the placeholder Geektastic Realms connector with a real
@@ -78,7 +100,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   feedback on a failed token creation or logs fetch), which is what made the
   cookie bug above look like nothing was happening. Both now surface the
   actual error message.
-
 - Docker build failing on `pnpm install` inside Portainer with
   `process "/bin/sh -c pnpm install --frozen-lockfile || pnpm install" did not
   complete successfully: exit code: 1`:
@@ -115,7 +136,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
     `dangerouslyAllowAllBuilds: true` to `pnpm-workspace.yaml` (acceptable for
     this private, self-hosted, single-operator deployment; can be tightened to
     an explicit `allowBuilds:` allowlist later).
-
 - Docker build failing at the `tsc`/`vite` build step (`pnpm --filter
   @geektastic/shared build && ...`, exit code 2). Installed a local, portable
   Node.js to actually run the build and see real compiler errors instead of
@@ -158,30 +178,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
     code 0, and the compiled server starts up and fails only at the expected
     point (no local Postgres available) rather than on any code/import error.
 
-### Added
-- Initial project scaffold implementing Phases 1–5 of [ROADMAP.md](ROADMAP.md):
-  - pnpm monorepo: `apps/server`, `apps/web`, `packages/shared`, `packages/connectors`.
-  - `AppConnector` / `ToolDefinition` abstraction and registry (`packages/connectors`) for
-    plugging in applications beyond Geektastic Realms.
-  - Geektastic Realms connector with a REST client and initial tool set (`gr_search_statblocks`,
-    `gr_get_statblock`, `gr_create_statblock`, `gr_update_statblock`, `gr_list_campaigns`,
-    `gr_get_campaign`) — endpoint paths are placeholders pending the real GR OpenAPI spec.
-  - Express backend (`apps/server`) with Prisma/PostgreSQL: session-based multi-user auth with
-    `admin`/`member` roles, admin-managed user accounts, AES-256-GCM secret encryption, CSRF
-    protection, and rate limiting on login and the MCP endpoint.
-  - MCP Streamable HTTP endpoint (`/mcp`) with bearer-token auth, dynamic tool aggregation from
-    enabled connections/tools, and tool-call logging.
-  - Management REST API (`/api`) covering auth, users, connections, tools, tokens, logs,
-    dashboard summary, and a testing playground that reuses the same tool-handler path as `/mcp`.
-  - React + Vite + Tailwind admin UI (`apps/web`): login, dashboard, connections, tools,
-    tokens, testing playground, logs, users, and profile pages, with role-based visibility.
-  - Multi-stage `Dockerfile` (`node:22-alpine`) and `docker-compose.yml` (app + official
-    `postgres:16-alpine`) for Portainer-based deployment.
-  - `ROADMAP.md` and `README.md` documenting architecture, decisions, setup, and known gaps.
-
 ### Known gaps
 - No Prisma migration history yet; the container runs `prisma db push` instead of
   `prisma migrate deploy` until an initial migration is generated and committed.
-- Scaffold has not been installed, type-checked, or run against a real database.
-- Geektastic Realms connector endpoints are placeholders pending real API docs.
 - No automated tests yet.
