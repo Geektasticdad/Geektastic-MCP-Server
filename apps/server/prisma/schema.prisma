@@ -1,0 +1,108 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  admin
+  member
+}
+
+enum UserStatus {
+  active
+  disabled
+}
+
+model User {
+  id                 String     @id @default(uuid())
+  username           String     @unique
+  email              String     @unique
+  passwordHash       String
+  role               UserRole   @default(member)
+  status             UserStatus @default(active)
+  mustChangePassword Boolean    @default(false)
+  createdAt          DateTime   @default(now())
+  lastLoginAt        DateTime?
+
+  createdConnections AppConnection[] @relation("ConnectionCreatedBy")
+  createdTokens      McpToken[]      @relation("TokenCreatedBy")
+
+  @@map("users")
+}
+
+model AppConnection {
+  id                    String   @id @default(uuid())
+  appType               String
+  name                  String
+  baseUrl               String
+  encryptedCredentials  String
+  enabled               Boolean  @default(true)
+  createdAt             DateTime @default(now())
+  createdById           String?
+  createdBy             User?    @relation("ConnectionCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+
+  toolSettings          ToolSetting[]
+  toolCallLogs          ToolCallLog[]
+
+  @@map("app_connections")
+}
+
+model ToolSetting {
+  id           String        @id @default(uuid())
+  connectionId String
+  connection   AppConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+  toolName     String
+  enabled      Boolean       @default(true)
+
+  @@unique([connectionId, toolName])
+  @@map("tool_settings")
+}
+
+model McpToken {
+  id            String    @id @default(uuid())
+  name          String
+  tokenHash     String    @unique
+  scopes        String[]  @default([])
+  createdAt     DateTime  @default(now())
+  lastUsedAt    DateTime?
+  revokedAt     DateTime?
+  createdById   String?
+  createdBy     User?     @relation("TokenCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+
+  toolCallLogs  ToolCallLog[]
+
+  @@map("mcp_tokens")
+}
+
+enum ToolCallStatus {
+  success
+  error
+}
+
+model ToolCallLog {
+  id           String         @id @default(uuid())
+  tokenId      String?
+  token        McpToken?      @relation(fields: [tokenId], references: [id], onDelete: SetNull)
+  connectionId String?
+  connection   AppConnection? @relation(fields: [connectionId], references: [id], onDelete: SetNull)
+  toolName     String
+  status       ToolCallStatus
+  durationMs   Int
+  errorSummary String?
+  createdAt    DateTime       @default(now())
+
+  @@index([createdAt])
+  @@map("tool_call_logs")
+}
+
+model Setting {
+  key   String @id
+  value String
+
+  @@map("settings")
+}

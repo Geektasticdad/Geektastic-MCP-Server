@@ -234,40 +234,46 @@ volumes:
 
 ## Delivery Phases
 
+> Status: Phases 1–5 are scaffolded in code (not yet installed, type-checked, or run — see
+> "Known gaps" in [README.md](README.md)). Phase 6 is partially done (rate limiting + CSRF
+> are in; a full security pass and finalized docs are still open).
+
 ### Phase 1 — Scaffold & infrastructure
-- [ ] pnpm monorepo (`apps/server`, `apps/web`, `packages/connectors`, `packages/shared`)
-- [ ] Dockerfile (multi-stage) + docker-compose (app + Postgres) + `.env.example`
-- [ ] Prisma schema + initial migration; `prisma migrate deploy` on startup
-- [ ] `/health` endpoint
+- [x] pnpm monorepo (`apps/server`, `apps/web`, `packages/connectors`, `packages/shared`)
+- [x] Dockerfile (multi-stage) + docker-compose (app + Postgres) + `.env.example`
+- [x] Prisma schema; startup runs `prisma db push` (no migration history yet — see README)
+- [x] `/health` endpoint
 - [ ] **Verify:** `docker compose up` → health green; Postgres persists on restart
 
 ### Phase 2 — Auth, users & connections
-- [ ] Session login, bcrypt passwords, CSRF; bootstrap admin from env
-- [ ] Roles (admin/member) + `requireAuth` / `requireAdmin` middleware
-- [ ] User management (admin creates accounts, roles, disable/enable, reset password, `mustChangePassword`)
-- [ ] Connections CRUD + AES-256-GCM secret encryption + GR "test connection"
+- [x] Session login, bcrypt passwords, CSRF; bootstrap admin from env
+- [x] Roles (admin/member) + `requireAuth` / `requireAdmin` middleware
+- [x] User management (admin creates accounts, roles, disable/enable, reset password, `mustChangePassword`)
+- [x] Connections CRUD + AES-256-GCM secret encryption + GR "test connection"
 
 ### Phase 3 — Connector layer
-- [ ] `AppConnector` / `ToolDefinition` interfaces + registry
-- [ ] Geektastic Realms connector (typed REST client) against the real GR API (from OpenAPI spec)
-- [ ] `healthCheck` for dashboard status
+- [x] `AppConnector` / `ToolDefinition` interfaces + registry
+- [x] Geektastic Realms connector scaffolded — REST client endpoint paths are placeholders
+      pending the real GR OpenAPI spec (see `packages/connectors/src/geektastic/client.ts`)
+- [x] `healthCheck` for dashboard status
 
 ### Phase 4 — MCP endpoint
-- [ ] Streamable HTTP `/mcp` via MCP SDK
-- [ ] Bearer-token auth middleware (hashed tokens, `lastUsedAt`, revoke, rate limit)
-- [ ] Tool aggregation from enabled connectors + per-tool enable/disable
-- [ ] Tool-call logging to DB
+- [x] Streamable HTTP `/mcp` via MCP SDK
+- [x] Bearer-token auth middleware (hashed tokens, `lastUsedAt`, revoke, rate limit)
+- [x] Tool aggregation from enabled connectors + per-tool enable/disable
+- [x] Tool-call logging to DB
 
 ### Phase 5 — Web UI
-- [ ] Dashboard, Connections, Tools toggles, Tokens
-- [ ] Testing Playground (reuses real handlers)
-- [ ] Logs
-- [ ] Users (admin) + Profile/password; role-based hiding of admin controls
+- [x] Dashboard, Connections, Tools toggles, Tokens
+- [x] Testing Playground (reuses real handlers)
+- [x] Logs
+- [x] Users (admin) + Profile/password; role-based hiding of admin controls
 
 ### Phase 6 — Harden & document
-- [ ] Rate limiting, CSRF hardening, security review of secret handling
-- [ ] README: Portainer deploy steps + `claude mcp add` client setup
-- [ ] `.env.example` finalized
+- [x] Rate limiting (login + `/mcp`), CSRF (double-submit token)
+- [ ] Full security review of secret handling; adopt tracked Prisma migrations
+- [x] README: Portainer deploy steps + `claude mcp add` client setup
+- [x] `.env.example` finalized
 
 ---
 

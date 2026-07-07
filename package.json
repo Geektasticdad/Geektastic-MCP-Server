@@ -1,0 +1,21 @@
+{
+  "name": "geektastic-mcp-server",
+  "private": true,
+  "version": "0.1.0",
+  "license": "UNLICENSED",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "pnpm --filter ./packages/shared build && pnpm --filter ./packages/connectors build && pnpm --filter ./apps/web build && pnpm --filter ./apps/server build",
+    "dev:server": "pnpm --filter ./apps/server dev",
+    "dev:web": "pnpm --filter ./apps/web dev",
+    "prisma:generate": "pnpm --filter ./apps/server exec prisma generate",
+    "prisma:push": "pnpm --filter ./apps/server exec prisma db push",
+    "lint": "pnpm -r lint",
+    "typecheck": "pnpm -r typecheck"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.3"
+  }
+}
