@@ -17,6 +17,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
     Corepack installs a known version instead of resolving "latest" itself.
   - Installed `openssl` in the Alpine base image, required by Prisma's query
     engine binaries on musl.
+  - Verified every pinned dependency version in every `package.json` actually
+    exists on the npm registry and that all `package.json` files are valid
+    JSON — ruled out as causes.
+  - Removed the `--frozen-lockfile || install` fallback (there's no committed
+    lockfile, so the first attempt always failed pointlessly and could muddy
+    the build log with two merged error outputs) in favor of a single, direct
+    `pnpm install` with bumped `fetch-retries`/`fetch-timeout` for resilience
+    against flaky registry access. If the build still fails, the log will now
+    show one unambiguous error instead of two conflated attempts.
 
 ### Added
 - Initial project scaffold implementing Phases 1–5 of [ROADMAP.md](ROADMAP.md):
