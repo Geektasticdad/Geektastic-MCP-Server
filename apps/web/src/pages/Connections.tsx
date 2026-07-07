@@ -109,10 +109,13 @@ export function Connections() {
               <input
                 value={baseUrl}
                 onChange={(e) => setBaseUrl(e.target.value)}
-                placeholder="https://realms.example.com/api"
+                placeholder="https://realms.example.com"
                 required
                 className="w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white"
               />
+              <p className="mt-1 text-xs text-slate-500">
+                Root URL of your Geektastic Realms instance — no `/api` suffix, that's added automatically.
+              </p>
             </div>
             <div>
               <label className="mb-1 block text-sm text-slate-300">API key</label>
@@ -121,6 +124,7 @@ export function Connections() {
                 onChange={(e) => setApiKey(e.target.value)}
                 type="password"
                 required
+                placeholder="grapi_..."
                 className="w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white"
               />
             </div>

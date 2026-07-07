@@ -6,6 +6,27 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Changed
+- Replaced the placeholder Geektastic Realms connector with a real
+  implementation against `geektastic-realms/Docs/API.md`. Built on top of a
+  parallel in-progress fix already on `main` (commit `88159a2`) that added a
+  precise `gr-statblock-v1` Zod schema (`abilities`/`features`/`items` with
+  the real enums from the docs) in place of the original catch-all — kept
+  that schema and its `entry_id`/`category_id` snake_case field naming, and
+  layered on:
+  - All routes live under `/api/v1/` on the instance's root origin — the
+    client now always prepends `/api/v1` itself, so the connection form's
+    "Base URL" field just needs the instance's origin (no path suffix),
+    with updated placeholder/help text to match.
+  - `healthCheck` now surfaces the world name and Realms version in its
+    detail message instead of a bare boolean.
+  - Error responses now parse GR's real `{ ok: false, error: "..." }` body
+    for a clean message instead of dumping raw response text.
+  - `entry_id`/`category_id`/campaign `id` inputs use `z.coerce.number()` so
+    an MCP client passing either a string or number both work.
+  - Verified with a local build: the full four-package build chain and the
+    web app's typecheck both exit 0.
+
 ### Fixed
 - Session cookie never persisted after login (refresh required re-login; token
   creation, password change, and the logs page all failed with

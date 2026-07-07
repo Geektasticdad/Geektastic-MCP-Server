@@ -3,17 +3,22 @@ import type { AppConnector, ConnectorConfig, HealthCheckResult, ToolDefinition }
 import { GeektasticRealmsClient, parseConfig } from "./client.js";
 
 /**
- * Connector for Geektastic Realms' general-purpose REST API (/api/v1/*).
- * See Docs/API.md in the geektastic-realms repo for the full endpoint reference
- * and the gr-statblock-v1 field mapping this schema mirrors.
+ * Connector for Geektastic Realms' "General-Purpose API" (see
+ * geektastic-realms/Docs/API.md). All routes live under `/api/v1/` on the
+ * instance's root origin — the client always prepends `/api/v1` itself, so
+ * `baseUrl` should be just the origin (no path suffix). Auth is a per-world
+ * Bearer token from that world's General API Access panel.
  */
 
 const configSchema = z.object({
   baseUrl: z
     .string()
     .url()
-    .describe("Base URL of the Geektastic Realms API, e.g. https://realms.example.com/api/v1"),
-  apiKey: z.string().min(1).describe("grapi_... bearer token, generated from a world's General API Access panel"),
+    .describe("Root origin of the Geektastic Realms instance, e.g. https://realms.example.com (no /api suffix)"),
+  apiKey: z
+    .string()
+    .min(1)
+    .describe("Per-world bearer token from that world's General API Access panel (prefix grapi_)"),
 });
 
 const abilityScoresSchema = z.object({
@@ -98,10 +103,11 @@ function client(cfg: ConnectorConfig): GeektasticRealmsClient {
 const tools: ToolDefinition[] = [
   {
     name: "gr_search_statblocks",
-    description: "Search Geektastic Realms statblocks by name or keyword.",
-    inputSchema: z.object({ query: z.string().min(1) }),
+    description:
+      "Search this world's stat blocks by entry title or stat block name. Omit query to list everything (capped at 100 when a query is given).",
+    inputSchema: z.object({ query: z.string().optional() }),
     async handler(input, cfg) {
-      const { query } = z.object({ query: z.string().min(1) }).parse(input);
+      const { query } = z.object({ query: z.string().optional() }).parse(input);
       try {
         return toResult(await client(cfg).searchStatblocks(query));
       } catch (err) {
@@ -112,9 +118,9 @@ const tools: ToolDefinition[] = [
   {
     name: "gr_get_statblock",
     description: "Fetch a single Geektastic Realms statblock by entry id, in gr-statblock-v1 format.",
-    inputSchema: z.object({ entry_id: z.string().min(1) }),
+    inputSchema: z.object({ entry_id: z.coerce.number().int() }),
     async handler(input, cfg) {
-      const { entry_id } = z.object({ entry_id: z.string().min(1) }).parse(input);
+      const { entry_id } = z.object({ entry_id: z.coerce.number().int() }).parse(input);
       try {
         return toResult(await client(cfg).getStatblock(entry_id));
       } catch (err) {
@@ -144,10 +150,10 @@ const tools: ToolDefinition[] = [
     description:
       "Update an existing Geektastic Realms statblock by entry id. Replaces the entire " +
       "features/items arrays with what's posted.",
-    inputSchema: z.object({ entry_id: z.string().min(1), statblock: statblockSchema }),
+    inputSchema: z.object({ entry_id: z.coerce.number().int(), statblock: statblockSchema }),
     async handler(input, cfg) {
       const { entry_id, statblock } = z
-        .object({ entry_id: z.string().min(1), statblock: statblockSchema })
+        .object({ entry_id: z.coerce.number().int(), statblock: statblockSchema })
         .parse(input);
       try {
         return toResult(await client(cfg).updateStatblock(entry_id, statblock));
@@ -171,9 +177,9 @@ const tools: ToolDefinition[] = [
   {
     name: "gr_get_campaign",
     description: "Fetch a single Geektastic Realms campaign by id.",
-    inputSchema: z.object({ id: z.string().min(1) }),
+    inputSchema: z.object({ id: z.coerce.number().int() }),
     async handler(input, cfg) {
-      const { id } = z.object({ id: z.string().min(1) }).parse(input);
+      const { id } = z.object({ id: z.coerce.number().int() }).parse(input);
       try {
         return toResult(await client(cfg).getCampaign(id));
       } catch (err) {
@@ -189,8 +195,8 @@ export const geektasticRealmsConnector: AppConnector = {
   configSchema,
   async healthCheck(cfg): Promise<HealthCheckResult> {
     try {
-      await client(cfg).ping();
-      return { ok: true };
+      const result = await client(cfg).ping();
+      return { ok: true, detail: `${result.setting.name} (Realms v${result.gr_version})` };
     } catch (err) {
       return { ok: false, detail: err instanceof Error ? err.message : String(err) };
     }
