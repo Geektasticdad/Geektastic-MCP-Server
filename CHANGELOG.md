@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.0.4] - 2026-07-07
+
+### Fixed
+- `gr_get_module` could return a response large enough (hundreds of KB on a
+  module with dozens of scenes) to exceed tool-response size limits outright,
+  making some modules effectively unreadable through the MCP server. Matches a
+  corresponding change on the Geektastic Realms side: `gr_get_module` now
+  returns a lightweight outline (no `body_html`; encounters/handouts are
+  name-only stubs) instead of the full tree.
+
+### Added
+- `gr_get_section` — fetch one Act/Chapter/Scene/Appendix's full content
+  (body, complete encounters/handouts, one level of lightweight children) by
+  module id + section id, now that `gr_get_module` no longer includes it.
+- `gr_search_sections` — find a section by title across every module in a
+  world without already knowing which module it's in.
+
 ## [1.0.3] - 2026-07-07
 
 ### Added

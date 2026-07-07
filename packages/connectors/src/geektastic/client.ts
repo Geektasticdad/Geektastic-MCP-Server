@@ -77,7 +77,12 @@ export interface GrModuleSummary {
 export interface GrModuleDetail {
   ok: true;
   module_id: number;
-  /** gr-module-v1 — nested Act/Chapter/Scene tree, see Docs/API.md. */
+  /**
+   * gr-module-v1 — nested Act/Chapter/Scene tree, see Docs/API.md. Deliberately
+   * lightweight (no body_html, name-only encounter/handout stubs) since a real
+   * module's full text can be hundreds of KB. Use getSection() for one
+   * section's full content.
+   */
   module: Record<string, unknown>;
 }
 
@@ -95,6 +100,35 @@ export interface GrSectionDetail {
   module_id: number;
   section_id: number;
   section: GrSection;
+}
+
+export interface GrSectionSearchResult {
+  section_id: number;
+  module_id: number;
+  module_title: string;
+  type: string;
+  title: string;
+}
+
+export interface GrSectionStub {
+  id: number;
+  type: string;
+  title: string;
+  sort_order: number;
+}
+
+export interface GrSectionFull extends GrSection {
+  encounters: GrEncounter[];
+  handouts: GrHandout[];
+  /** One level only — no grandchildren, no body text. Call getSection() again to drill further. */
+  children: GrSectionStub[];
+}
+
+export interface GrSectionFullDetail {
+  ok: true;
+  module_id: number;
+  section_id: number;
+  section: GrSectionFull;
 }
 
 export interface GrHandout {
@@ -241,6 +275,18 @@ export class GeektasticRealmsClient {
 
   updateModule(moduleId: number, module: Record<string, unknown>): Promise<GrModuleDetail> {
     return this.request(`/modules/${moduleId}`, { method: "PATCH", body: JSON.stringify({ module }) });
+  }
+
+  searchSections(query?: string, type?: string): Promise<{ ok: true; sections: GrSectionSearchResult[] }> {
+    const params = new URLSearchParams();
+    if (query) params.set("q", query);
+    if (type) params.set("type", type);
+    const qs = params.toString();
+    return this.request(`/sections${qs ? `?${qs}` : ""}`);
+  }
+
+  getSection(moduleId: number, sectionId: number): Promise<GrSectionFullDetail> {
+    return this.request(`/modules/${moduleId}/sections/${sectionId}`);
   }
 
   createSection(moduleId: number, section: Record<string, unknown>): Promise<GrSectionDetail> {

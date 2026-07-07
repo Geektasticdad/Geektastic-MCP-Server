@@ -138,8 +138,11 @@ Concrete tools, implemented in `packages/connectors/src/geektastic/index.ts` and
 - `gr_list_campaigns` / `gr_get_campaign`
 - `gr_search_entries` / `gr_get_entry` / `gr_create_entry` / `gr_update_entry` — any
   category's lore entries, with a category-specific `custom_fields` bag
-- `gr_list_modules` / `gr_get_module` / `gr_create_module` / `gr_update_module`
-- `gr_create_section` / `gr_update_section` — Acts/Chapters/Scenes/Appendices
+- `gr_list_modules` / `gr_get_module` (lightweight outline — no body text) /
+  `gr_create_module` / `gr_update_module`
+- `gr_search_sections` / `gr_get_section` (full content: one Act/Chapter/Scene at
+  a time, since a module's full text can be hundreds of KB) / `gr_create_section` /
+  `gr_update_section`
 - `gr_create_handout` / `gr_update_handout`
 - `gr_create_encounter` / `gr_update_encounter`
 - Extend further as GR's API grows (Roll Tables not yet exposed).

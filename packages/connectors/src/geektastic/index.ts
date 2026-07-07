@@ -314,8 +314,9 @@ const tools: ToolDefinition[] = [
   {
     name: "gr_get_module",
     description:
-      "Fetch a single Geektastic Realms adventure module by id, in gr-module-v1 format — the nested " +
-      "Act/Chapter/Scene/Appendix section tree, each with its Encounters and Handouts.",
+      "Fetch a single Geektastic Realms adventure module by id, in gr-module-v1 format — the lightweight " +
+      "Act/Chapter/Scene/Appendix outline (no body text; encounters/handouts are name-only). " +
+      "Use gr_get_section to read a specific section's full content.",
     inputSchema: z.object({ module_id: z.coerce.number().int() }),
     async handler(input, cfg) {
       const { module_id } = z.object({ module_id: z.coerce.number().int() }).parse(input);
@@ -349,6 +350,45 @@ const tools: ToolDefinition[] = [
         .parse(input);
       try {
         return toResult(await client(cfg).updateModule(module_id, module));
+      } catch (err) {
+        return toErrorResult(err);
+      }
+    },
+  },
+  {
+    name: "gr_search_sections",
+    description:
+      "Search for an Act/Chapter/Scene/Appendix by title across every module in this world, without " +
+      "needing to already know which module it's in. Returns lightweight matches (module_id + section_id); " +
+      "use gr_get_section to fetch full content.",
+    inputSchema: z.object({
+      query: z.string().optional(),
+      type: z.enum(["act", "chapter", "scene", "appendix"]).optional(),
+    }),
+    async handler(input, cfg) {
+      const { query, type } = z
+        .object({ query: z.string().optional(), type: z.enum(["act", "chapter", "scene", "appendix"]).optional() })
+        .parse(input);
+      try {
+        return toResult(await client(cfg).searchSections(query, type));
+      } catch (err) {
+        return toErrorResult(err);
+      }
+    },
+  },
+  {
+    name: "gr_get_section",
+    description:
+      "Fetch one section's full content (body_html, full encounters/handouts, one level of lightweight " +
+      "children) by module id + section id. This is how to actually read an Act/Chapter/Scene's text — " +
+      "gr_get_module only returns the lightweight outline.",
+    inputSchema: z.object({ module_id: z.coerce.number().int(), section_id: z.coerce.number().int() }),
+    async handler(input, cfg) {
+      const { module_id, section_id } = z
+        .object({ module_id: z.coerce.number().int(), section_id: z.coerce.number().int() })
+        .parse(input);
+      try {
+        return toResult(await client(cfg).getSection(module_id, section_id));
       } catch (err) {
         return toErrorResult(err);
       }
