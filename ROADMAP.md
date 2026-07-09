@@ -144,7 +144,8 @@ Concrete tools, implemented in `packages/connectors/src/geektastic/index.ts` and
   a time, since a module's full text can be hundreds of KB) / `gr_create_section` /
   `gr_update_section`
 - `gr_create_handout` / `gr_update_handout`
-- `gr_create_encounter` / `gr_update_encounter`
+- `gr_create_encounter` / `gr_update_encounter` — accepts an `adversaries`
+  array (`entry_id` + `quantity`) to set which creatures are in the fight
 - Extend further as GR's API grows (Roll Tables not yet exposed).
 
 ---

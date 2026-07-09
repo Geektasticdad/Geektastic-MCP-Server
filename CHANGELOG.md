@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.0.5] - 2026-07-08
+
+### Added
+- `gr_create_encounter` / `gr_update_encounter` now accept an `adversaries`
+  array (`{ entry_id, quantity }`) to set which creatures are in the fight,
+  matching a corresponding change on the Geektastic Realms side
+  (`Api\EncounterController` now validates and stores adversary links).
+  Sending `adversaries` on update **replaces the whole list**, not a
+  diff/append — find candidate `entry_id`s with `gr_search_statblocks` first.
+  Every encounter returned by `gr_create_encounter`, `gr_update_encounter`,
+  and `gr_get_section` now includes a resolved `adversaries` array
+  (`{ entry_id, name, category, quantity }`).
+
 ## [1.0.4] - 2026-07-07
 
 ### Fixed

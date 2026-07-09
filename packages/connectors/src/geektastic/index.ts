@@ -125,6 +125,11 @@ const handoutSchema = z.object({
   media_id: z.number().int().nullable().optional(),
 });
 
+const encounterAdversaryInputSchema = z.object({
+  entry_id: z.coerce.number().int().describe("Entry id of a creature with a stat block in this world — find one via gr_search_statblocks."),
+  quantity: z.coerce.number().int().min(1).optional().describe("Defaults to 1."),
+});
+
 const encounterSchema = z.object({
   name: z.string().min(1),
   encounter_type: z.enum(["combat", "social", "exploration", "puzzle", "trap", "other"]).optional(),
@@ -133,6 +138,14 @@ const encounterSchema = z.object({
   tactics: z.string().nullable().optional(),
   rewards: z.string().nullable().optional(),
   notes: z.string().nullable().optional(),
+  adversaries: z
+    .array(encounterAdversaryInputSchema)
+    .optional()
+    .describe(
+      "Creatures in this fight. REPLACES the entire existing list on update (not a diff/append) — " +
+        "omit this field to leave adversaries untouched, or send [] to clear them all. " +
+        "Each entry_id must have a stat block (gr_search_statblocks) in this world."
+    ),
 });
 
 function toResult(data: unknown) {
@@ -475,7 +488,10 @@ const tools: ToolDefinition[] = [
   },
   {
     name: "gr_create_encounter",
-    description: "Create an encounter within a specific section (Scene, typically) of a module.",
+    description:
+      "Create an encounter within a specific section (Scene, typically) of a module. " +
+      "Optionally set its adversaries (creatures in the fight) in the same call — " +
+      "look up entry_ids first with gr_search_statblocks.",
     inputSchema: z.object({
       module_id: z.coerce.number().int(),
       section_id: z.coerce.number().int(),
@@ -498,7 +514,10 @@ const tools: ToolDefinition[] = [
   },
   {
     name: "gr_update_encounter",
-    description: "Update an existing encounter by id.",
+    description:
+      "Update an existing encounter by id. Sending `adversaries` replaces the whole list — " +
+      "fetch the encounter's current adversaries first (via gr_get_section) if you only want " +
+      "to add or remove one creature rather than resetting the roster.",
     inputSchema: z.object({
       module_id: z.coerce.number().int(),
       encounter_id: z.coerce.number().int(),

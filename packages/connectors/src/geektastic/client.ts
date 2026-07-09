@@ -146,6 +146,13 @@ export interface GrHandoutDetail {
   handout: GrHandout;
 }
 
+export interface GrEncounterAdversary {
+  entry_id: number;
+  name: string;
+  category: string;
+  quantity: number;
+}
+
 export interface GrEncounter {
   id: number;
   name: string;
@@ -155,6 +162,7 @@ export interface GrEncounter {
   tactics: string;
   rewards: string;
   notes: string;
+  adversaries: GrEncounterAdversary[];
 }
 
 export interface GrEncounterDetail {
