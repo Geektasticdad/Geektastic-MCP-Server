@@ -16,6 +16,15 @@ applications can be plugged in over time.
 See **[ROADMAP.md](ROADMAP.md)** for the full architecture, data model, and phased
 delivery plan.
 
+## Documentation
+
+- **[Docs/](Docs/README.md)** — the end-user & administrator manual: getting started,
+  the admin guide (connections, tools, tokens, OAuth clients, users), the user guide,
+  connecting an MCP client, the Geektastic Realms tools reference, and troubleshooting.
+- **[Tech_Docs/](Tech_Docs/README.md)** — engineering reference: architecture, data
+  model, API reference, the MCP protocol implementation, OAuth 2.1, security, the
+  connector SDK, deployment, and local development.
+
 ## Status
 
 Deployed and running (see [CHANGELOG.md](CHANGELOG.md) for the release history: the
