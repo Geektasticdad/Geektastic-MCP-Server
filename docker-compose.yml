@@ -37,5 +37,11 @@ services:
       retries: 10
     restart: unless-stopped
 
+services:
+  app:
+    # ...existing config...
+    extra_hosts:
+      - "family.gtastic.xyz:host-gateway"
+
 volumes:
   pgdata:
