@@ -240,9 +240,12 @@ volumes:
 
 ## Delivery Phases
 
-> Status: Phases 1–5 are scaffolded in code (not yet installed, type-checked, or run — see
-> "Known gaps" in [README.md](README.md)). Phase 6 is partially done (rate limiting + CSRF
-> are in; a full security pass and finalized docs are still open).
+> Status: Phases 1–6 are **built, deployed, and in real use** — v1.0.x is running as a
+> Docker stack, serving Claude Desktop/Claude.ai over OAuth 2.1 and Claude Code over
+> Bearer tokens, with 22 Geektastic Realms tools live (see [CHANGELOG.md](CHANGELOG.md)).
+> Remaining Phase 6 items (tracked Prisma migrations, a full security pass, automated
+> tests) roll forward into **Phase 9** below. Forward work is planned in
+> "Delivery Phases — what's next" following this section.
 
 ### Phase 1 — Scaffold & infrastructure
 - [x] pnpm monorepo (`apps/server`, `apps/web`, `packages/connectors`, `packages/shared`)
@@ -305,9 +308,72 @@ volumes:
 
 ---
 
-## Open Item
+## Delivery Phases — what's next
+
+The phases below serve the same DM-first goal as the rest of the Geektastic stack (see
+`ROADMAP.md` in the geektastic-realms repo): Claude as a **prep co-DM** that can read
+the world, write lore and adventures, and leave everything ready to pull into Foundry
+VTT. Tool phases track the GR API — each new GR endpoint family lands here as tools in
+the same release window, the pattern already proven by entries → modules → adversaries
+in v1.0.1–v1.0.5.
+
+### Phase 7 — GR tool coverage: close the content loop
+
+Track GR's "Priority 1" API work so no prep content type is invisible to Claude:
+
+- [ ] **Roll Tables** — `gr_list_roll_tables` / `gr_get_roll_table` /
+      `gr_create_roll_table` / `gr_update_roll_table` (rows included; the single most
+      generative-AI-friendly content type — wandering monsters, loot, rumors).
+      Blocked on GR exposing `/api/v1/.../roll-tables*` (planned there as v1.18).
+- [ ] **Campaign writes** — `gr_create_campaign` / `gr_update_campaign` (reads exist).
+- [ ] **Individual reads** — `gr_get_encounter` / `gr_get_handout` (both currently
+      write-only round-trips: create returns the object, but a later session can't
+      re-fetch one by id without pulling the whole section).
+- [ ] **Session logs** — `gr_list_sessions` / `gr_create_session` /
+      `gr_update_session`: "here are my messy notes, write the recap and next-session
+      prep" is a marquee MCP use case, and reads give Claude campaign continuity.
+- [ ] **World history & calendar** — era/event tools so worldbuilding chats can file
+      timeline events as they invent them.
+- [ ] **Deletes** — `gr_delete_*` where GR grows `DELETE` endpoints. Gate these behind
+      per-tool disable (already supported) so an admin can run a no-delete server.
+
+### Phase 8 — MCP surface beyond tools
+
+- [ ] **Prompts** — ship reusable MCP prompts encoding real DM workflows:
+      *session-prep* (read module outline + session log + in-progress sections, draft
+      the prep sheet), *recap-writer*, *statblock-from-description*,
+      *populate-encounter* (pick adversaries by CR budget from existing statblocks).
+- [ ] **Resources** — expose read-heavy content (module outlines, entry bodies) as MCP
+      resources so clients that prefer resource attachment over tool calls can browse.
+- [ ] **Response-size discipline** — codify the v1.0.4 lesson (outline vs full-content
+      endpoints) as a connector-SDK convention: any list/detail tool must have a
+      bounded worst case.
+
+### Phase 9 — Engineering hardening (carried from Phase 6)
+
+- [ ] Tracked Prisma migrations (`prisma migrate dev --name init` → commit
+      `migrations/` → Dockerfile back to `migrate deploy`).
+- [ ] Automated tests: connector client against a GR fixture server; auth/OAuth flows;
+      one end-to-end MCP round-trip in CI.
+- [ ] Full security pass on secret handling; dependency audit in CI.
+
+### Phase 10 — Operations & multi-connection polish
+
+- [ ] **Per-token tool/connection scoping** — today a token grants all enabled tools on
+      all enabled connections; scope tokens to a connection (and optionally a tool
+      subset) so a "worldbuilding-only" token can't touch another world.
+- [ ] **Dashboard usage analytics** — calls per tool/day, error rates over time, top
+      slow tools (data already in `tool_call_logs`).
+- [ ] **Log retention** — configurable pruning of `tool_call_logs` (superadmin
+      setting + scheduled job).
+- [ ] **Second connector** — when a second app is ready, use it to validate the
+      `AppConnector` abstraction for real and document the connector SDK against a
+      worked example.
+
+---
+
+## Resolved Items
 - ~~Provide the Geektastic Realms OpenAPI spec / endpoint docs + auth scheme~~ — resolved.
-  See **Docs/API.md** in the geektastic-realms repo: `/api/v1/*`, `grapi_...` bearer
-  tokens (generated from a world's General API Access panel), and the full
-  `gr-statblock-v1` field mapping. The connector in `packages/connectors/src/geektastic/`
-  is implemented against it.
+  See **Docs/API.md** in the geektastic-realms repo: `/api/v1/*` and the unified `grt_...`
+  scoped bearer tokens (originally `grapi_...`), plus the full `gr-statblock-v1` field
+  mapping. The connector in `packages/connectors/src/geektastic/` is implemented against it.

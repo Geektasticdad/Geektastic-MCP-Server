@@ -125,7 +125,9 @@ account.
   schema is validated against a real database, run `prisma migrate dev --name init`
   locally and commit the generated `apps/server/prisma/migrations/` folder, then switch
   the Dockerfile back to `migrate deploy` for safer, trackable schema changes.
-- **Nothing has been `pnpm install`ed, type-checked, or run.** Expect some rough edges
-  (dependency versions, minor type errors) on the first real build — this was scaffolded
-  without running installers, per the plan.
-- **No automated tests yet.**
+- **No automated tests yet.** Planned alongside the migration work — see Phase 9 in
+  [ROADMAP.md](ROADMAP.md).
+
+Forward plans (new tools tracking the Geektastic Realms API, MCP prompts/resources,
+hardening, per-token scoping) are in **[ROADMAP.md](ROADMAP.md)** under
+"Delivery Phases — what's next".
