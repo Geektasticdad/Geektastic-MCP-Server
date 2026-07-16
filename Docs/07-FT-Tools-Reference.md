@@ -96,13 +96,19 @@ an event, a person, a family, or a note — and can be shared across owners.
 ## Notes
 
 Free-text notes attached to exactly one thing — an event, person, family,
-source, repository, place, or media item.
+source, repository, place, media item, or **surname**.
 
 | Tool | What it does |
 |---|---|
 | `ft_list_notes` | List notes for one owner (pass exactly one owner field). |
 | `ft_create_note` | Add a note (HTML body) to one owner. |
 | `ft_get_note` / `ft_update_note` / `ft_delete_note` | Fetch, edit, or remove a note. |
+
+Surname notes are the odd one out: pass `surname` (a plain name string like
+`"McConnell"`) instead of one of the `*_id` owner fields, for research notes
+about a whole surname line rather than one person — e.g. "the McConnell line
+emigrated from Ulster in the 1850s." There's no surname entity/id; it's
+matched against everyone's `names.surname` in the tree.
 
 ## Media
 

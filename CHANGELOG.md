@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.1.1] - 2026-07-16
+
+### Added
+- `ft_list_notes` / `ft_create_note` now accept `surname` (a plain name
+  string, e.g. `"McConnell"`) as an alternative owner to the existing
+  `event_id`/`individual_id`/`family_id`/`source_id`/`repository_id`/
+  `place_id`/`media_id` fields, matching Geektastic Family Tree's `v0.17.1`
+  API addition (surname notes aren't a table-backed entity — matched against
+  `names.surname` — so no new tool was needed, just a schema update in
+  `packages/connectors/src/family-tree/index.ts`).
+
 ## [1.1.0] - 2026-07-16
 
 ### Added

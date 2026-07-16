@@ -163,6 +163,14 @@ const noteOwnerSchema = z.object({
   repository_id: z.coerce.number().int().optional(),
   place_id: z.coerce.number().int().optional(),
   media_id: z.coerce.number().int().optional(),
+  surname: z
+    .string()
+    .optional()
+    .describe(
+      "A surname string (e.g. \"McConnell\"), not an id — surnames aren't a table-backed entity, " +
+        "this matches names.surname across the tree. Use instead of the id fields above to attach " +
+        "a note to a surname as a research subject rather than one person.",
+    ),
 });
 
 const noteCreateSchema = noteOwnerSchema.extend({
@@ -565,13 +573,15 @@ const tools: ToolDefinition[] = [
   tool(
     "ft_list_notes",
     "List notes for exactly one owner (event_id/individual_id/family_id/source_id/repository_id/" +
-      "place_id/media_id — pass exactly one).",
+      "place_id/media_id/surname — pass exactly one). surname is a name string (e.g. \"McConnell\"), " +
+      "not an id, for research notes about a surname as a whole rather than one person.",
     z.object({ tree_id: treeIdSchema, owner: noteOwnerSchema }),
     (i, cfg) => client(cfg).listNotes(i.tree_id, i.owner),
   ),
   tool(
     "ft_create_note",
-    "Create a note attached to exactly one owner. body is sanitized HTML.",
+    "Create a note attached to exactly one owner (or a surname string instead of an owner id, " +
+      "for research notes about a whole surname line). body is sanitized HTML.",
     z.object({ tree_id: treeIdSchema, note: noteCreateSchema }),
     (i, cfg) => client(cfg).createNote(i.tree_id, i.note),
   ),
