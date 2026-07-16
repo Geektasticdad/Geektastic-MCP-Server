@@ -1,7 +1,5 @@
 services:
   mcp-server:
-    extra_hosts:
-      - "family.gtastic.xyz:host-gateway"
     build: .
     image: geektastic-mcp-server:latest
     container_name: geektastic_mcp_server-app
@@ -21,6 +19,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+    extra_hosts:
+      - "family.gtastic.xyz:host-gateway"
     restart: unless-stopped
 
   postgres:
