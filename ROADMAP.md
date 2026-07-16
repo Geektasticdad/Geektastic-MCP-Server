@@ -148,6 +148,34 @@ Concrete tools, implemented in `packages/connectors/src/geektastic/index.ts` and
   array (`entry_id` + `quantity`) to set which creatures are in the fight
 - Extend further as GR's API grows (Roll Tables not yet exposed).
 
+### Geektastic Family Tree tools (backed by `/api/v1/*`, see docs/API.md in the Family Tree repo)
+Second connector, implemented in `packages/connectors/src/family-tree/index.ts` and
+`client.ts`. Auth is a per-user token (Account menu -> API Tokens) that acts as that
+user's own per-tree role (viewer/contributor/editor/admin) — everything is scoped
+under `/trees/{treeId}/...`:
+- `ft_list_trees` / `ft_get_tree` / `ft_set_home_person`
+- `ft_search_people` / `ft_create_person` / `ft_get_person` / `ft_update_person` /
+  `ft_delete_person` — plus `ft_add_name` / `ft_update_name` / `ft_delete_name`,
+  `ft_get_pedigree`, `ft_get_descendants`
+- `ft_list_families` / `ft_create_family` / `ft_get_family` / `ft_update_family` /
+  `ft_delete_family` — plus `ft_add_child` / `ft_update_child_relation` / `ft_remove_child`
+- `ft_list_events` / `ft_create_event` / `ft_get_event` / `ft_update_event` / `ft_delete_event`
+- `ft_list_places` / `ft_create_place` / `ft_get_place` / `ft_update_place` / `ft_delete_place`
+- `ft_list_sources` / `ft_create_source` / `ft_get_source` / `ft_update_source` / `ft_delete_source`
+- `ft_list_repositories` / `ft_create_repository` / `ft_get_repository` /
+  `ft_update_repository` / `ft_delete_repository`
+- `ft_list_citations` / `ft_create_citation` / `ft_get_citation` / `ft_update_citation` /
+  `ft_delete_citation` / `ft_detach_citation`
+- `ft_list_notes` / `ft_create_note` / `ft_get_note` / `ft_update_note` / `ft_delete_note`
+- `ft_list_media` / `ft_get_media` / `ft_delete_media` — metadata only; upload/replace is
+  multipart/form-data and stays a web-app-only action
+- `ft_list_research_tasks` / `ft_create_research_task` / `ft_get_research_task` /
+  `ft_update_research_task` / `ft_delete_research_task`
+- `ft_list_dna_matches` / `ft_create_dna_match` / `ft_get_dna_match` /
+  `ft_update_dna_match` / `ft_delete_dna_match`
+- `ft_search` (typeahead), `ft_get_relationship`, `ft_get_gaps_report`,
+  `ft_get_duplicates_report`
+
 ---
 
 ## Data Model (Postgres via Prisma)

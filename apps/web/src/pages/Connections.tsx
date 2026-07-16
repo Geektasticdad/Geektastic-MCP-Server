@@ -54,7 +54,20 @@ export function Connections() {
     mutationFn: (id: string) => api.post<{ ok: boolean; detail?: string }>(`/api/connections/${id}/test`),
   });
 
-  const isKnownConnector = appType === "geektastic-realms";
+  const BASE_URL_APIKEY_CONNECTORS: Record<string, { baseUrlPlaceholder: string; baseUrlHint: string; apiKeyPlaceholder: string }> = {
+    "geektastic-realms": {
+      baseUrlPlaceholder: "https://realms.example.com",
+      baseUrlHint: "Root URL of your Geektastic Realms instance — no `/api` suffix, that's added automatically.",
+      apiKeyPlaceholder: "grapi_...",
+    },
+    "family-tree": {
+      baseUrlPlaceholder: "https://tree.example.com",
+      baseUrlHint: "Root URL of your Geektastic Family Tree instance — no `/api` suffix, that's added automatically.",
+      apiKeyPlaceholder: "gtk_...",
+    },
+  };
+  const knownConnectorFields = BASE_URL_APIKEY_CONNECTORS[appType];
+  const isKnownConnector = knownConnectorFields !== undefined;
 
   function onSubmit(e: FormEvent) {
     e.preventDefault();
@@ -86,7 +99,12 @@ export function Connections() {
             onChange={(e) => setAppType(e.target.value)}
             className="w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white"
           >
-            {(connectors?.connectors ?? [{ id: "geektastic-realms", displayName: "Geektastic Realms" }]).map((c) => (
+            {(
+              connectors?.connectors ?? [
+                { id: "geektastic-realms", displayName: "Geektastic Realms" },
+                { id: "family-tree", displayName: "Geektastic Family Tree" },
+              ]
+            ).map((c) => (
               <option key={c.id} value={c.id}>
                 {c.displayName}
               </option>
@@ -109,13 +127,11 @@ export function Connections() {
               <input
                 value={baseUrl}
                 onChange={(e) => setBaseUrl(e.target.value)}
-                placeholder="https://realms.example.com"
+                placeholder={knownConnectorFields?.baseUrlPlaceholder}
                 required
                 className="w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white"
               />
-              <p className="mt-1 text-xs text-slate-500">
-                Root URL of your Geektastic Realms instance — no `/api` suffix, that's added automatically.
-              </p>
+              <p className="mt-1 text-xs text-slate-500">{knownConnectorFields?.baseUrlHint}</p>
             </div>
             <div>
               <label className="mb-1 block text-sm text-slate-300">API key</label>
@@ -124,7 +140,7 @@ export function Connections() {
                 onChange={(e) => setApiKey(e.target.value)}
                 type="password"
                 required
-                placeholder="grapi_..."
+                placeholder={knownConnectorFields?.apiKeyPlaceholder}
                 className="w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white"
               />
             </div>

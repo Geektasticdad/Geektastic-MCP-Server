@@ -6,9 +6,12 @@ under the sidebar's "Admin" section: **Connections**, **Tools**, **Tokens**,
 
 ## Connections
 
-A **connection** is one configured link to an application — currently just
-**Geektastic Realms**, but the server is built to support more apps later (see
-[Tech_Docs/07-Connector-SDK.md](../Tech_Docs/07-Connector-SDK.md)).
+A **connection** is one configured link to an application — **Geektastic
+Realms** or **Geektastic Family Tree** today, but the server is built to
+support more apps later (see
+[Tech_Docs/07-Connector-SDK.md](../Tech_Docs/07-Connector-SDK.md)). You can add
+as many connections as you like, of either type — e.g. one Family Tree
+connection per tree owner, or separate connections for separate Realms worlds.
 
 ### Adding a Geektastic Realms connection
 
@@ -27,13 +30,33 @@ The API key is encrypted before it's stored and is never shown again in the UI
 after creation — if you lose track of it, generate a new one in Geektastic
 Realms and update the connection.
 
+### Adding a Geektastic Family Tree connection
+
+1. Go to **Connections** → **Add connection**.
+2. **Application**: choose "Geektastic Family Tree".
+3. **Connection name**: any label you want (e.g. "McConnell Family Tree").
+4. **Base URL**: the root URL of your Family Tree instance, e.g.
+   `https://tree.example.com` — **do not** include `/api` or any path suffix;
+   the server adds `/api/v1` itself.
+5. **API key**: a personal API token generated from the account menu → **API
+   Tokens** panel inside the Family Tree app itself. It's prefixed `gtk_`.
+   Unlike Realms' per-world tokens, this token acts as the specific user who
+   created it — every tool call sees exactly the trees and role (viewer/
+   contributor/editor/admin) that user has.
+6. Click **Add connection**.
+
+The API key is encrypted before it's stored and is never shown again in the UI
+after creation — if you lose track of it, generate a new one in the Family
+Tree app and update the connection.
+
 ### Managing an existing connection
 
 Each connection card shows a live health indicator (rechecked automatically):
 
-- **Healthy** — the server successfully reached Geektastic Realms and shows the
-  world name and Realms version.
-- Anything else — the error message returned by Geektastic Realms (bad API key,
+- **Healthy** — the server successfully reached the application (for Realms,
+  shows the world name and version; for Family Tree, the count of trees the
+  token's user can access).
+- Anything else — the error message returned by the application (bad API key,
   unreachable host, etc.).
 
 Buttons per connection:
@@ -55,8 +78,9 @@ connection name, with a checkbox to enable or disable each one individually.
 - This is the lever to use if you want to, say, allow read/search tools but
   block create/update tools for now, or hide a tool you're not ready to expose.
 
-See [Geektastic Realms Tools Reference](05-GR-Tools-Reference.md) for what each
-tool actually does.
+See [Geektastic Realms Tools Reference](05-GR-Tools-Reference.md) and
+[Geektastic Family Tree Tools Reference](07-FT-Tools-Reference.md) for what
+each tool actually does.
 
 ## Tokens
 

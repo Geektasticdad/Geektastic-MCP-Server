@@ -7,6 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-07-16
+
+### Added
+- **Geektastic Family Tree connector** (`packages/connectors/src/family-tree/`),
+  the second app connector after Geektastic Realms — registered in
+  `packages/connectors/src/registry.ts`, no server-side changes needed since
+  connections/tools/UI are all connector-agnostic already.
+  - `family-tree/client.ts` — REST client against `geektastic-family-tree/docs/API.md`'s
+    `/api/v1/*`, mirroring the Geektastic Realms client's shape (bearer token,
+    JSON error parsing).
+  - `family-tree/index.ts` — 69 `ft_*` tools covering trees, people (+ names,
+    pedigree, descendants), families (+ children), events, places, sources,
+    repositories, citations, notes, media (metadata/delete only — file upload
+    is multipart/form-data and stays a web-app-only action), research tasks,
+    DNA matches, and the search/relationship/gap/duplicate research tools.
+  - `healthCheck` calls `GET /trees` and reports how many trees the
+    connection's token can access.
+  - `apps/web/src/pages/Connections.tsx` generalized its baseUrl+apiKey quick-add
+    form (previously hardcoded to `geektastic-realms`) to a small per-connector
+    lookup table so both known connector types get the guided form instead of
+    the raw-JSON fallback.
+  - New `Docs/07-FT-Tools-Reference.md`; `Docs/02-Admin-Guide.md` and
+    `Docs/README.md` updated to cover adding a Family Tree connection.
+  - Not yet exposed as tools: media upload/replace (multipart file upload).
+
 ## [1.0.5] - 2026-07-08
 
 ### Added

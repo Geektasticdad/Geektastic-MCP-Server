@@ -1,11 +1,11 @@
 # Geektastic MCP Server
 
 A self-hosted **MCP (Model Context Protocol) server** with a **Web management UI** that
-exposes the **Geektastic Realms** application to MCP clients (Claude Desktop/Code and
-others). Deploys as a Docker stack via **Portainer**, and is architected so additional
-applications can be plugged in over time.
+exposes the **Geektastic Realms** and **Geektastic Family Tree** applications to MCP
+clients (Claude Desktop/Code and others). Deploys as a Docker stack via **Portainer**,
+and is architected so additional applications can be plugged in over time.
 
-- **Integration:** Geektastic Realms REST/HTTP API
+- **Integrations:** Geektastic Realms REST/HTTP API, Geektastic Family Tree JSON API
 - **Stack:** TypeScript full-stack (Node + `@modelcontextprotocol/sdk` backend, React UI)
 - **MCP transport:** Streamable HTTP (remote clients, bearer-token auth)
 - **Storage:** PostgreSQL (Prisma ORM)
@@ -29,11 +29,18 @@ delivery plan.
 
 Deployed and running (see [CHANGELOG.md](CHANGELOG.md) for the release history: the
 initial scaffold, OAuth 2.1 support for Claude Desktop/Claude.ai, and a CSRF/session
-fix). The Geektastic Realms connector is implemented against the real `/api/v1/*` API
-(see `geektastic-realms/Docs/API.md`) — statblocks, campaigns, generic lore entries
-(any category, with custom fields), and adventure modules (Acts/Chapters/Scenes/
-Appendices, Encounters, Handouts). See **[ROADMAP.md](ROADMAP.md)** for the full tool
-list and what's still ahead (Roll Tables aren't exposed yet).
+fix). Two connectors are implemented:
+- **Geektastic Realms**, against the real `/api/v1/*` API (see
+  `geektastic-realms/Docs/API.md`) — statblocks, campaigns, generic lore entries
+  (any category, with custom fields), and adventure modules (Acts/Chapters/Scenes/
+  Appendices, Encounters, Handouts). Roll Tables aren't exposed yet.
+- **Geektastic Family Tree**, against the real `/api/v1/*` API (see
+  `geektastic-family-tree/docs/API.md`) — trees, people, families, events, places,
+  sources/repositories, citations, notes, media metadata, research log, DNA matches,
+  and the search/relationship/gap/duplicate research tools. Media upload/replace
+  (multipart file upload) isn't exposed as a tool.
+
+See **[ROADMAP.md](ROADMAP.md)** for the full architecture and tool lists.
 
 ## Repository layout
 
@@ -41,7 +48,7 @@ list and what's still ahead (Roll Tables aren't exposed yet).
 apps/server/       Node + Express backend: /api (management) and /mcp (Streamable HTTP)
 apps/web/           React + Vite admin UI (built into apps/server/public)
 packages/shared/    Types shared between server and web
-packages/connectors/ AppConnector abstraction + the Geektastic Realms connector
+packages/connectors/ AppConnector abstraction + the Geektastic Realms and Family Tree connectors
 ```
 
 ## Getting started

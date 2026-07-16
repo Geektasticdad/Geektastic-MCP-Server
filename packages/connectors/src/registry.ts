@@ -1,11 +1,12 @@
 import type { AppConnector, ConnectorConfig, ToolDefinition } from "./types.js";
 import { geektasticRealmsConnector } from "./geektastic/index.js";
+import { familyTreeConnector } from "./family-tree/index.js";
 
 /**
  * All connectors known to this build. Add a new app here after implementing
  * `AppConnector` under packages/connectors/src/<app>/.
  */
-const CONNECTORS: AppConnector[] = [geektasticRealmsConnector];
+const CONNECTORS: AppConnector[] = [geektasticRealmsConnector, familyTreeConnector];
 
 const connectorsById = new Map(CONNECTORS.map((c) => [c.id, c]));
 
