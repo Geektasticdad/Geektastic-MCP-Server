@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.1.2] - 2026-07-16
+
+### Added
+- `ft_add_child` / `ft_update_child_relation`'s `father_relation`/
+  `mother_relation` now accept `no_relation` alongside `birth`/`adopted`/
+  `foster`/`step`/`unknown`, matching Geektastic Family Tree's `v0.18.0`
+  addition. Unlike `unknown` (a relation exists but isn't known),
+  `no_relation` means that parent isn't related to the child at all — the
+  child stays linked into the family, but is excluded from that side's
+  pedigree/descendant/relationship calculations on the Family Tree side.
+
 ## [1.1.1] - 2026-07-16
 
 ### Added

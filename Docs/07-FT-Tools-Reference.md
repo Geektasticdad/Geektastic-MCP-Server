@@ -48,8 +48,15 @@ A family is a couple (husband/wife, either optional) plus their children.
 | `ft_update_family` | Change who the husband/wife are. |
 | `ft_delete_family` | Delete a family. |
 | `ft_add_child` | Link a child into a family — either an existing person or a brand-new one created on the spot. |
-| `ft_update_child_relation` | Set a child's relation to each parent (birth/adopted/foster/step/unknown). |
+| `ft_update_child_relation` | Set a child's relation to each parent (birth/adopted/foster/step/no_relation/unknown) — independently per parent. |
 | `ft_remove_child` | Unlink a child from a family (doesn't delete the person). |
+
+`father_relation`/`mother_relation` are independent — a half-sibling can be
+`birth` to one parent and `step` (or `no_relation`) to the other.
+`no_relation` means that parent isn't related to the child at all, unlike
+`unknown` (a relation exists but isn't known): the child stays linked into
+the family for record-keeping, but that side is excluded from pedigree/
+descendant/relationship calculations.
 
 ## Events
 

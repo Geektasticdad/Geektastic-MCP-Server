@@ -47,17 +47,25 @@ const familyWriteSchema = z.object({
   wife_id: z.coerce.number().int().nullable().optional(),
 });
 
+const childRelationTypeSchema = z
+  .enum(["birth", "adopted", "foster", "step", "no_relation", "unknown"])
+  .describe(
+    "no_relation means that parent isn't related to the child at all (the child stays linked into the " +
+      "family, but is excluded from that side's pedigree/descendant/relationship calculations), distinct " +
+      "from unknown (a relation exists but isn't known).",
+  );
+
 const addChildSchema = z.object({
   individual_id: z.coerce.number().int().optional().describe("Existing person to link as a child."),
   new_given: z.string().optional().describe("Given name for a brand-new child person (alternative to individual_id)."),
   new_surname: z.string().optional().describe("Surname for a brand-new child person."),
-  father_relation: z.enum(["birth", "adopted", "foster", "step", "unknown"]).optional(),
-  mother_relation: z.enum(["birth", "adopted", "foster", "step", "unknown"]).optional(),
+  father_relation: childRelationTypeSchema.optional(),
+  mother_relation: childRelationTypeSchema.optional(),
 });
 
 const childRelationSchema = z.object({
-  father_relation: z.enum(["birth", "adopted", "foster", "step", "unknown"]).optional(),
-  mother_relation: z.enum(["birth", "adopted", "foster", "step", "unknown"]).optional(),
+  father_relation: childRelationTypeSchema.optional(),
+  mother_relation: childRelationTypeSchema.optional(),
 });
 
 const eventWriteSchema = z.object({
@@ -384,7 +392,8 @@ const tools: ToolDefinition[] = [
   ),
   tool(
     "ft_update_child_relation",
-    "Update a child's father_relation/mother_relation (birth/adopted/foster/step/unknown) within a family.",
+    "Update a child's father_relation/mother_relation (birth/adopted/foster/step/no_relation/unknown) " +
+      "within a family — see the relation field's own description for what no_relation vs. unknown means.",
     z.object({
       tree_id: treeIdSchema,
       family_id: z.coerce.number().int(),
