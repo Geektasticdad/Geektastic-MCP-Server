@@ -33,7 +33,8 @@ fix). Two connectors are implemented:
 - **Geektastic Realms**, against the real `/api/v1/*` API (see
   `geektastic-realms/Docs/API.md`) — statblocks, campaigns, generic lore entries
   (any category, with custom fields), and adventure modules (Acts/Chapters/Scenes/
-  Appendices, Encounters, Handouts). Roll Tables aren't exposed yet.
+  Appendices, Encounters, Handouts). Roll Tables are exposed on the GR side
+  (v1.18.0) but not yet as connector tools here — see `ROADMAP.md` Phase 7.
 - **Geektastic Family Tree**, against the real `/api/v1/*` API (see
   `geektastic-family-tree/docs/API.md`) — trees, people, families, events, places,
   sources/repositories, citations, notes, media metadata, research log, DNA matches,

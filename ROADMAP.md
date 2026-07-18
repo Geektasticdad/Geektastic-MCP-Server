@@ -146,7 +146,9 @@ Concrete tools, implemented in `packages/connectors/src/geektastic/index.ts` and
 - `gr_create_handout` / `gr_update_handout`
 - `gr_create_encounter` / `gr_update_encounter` — accepts an `adversaries`
   array (`entry_id` + `quantity`) to set which creatures are in the fight
-- Extend further as GR's API grows (Roll Tables not yet exposed).
+- Roll Tables are exposed on the GR side as of v1.18.0
+  (`/api/v1/modules/{moduleId}/roll-tables*`) but not yet as connector tools here —
+  tracked in Phase 7 below.
 
 ### Geektastic Family Tree tools (backed by `/api/v1/*`, see docs/API.md in the Family Tree repo)
 Second connector, implemented in `packages/connectors/src/family-tree/index.ts` and
@@ -352,7 +354,11 @@ Track GR's "Priority 1" API work so no prep content type is invisible to Claude:
 - [ ] **Roll Tables** — `gr_list_roll_tables` / `gr_get_roll_table` /
       `gr_create_roll_table` / `gr_update_roll_table` (rows included; the single most
       generative-AI-friendly content type — wandering monsters, loot, rumors).
-      Blocked on GR exposing `/api/v1/.../roll-tables*` (planned there as v1.18).
+      GR's side shipped in v1.18.0: `GET/POST/PATCH /api/v1/modules/{moduleId}/roll-tables*`
+      (see `Tech_Docs/API.md` in the geektastic-realms repo) — lightweight list +
+      full-detail-by-id, same split as sections; `gr-module-v1` and the section-detail
+      endpoint also now carry `roll_tables`. No longer blocked — this is now a normal
+      connector build, following the same pattern as the entries/modules tools.
 - [ ] **Campaign writes** — `gr_create_campaign` / `gr_update_campaign` (reads exist).
 - [ ] **Individual reads** — `gr_get_encounter` / `gr_get_handout` (both currently
       write-only round-trips: create returns the object, but a later session can't
