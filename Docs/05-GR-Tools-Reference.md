@@ -31,12 +31,17 @@ weight, value, and attunement info).
 
 ## Campaigns
 
+A campaign is a named arc grouping several adventure modules together.
+
 | Tool | What it does |
 |---|---|
 | `gr_list_campaigns` | List every campaign in the world. |
 | `gr_get_campaign` | Fetch one campaign by id. |
+| `gr_create_campaign` | Create a new campaign (title, summary, description, status). |
+| `gr_update_campaign` | Update an existing campaign by id. |
 
-Campaigns are read-only through this connector (no create/update tool).
+A campaign's cover image is web-editor-only — there's no tool to set it (same
+treatment as an entry's image/gallery/map custom fields).
 
 ## Lore entries (any category)
 
@@ -78,15 +83,19 @@ A module is a full adventure: a tree of **Acts → Chapters → Scenes**, plus
 
 | Tool | What it does |
 |---|---|
+| `gr_get_handout` | Fetch a single handout by id, without pulling the whole section. |
 | `gr_create_handout` | Create a handout inside a module — either module-level (no `section_id`) or attached to a specific section. |
 | `gr_update_handout` | Update an existing handout by id. |
+| `gr_delete_handout` | Permanently delete a handout. No undo. |
 
 ### Encounters
 
 | Tool | What it does |
 |---|---|
+| `gr_get_encounter` | Fetch a single encounter by id (with resolved adversaries), without pulling the whole section. |
 | `gr_create_encounter` | Create an encounter inside a specific section (typically a Scene). Can set its **adversaries** (the creatures fighting the party) in the same call. |
 | `gr_update_encounter` | Update an existing encounter by id, including its adversaries. |
+| `gr_delete_encounter` | Permanently delete an encounter (its adversary links go with it). No undo. |
 
 An encounter has a name, type (combat/social/exploration/puzzle/trap/other),
 difficulty, setup, tactics, rewards, and notes, plus an **adversaries** list —
@@ -99,6 +108,82 @@ you want to add or remove a single creature from an existing encounter's
 roster, first read the current list with `gr_get_section` (which returns each
 encounter's resolved adversaries), then send the full updated list back.
 
+### Deleting a section
+
+| Tool | What it does |
+|---|---|
+| `gr_delete_section` | Permanently delete an Act/Chapter/Scene/Appendix. Child sections and encounters attached to it go with it; handouts and roll tables attributed to it are detached (become adventure-level) rather than deleted. No undo. |
+
+## Roll tables
+
+Wandering-monster tables, loot tables, rumor tables — any table a DM rolls on
+during play. A table can be adventure-level or attributed to a specific
+section, and is embeddable anywhere via the web editor's `/rolltable`
+slash command regardless of that attribution.
+
+| Tool | What it does |
+|---|---|
+| `gr_list_roll_tables` | List every roll table in a module (lightweight — id, title, computed die, row count; no rows). |
+| `gr_get_roll_table` | Fetch one table's full detail, including every row, by module id + roll table id. |
+| `gr_create_roll_table` | Create a roll table in a module. Each row needs at least a `range_start` (`range_end` defaults to it); the die size (d4–d100) is computed automatically from the highest `range_end`, never set directly. |
+| `gr_update_roll_table` | Update an existing table by id. |
+
+**Important:** sending `rows` on `gr_update_roll_table` **replaces the entire
+list**, the same as `adversaries` above — fetch the table first with
+`gr_get_roll_table` if you only want to add or edit one row.
+
+## Session logs
+
+A DM-only record of past game sessions — what happened, follow-ups, and the
+recap to open next time with.
+
+| Tool | What it does |
+|---|---|
+| `gr_list_sessions` | List every session logged for a module (lightweight — title, date, XP/GP, no recap text). |
+| `gr_get_session` | Fetch one session's full detail: summary, notes, next-session prep, player recap, XP/GP/loot, and which sections it covered. |
+| `gr_create_session` | Log a new session. Hand this a DM's messy notes and it becomes the structured recap. |
+| `gr_update_session` | Update an existing session log by id. |
+
+**Important:** sending `sections_covered` on `gr_update_session` **replaces
+the entire list**, same pattern as adversaries/roll table rows.
+
+## World history
+
+Eras (named historical periods) and events (discrete moments in the world's
+timeline) — see the world's **History** page in the web app.
+
+**These tools need the connection's token to have `history` scope**, separate
+from `entries`/`modules`/`campaigns`/`foundry` — if they 403, check the
+token's scopes on the Geektastic Realms side first (see
+[Administrator Guide](02-Admin-Guide.md)).
+
+| Tool | What it does |
+|---|---|
+| `gr_list_eras` | List every era in this world's history. |
+| `gr_get_era` | Fetch a single era by id. |
+| `gr_create_era` | Create a new era. `age_id`, if given, must reference a calendar age (epoch) already defined in the world's calendar. |
+| `gr_update_era` | Update an existing era by id. |
+| `gr_list_events` | List every historical event in this world. |
+| `gr_get_event` | Fetch a single event by id. |
+| `gr_create_event` | File a new historical event, optionally grouped under an era. `is_secret` hides it from public-facing pages. |
+| `gr_update_event` | Update an existing event by id. |
+
+## Deleting a lore entry
+
+| Tool | What it does |
+|---|---|
+| `gr_delete_entry` | Permanently delete a lore entry — its stat block, custom field values, tags, and relations are cascade-deleted too. No undo. |
+
+## A note on deletes
+
+None of the delete tools above (`gr_delete_entry`, `gr_delete_section`,
+`gr_delete_encounter`, `gr_delete_handout`) have an undo. If you'd rather your
+MCP clients couldn't delete anything, disable these four tools individually
+under **Tools** (see [Administrator Guide](02-Admin-Guide.md#tools)) — every
+other tool on this page is unaffected.
+
 ## Not yet available
 
-**Roll Tables** exist in Geektastic Realms but aren't exposed as tools yet.
+Deletes for **campaigns**, **roll tables**, and **session logs** — Geektastic
+Realms doesn't expose those `DELETE` endpoints yet, so there's nothing for a
+tool to call. Remove them from the web app in the meantime.

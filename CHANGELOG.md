@@ -7,6 +7,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-07-17
+
+### Added
+- **24 new Geektastic Realms tools** (`packages/connectors/src/geektastic/`),
+  closing every gap tracked in `ROADMAP.md` Phase 7 against the GR API
+  shipped in `geektastic-realms` v1.18.0–1.19.0:
+  - **Roll tables**: `gr_list_roll_tables` / `gr_get_roll_table` /
+    `gr_create_roll_table` / `gr_update_roll_table` — the single most
+    generative-AI-friendly content type (wandering monsters, loot, rumors).
+    List is lightweight (no rows); `gr_get_roll_table` returns full detail.
+    Sending `rows` on update replaces the entire list, matching the
+    `adversaries` semantics already established for encounters.
+  - **Campaign writes**: `gr_create_campaign` / `gr_update_campaign`
+    (campaigns were read-only through this connector until now).
+  - **Individual reads**: `gr_get_encounter` / `gr_get_handout` — fetch one
+    by id without pulling the whole section.
+  - **Session logs**: `gr_list_sessions` / `gr_get_session` /
+    `gr_create_session` / `gr_update_session` — write a session recap from a
+    DM's notes, or read past sessions for "previously on…" continuity.
+    Sending `sections_covered` on update replaces the entire list.
+  - **World history**: `gr_list_eras` / `gr_get_era` / `gr_create_era` /
+    `gr_update_era` and `gr_list_events` / `gr_get_event` / `gr_create_event` /
+    `gr_update_event`. These require the connection's token to carry GR's new
+    `history` resource scope (separate from `entries`/`modules`/`campaigns`/
+    `foundry`) — a 403 here most likely means that scope hasn't been granted.
+  - **Deletes**: `gr_delete_entry` / `gr_delete_section` /
+    `gr_delete_encounter` / `gr_delete_handout` — all four are irreversible;
+    disable them individually under **Tools** if a deployment shouldn't allow
+    deletion at all.
+  - `client.ts` gained matching typed methods/interfaces (`GrRollTable`,
+    `GrSession`, `GrEra`, `GrHistoryEvent`, `GrOkResponse`, ...); `index.ts`
+    gained typed Zod schemas for each new resource. Total GR tool count:
+    22 → 46. See [Docs/05-GR-Tools-Reference.md](Docs/05-GR-Tools-Reference.md).
+
 ## [1.1.2] - 2026-07-16
 
 ### Added

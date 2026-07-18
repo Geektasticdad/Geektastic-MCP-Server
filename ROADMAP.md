@@ -270,9 +270,10 @@ volumes:
 
 ## Delivery Phases
 
-> Status: Phases 1–6 are **built, deployed, and in real use** — v1.0.x is running as a
+> Status: Phases 1–6 are **built, deployed, and in real use** — v1.2.0 is running as a
 > Docker stack, serving Claude Desktop/Claude.ai over OAuth 2.1 and Claude Code over
-> Bearer tokens, with 22 Geektastic Realms tools live (see [CHANGELOG.md](CHANGELOG.md)).
+> Bearer tokens, with 46 Geektastic Realms tools and 69 Geektastic Family Tree tools
+> live (see [CHANGELOG.md](CHANGELOG.md)). Phase 7 is also now shipped (see below).
 > Remaining Phase 6 items (tracked Prisma migrations, a full security pass, automated
 > tests) roll forward into **Phase 9** below. Forward work is planned in
 > "Delivery Phases — what's next" following this section.
@@ -282,7 +283,7 @@ volumes:
 - [x] Dockerfile (multi-stage) + docker-compose (app + Postgres) + `.env.example`
 - [x] Prisma schema; startup runs `prisma db push` (no migration history yet — see README)
 - [x] `/health` endpoint
-- [ ] **Verify:** `docker compose up` → health green; Postgres persists on restart
+- [x] **Verify:** `docker compose up` → health green; Postgres persists on restart
 
 ### Phase 2 — Auth, users & connections
 - [x] Session login, bcrypt passwords, CSRF; bootstrap admin from env
@@ -347,29 +348,33 @@ VTT. Tool phases track the GR API — each new GR endpoint family lands here as 
 the same release window, the pattern already proven by entries → modules → adversaries
 in v1.0.1–v1.0.5.
 
-### Phase 7 — GR tool coverage: close the content loop
+### Phase 7 — GR tool coverage: close the content loop ✅ shipped (v1.2.0)
 
-Track GR's "Priority 1" API work so no prep content type is invisible to Claude:
+Tracked GR's "Priority 1" API work so no prep content type is invisible to Claude —
+all six items shipped in one pass; total GR tool count 22 → 46. See
+[CHANGELOG.md](CHANGELOG.md) and
+[Docs/05-GR-Tools-Reference.md](Docs/05-GR-Tools-Reference.md).
 
-- [ ] **Roll Tables** — `gr_list_roll_tables` / `gr_get_roll_table` /
+- [x] **Roll Tables** — `gr_list_roll_tables` / `gr_get_roll_table` /
       `gr_create_roll_table` / `gr_update_roll_table` (rows included; the single most
       generative-AI-friendly content type — wandering monsters, loot, rumors).
-      GR's side shipped in v1.18.0: `GET/POST/PATCH /api/v1/modules/{moduleId}/roll-tables*`
-      (see `Tech_Docs/API.md` in the geektastic-realms repo) — lightweight list +
-      full-detail-by-id, same split as sections; `gr-module-v1` and the section-detail
-      endpoint also now carry `roll_tables`. No longer blocked — this is now a normal
-      connector build, following the same pattern as the entries/modules tools.
-- [ ] **Campaign writes** — `gr_create_campaign` / `gr_update_campaign` (reads exist).
-- [ ] **Individual reads** — `gr_get_encounter` / `gr_get_handout` (both currently
-      write-only round-trips: create returns the object, but a later session can't
-      re-fetch one by id without pulling the whole section).
-- [ ] **Session logs** — `gr_list_sessions` / `gr_create_session` /
+      Lightweight list + full-detail-by-id, same split as sections.
+- [x] **Campaign writes** — `gr_create_campaign` / `gr_update_campaign`.
+- [x] **Individual reads** — `gr_get_encounter` / `gr_get_handout` — fetch one by id
+      without pulling the whole section.
+- [x] **Session logs** — `gr_list_sessions` / `gr_get_session` / `gr_create_session` /
       `gr_update_session`: "here are my messy notes, write the recap and next-session
       prep" is a marquee MCP use case, and reads give Claude campaign continuity.
-- [ ] **World history & calendar** — era/event tools so worldbuilding chats can file
-      timeline events as they invent them.
-- [ ] **Deletes** — `gr_delete_*` where GR grows `DELETE` endpoints. Gate these behind
-      per-tool disable (already supported) so an admin can run a no-delete server.
+- [x] **World history** — era/event tools so worldbuilding chats can file timeline
+      events as they invent them. Gated by GR's `history` resource scope — a
+      connection's token needs that scope granted (in addition to
+      `entries`/`modules`/`campaigns`/`foundry`) before these tools return anything
+      but a 403.
+- [x] **Deletes** — `gr_delete_entry` / `gr_delete_section` / `gr_delete_encounter` /
+      `gr_delete_handout`. Gated behind the existing per-tool disable so an admin can
+      run a no-delete server; all four are irreversible (no undo on the GR side).
+      Deletes for campaigns/roll tables/session logs remain unavailable — GR doesn't
+      expose those `DELETE` endpoints yet.
 
 ### Phase 8 — MCP surface beyond tools
 

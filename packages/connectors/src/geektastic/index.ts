@@ -148,6 +148,98 @@ const encounterSchema = z.object({
     ),
 });
 
+const rollTableTypeOptions = [
+  "Combat",
+  "Environmental",
+  "Exploration",
+  "Hazard",
+  "Loot",
+  "Lore",
+  "Traps & Triggers",
+  "Weather & Travel",
+] as const;
+
+const rollTableRowSchema = z.object({
+  range_start: z.coerce.number().int(),
+  range_end: z.coerce.number().int().optional().describe("Defaults to range_start if omitted."),
+  title: z.string().nullable().optional(),
+  type: z.array(z.enum(rollTableTypeOptions)).optional(),
+  description: z.string().nullable().optional(),
+  dm_note: z.string().nullable().optional().describe("DM-only — never shown on the public page."),
+});
+
+const rollTableSchema = z.object({
+  title: z.string().min(1),
+  dm_notes: z.string().nullable().optional(),
+  section_id: z.number().int().nullable().optional().describe("Omit or null for an adventure-level table."),
+  rows: z
+    .array(rollTableRowSchema)
+    .optional()
+    .describe(
+      "REPLACES the entire existing row list on update (not a diff/append) — omit this field " +
+        "to leave rows untouched, or send [] to clear them all."
+    ),
+});
+
+const campaignSchema = z.object({
+  title: z.string().min(1),
+  summary: z.string().nullable().optional(),
+  description: z.string().nullable().optional(),
+  status: z.enum(["active", "paused", "complete", "planned"]).optional().describe("Defaults to active."),
+});
+
+const sessionLogSchema = z.object({
+  title: z.string().min(1),
+  played_on: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .nullable()
+    .optional()
+    .describe("YYYY-MM-DD"),
+  summary: z.string().nullable().optional(),
+  notes: z.string().nullable().optional(),
+  next_session_prep: z.string().nullable().optional(),
+  player_recap: z.string().nullable().optional().describe('The "Last time on…" recap for the next session opening.'),
+  xp_awarded: z.coerce.number().int().min(0).nullable().optional(),
+  gp_gained: z.coerce.number().min(0).nullable().optional(),
+  loot_notes: z.string().nullable().optional(),
+  sections_covered: z
+    .array(z.coerce.number().int())
+    .optional()
+    .describe(
+      "Section ids the party played through this session. REPLACES the entire existing list on " +
+        "update — omit this field to leave it untouched, or send [] to clear it."
+    ),
+});
+
+const eraSchema = z.object({
+  name: z.string().min(1),
+  era_label: z.string().nullable().optional().describe('Compact badge, e.g. "Era I".'),
+  age_id: z
+    .number()
+    .int()
+    .nullable()
+    .optional()
+    .describe("Must reference a calendar age (epoch) already defined in this world's calendar. Omit/null for no epoch tie."),
+  start_year: z.number().int().nullable().optional().describe("Epoch-relative year."),
+  end_year: z.number().int().nullable().optional().describe("Epoch-relative year."),
+  color: z.string().nullable().optional().describe("Hex color for the timeline bar, e.g. #6a89a8. Defaults to #6a89a8 on create."),
+  description: z.string().nullable().optional(),
+  dm_notes: z.string().nullable().optional().describe("DM-only — never shown publicly."),
+});
+
+const historyEventSchema = z.object({
+  title: z.string().min(1),
+  era_id: z.number().int().nullable().optional().describe("Must reference an era already in this world."),
+  age_id: z.number().int().nullable().optional().describe("Must reference a calendar age already in this world."),
+  year_in_epoch: z.coerce.number().int().nullable().optional(),
+  month_number: z.coerce.number().int().nullable().optional(),
+  day: z.coerce.number().int().nullable().optional(),
+  body_html: z.string().nullable().optional(),
+  dm_notes: z.string().nullable().optional().describe("DM-only — never shown publicly."),
+  is_secret: z.boolean().optional().describe("Hides this event on all public-facing pages."),
+});
+
 function toResult(data: unknown) {
   return { content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }] };
 }
@@ -533,6 +625,381 @@ const tools: ToolDefinition[] = [
         .parse(input);
       try {
         return toResult(await client(cfg).updateEncounter(module_id, encounter_id, encounter));
+      } catch (err) {
+        return toErrorResult(err);
+      }
+    },
+  },
+  {
+    name: "gr_get_encounter",
+    description: "Fetch a single encounter by id (with resolved adversaries), without pulling the whole section.",
+    inputSchema: z.object({ module_id: z.coerce.number().int(), encounter_id: z.coerce.number().int() }),
+    async handler(input, cfg) {
+      const { module_id, encounter_id } = z
+        .object({ module_id: z.coerce.number().int(), encounter_id: z.coerce.number().int() })
+        .parse(input);
+      try {
+        return toResult(await client(cfg).getEncounter(module_id, encounter_id));
+      } catch (err) {
+        return toErrorResult(err);
+      }
+    },
+  },
+  {
+    name: "gr_get_handout",
+    description: "Fetch a single handout by id, without pulling the whole section.",
+    inputSchema: z.object({ module_id: z.coerce.number().int(), handout_id: z.coerce.number().int() }),
+    async handler(input, cfg) {
+      const { module_id, handout_id } = z
+        .object({ module_id: z.coerce.number().int(), handout_id: z.coerce.number().int() })
+        .parse(input);
+      try {
+        return toResult(await client(cfg).getHandout(module_id, handout_id));
+      } catch (err) {
+        return toErrorResult(err);
+      }
+    },
+  },
+  {
+    name: "gr_create_campaign",
+    description: "Create a campaign — a named arc grouping several adventure modules. Cover image is web-editor-only.",
+    inputSchema: z.object({ campaign: campaignSchema }),
+    async handler(input, cfg) {
+      const { campaign } = z.object({ campaign: campaignSchema }).parse(input);
+      try {
+        return toResult(await client(cfg).createCampaign(campaign));
+      } catch (err) {
+        return toErrorResult(err);
+      }
+    },
+  },
+  {
+    name: "gr_update_campaign",
+    description: "Update an existing campaign by id.",
+    inputSchema: z.object({ campaign_id: z.coerce.number().int(), campaign: campaignSchema }),
+    async handler(input, cfg) {
+      const { campaign_id, campaign } = z
+        .object({ campaign_id: z.coerce.number().int(), campaign: campaignSchema })
+        .parse(input);
+      try {
+        return toResult(await client(cfg).updateCampaign(campaign_id, campaign));
+      } catch (err) {
+        return toErrorResult(err);
+      }
+    },
+  },
+  {
+    name: "gr_list_roll_tables",
+    description:
+      "List every roll table in a module (lightweight — id, title, die, row count; adventure-level tables " +
+      "have section_id: null). Use gr_get_roll_table to read a specific table's rows.",
+    inputSchema: z.object({ module_id: z.coerce.number().int() }),
+    async handler(input, cfg) {
+      const { module_id } = z.object({ module_id: z.coerce.number().int() }).parse(input);
+      try {
+        return toResult(await client(cfg).listRollTables(module_id));
+      } catch (err) {
+        return toErrorResult(err);
+      }
+    },
+  },
+  {
+    name: "gr_get_roll_table",
+    description: "Fetch one roll table's full detail, including every row, by module id + roll table id.",
+    inputSchema: z.object({ module_id: z.coerce.number().int(), roll_table_id: z.coerce.number().int() }),
+    async handler(input, cfg) {
+      const { module_id, roll_table_id } = z
+        .object({ module_id: z.coerce.number().int(), roll_table_id: z.coerce.number().int() })
+        .parse(input);
+      try {
+        return toResult(await client(cfg).getRollTable(module_id, roll_table_id));
+      } catch (err) {
+        return toErrorResult(err);
+      }
+    },
+  },
+  {
+    name: "gr_create_roll_table",
+    description:
+      "Create a roll table within a module — wandering monsters, loot, rumors, etc. Adventure-level " +
+      "(omit section_id) or attributed to a specific section. Each row needs at least range_start " +
+      "(range_end defaults to range_start); the die size is computed automatically from the highest range_end.",
+    inputSchema: z.object({ module_id: z.coerce.number().int(), roll_table: rollTableSchema }),
+    async handler(input, cfg) {
+      const { module_id, roll_table } = z
+        .object({ module_id: z.coerce.number().int(), roll_table: rollTableSchema })
+        .parse(input);
+      try {
+        return toResult(await client(cfg).createRollTable(module_id, roll_table));
+      } catch (err) {
+        return toErrorResult(err);
+      }
+    },
+  },
+  {
+    name: "gr_update_roll_table",
+    description:
+      "Update an existing roll table by id. Sending `rows` replaces the entire list — fetch the table " +
+      "first (gr_get_roll_table) if you only want to add or edit one row rather than resetting them all.",
+    inputSchema: z.object({
+      module_id: z.coerce.number().int(),
+      roll_table_id: z.coerce.number().int(),
+      roll_table: rollTableSchema,
+    }),
+    async handler(input, cfg) {
+      const { module_id, roll_table_id, roll_table } = z
+        .object({
+          module_id: z.coerce.number().int(),
+          roll_table_id: z.coerce.number().int(),
+          roll_table: rollTableSchema,
+        })
+        .parse(input);
+      try {
+        return toResult(await client(cfg).updateRollTable(module_id, roll_table_id, roll_table));
+      } catch (err) {
+        return toErrorResult(err);
+      }
+    },
+  },
+  {
+    name: "gr_list_sessions",
+    description:
+      "List every session logged for a module (lightweight — title, played_on, xp/gp, no summary/notes " +
+      "body text). Use gr_get_session to read one session's full recap and sections_covered.",
+    inputSchema: z.object({ module_id: z.coerce.number().int() }),
+    async handler(input, cfg) {
+      const { module_id } = z.object({ module_id: z.coerce.number().int() }).parse(input);
+      try {
+        return toResult(await client(cfg).listSessions(module_id));
+      } catch (err) {
+        return toErrorResult(err);
+      }
+    },
+  },
+  {
+    name: "gr_get_session",
+    description:
+      "Fetch one session log's full detail — summary, notes, next_session_prep, player_recap, xp/gp/loot, " +
+      "and sections_covered — for 'previously on…' continuity.",
+    inputSchema: z.object({ module_id: z.coerce.number().int(), session_id: z.coerce.number().int() }),
+    async handler(input, cfg) {
+      const { module_id, session_id } = z
+        .object({ module_id: z.coerce.number().int(), session_id: z.coerce.number().int() })
+        .parse(input);
+      try {
+        return toResult(await client(cfg).getSession(module_id, session_id));
+      } catch (err) {
+        return toErrorResult(err);
+      }
+    },
+  },
+  {
+    name: "gr_create_session",
+    description:
+      "Log a new session for a module — hand this messy notes and it becomes the recap, next-session prep, " +
+      "and player recap. xp_awarded/gp_gained store exactly what's sent (0 is a valid awarded amount).",
+    inputSchema: z.object({ module_id: z.coerce.number().int(), session: sessionLogSchema }),
+    async handler(input, cfg) {
+      const { module_id, session } = z
+        .object({ module_id: z.coerce.number().int(), session: sessionLogSchema })
+        .parse(input);
+      try {
+        return toResult(await client(cfg).createSession(module_id, session));
+      } catch (err) {
+        return toErrorResult(err);
+      }
+    },
+  },
+  {
+    name: "gr_update_session",
+    description:
+      "Update an existing session log by id. Sending `sections_covered` replaces the entire list — " +
+      "fetch the session first (gr_get_session) if you only want to add one section rather than resetting it.",
+    inputSchema: z.object({
+      module_id: z.coerce.number().int(),
+      session_id: z.coerce.number().int(),
+      session: sessionLogSchema,
+    }),
+    async handler(input, cfg) {
+      const { module_id, session_id, session } = z
+        .object({
+          module_id: z.coerce.number().int(),
+          session_id: z.coerce.number().int(),
+          session: sessionLogSchema,
+        })
+        .parse(input);
+      try {
+        return toResult(await client(cfg).updateSession(module_id, session_id, session));
+      } catch (err) {
+        return toErrorResult(err);
+      }
+    },
+  },
+  {
+    name: "gr_list_eras",
+    description:
+      "List every era (named historical period) in this world's history. Requires the connection's token " +
+      "to have `history` scope, separate from entries/modules/campaigns/foundry.",
+    inputSchema: z.object({}),
+    async handler(_input, cfg) {
+      try {
+        return toResult(await client(cfg).listEras());
+      } catch (err) {
+        return toErrorResult(err);
+      }
+    },
+  },
+  {
+    name: "gr_get_era",
+    description: "Fetch a single era by id.",
+    inputSchema: z.object({ era_id: z.coerce.number().int() }),
+    async handler(input, cfg) {
+      const { era_id } = z.object({ era_id: z.coerce.number().int() }).parse(input);
+      try {
+        return toResult(await client(cfg).getEra(era_id));
+      } catch (err) {
+        return toErrorResult(err);
+      }
+    },
+  },
+  {
+    name: "gr_create_era",
+    description: "Create a new era in this world's history (e.g. \"The Seraphic Conquest\").",
+    inputSchema: z.object({ era: eraSchema }),
+    async handler(input, cfg) {
+      const { era } = z.object({ era: eraSchema }).parse(input);
+      try {
+        return toResult(await client(cfg).createEra(era));
+      } catch (err) {
+        return toErrorResult(err);
+      }
+    },
+  },
+  {
+    name: "gr_update_era",
+    description: "Update an existing era by id.",
+    inputSchema: z.object({ era_id: z.coerce.number().int(), era: eraSchema }),
+    async handler(input, cfg) {
+      const { era_id, era } = z.object({ era_id: z.coerce.number().int(), era: eraSchema }).parse(input);
+      try {
+        return toResult(await client(cfg).updateEra(era_id, era));
+      } catch (err) {
+        return toErrorResult(err);
+      }
+    },
+  },
+  {
+    name: "gr_list_events",
+    description:
+      "List every historical event in this world. Requires the connection's token to have `history` scope.",
+    inputSchema: z.object({}),
+    async handler(_input, cfg) {
+      try {
+        return toResult(await client(cfg).listEvents());
+      } catch (err) {
+        return toErrorResult(err);
+      }
+    },
+  },
+  {
+    name: "gr_get_event",
+    description: "Fetch a single historical event by id.",
+    inputSchema: z.object({ event_id: z.coerce.number().int() }),
+    async handler(input, cfg) {
+      const { event_id } = z.object({ event_id: z.coerce.number().int() }).parse(input);
+      try {
+        return toResult(await client(cfg).getEvent(event_id));
+      } catch (err) {
+        return toErrorResult(err);
+      }
+    },
+  },
+  {
+    name: "gr_create_event",
+    description: "File a new historical event in this world — a discrete moment, optionally grouped under an era.",
+    inputSchema: z.object({ event: historyEventSchema }),
+    async handler(input, cfg) {
+      const { event } = z.object({ event: historyEventSchema }).parse(input);
+      try {
+        return toResult(await client(cfg).createEvent(event));
+      } catch (err) {
+        return toErrorResult(err);
+      }
+    },
+  },
+  {
+    name: "gr_update_event",
+    description: "Update an existing historical event by id.",
+    inputSchema: z.object({ event_id: z.coerce.number().int(), event: historyEventSchema }),
+    async handler(input, cfg) {
+      const { event_id, event } = z
+        .object({ event_id: z.coerce.number().int(), event: historyEventSchema })
+        .parse(input);
+      try {
+        return toResult(await client(cfg).updateEvent(event_id, event));
+      } catch (err) {
+        return toErrorResult(err);
+      }
+    },
+  },
+  {
+    name: "gr_delete_entry",
+    description:
+      "Permanently delete a lore entry — its stat block, custom field values, tags, and relations are " +
+      "cascade-deleted too. There is no undo.",
+    inputSchema: z.object({ entry_id: z.coerce.number().int() }),
+    async handler(input, cfg) {
+      const { entry_id } = z.object({ entry_id: z.coerce.number().int() }).parse(input);
+      try {
+        return toResult(await client(cfg).deleteEntry(entry_id));
+      } catch (err) {
+        return toErrorResult(err);
+      }
+    },
+  },
+  {
+    name: "gr_delete_section",
+    description:
+      "Permanently delete an Act/Chapter/Scene/Appendix. Child sections and encounters attached to it are " +
+      "cascade-deleted; handouts and roll tables attributed to it are detached (become adventure-level) " +
+      "rather than deleted. There is no undo.",
+    inputSchema: z.object({ module_id: z.coerce.number().int(), section_id: z.coerce.number().int() }),
+    async handler(input, cfg) {
+      const { module_id, section_id } = z
+        .object({ module_id: z.coerce.number().int(), section_id: z.coerce.number().int() })
+        .parse(input);
+      try {
+        return toResult(await client(cfg).deleteSection(module_id, section_id));
+      } catch (err) {
+        return toErrorResult(err);
+      }
+    },
+  },
+  {
+    name: "gr_delete_encounter",
+    description: "Permanently delete an encounter (its adversary links go with it). There is no undo.",
+    inputSchema: z.object({ module_id: z.coerce.number().int(), encounter_id: z.coerce.number().int() }),
+    async handler(input, cfg) {
+      const { module_id, encounter_id } = z
+        .object({ module_id: z.coerce.number().int(), encounter_id: z.coerce.number().int() })
+        .parse(input);
+      try {
+        return toResult(await client(cfg).deleteEncounter(module_id, encounter_id));
+      } catch (err) {
+        return toErrorResult(err);
+      }
+    },
+  },
+  {
+    name: "gr_delete_handout",
+    description: "Permanently delete a handout. There is no undo.",
+    inputSchema: z.object({ module_id: z.coerce.number().int(), handout_id: z.coerce.number().int() }),
+    async handler(input, cfg) {
+      const { module_id, handout_id } = z
+        .object({ module_id: z.coerce.number().int(), handout_id: z.coerce.number().int() })
+        .parse(input);
+      try {
+        return toResult(await client(cfg).deleteHandout(module_id, handout_id));
       } catch (err) {
         return toErrorResult(err);
       }

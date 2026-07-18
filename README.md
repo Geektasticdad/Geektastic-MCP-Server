@@ -31,10 +31,12 @@ Deployed and running (see [CHANGELOG.md](CHANGELOG.md) for the release history: 
 initial scaffold, OAuth 2.1 support for Claude Desktop/Claude.ai, and a CSRF/session
 fix). Two connectors are implemented:
 - **Geektastic Realms**, against the real `/api/v1/*` API (see
-  `geektastic-realms/Docs/API.md`) — statblocks, campaigns, generic lore entries
-  (any category, with custom fields), and adventure modules (Acts/Chapters/Scenes/
-  Appendices, Encounters, Handouts). Roll Tables are exposed on the GR side
-  (v1.18.0) but not yet as connector tools here — see `ROADMAP.md` Phase 7.
+  `geektastic-realms/Docs/API.md`) — 46 tools covering statblocks, campaigns
+  (read + write), generic lore entries (any category, with custom fields),
+  adventure modules (Acts/Chapters/Scenes/Appendices, Encounters, Handouts,
+  Roll Tables), session logs, world history (eras/events, gated by a separate
+  `history` token scope), and deletes for entries/sections/encounters/handouts.
+  See [Docs/05-GR-Tools-Reference.md](Docs/05-GR-Tools-Reference.md).
 - **Geektastic Family Tree**, against the real `/api/v1/*` API (see
   `geektastic-family-tree/docs/API.md`) — trees, people, families, events, places,
   sources/repositories, citations, notes, media metadata, research log, DNA matches,

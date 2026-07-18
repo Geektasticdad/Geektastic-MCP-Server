@@ -173,6 +173,112 @@ export interface GrEncounterDetail {
   encounter: GrEncounter;
 }
 
+export interface GrOkResponse {
+  ok: true;
+}
+
+export interface GrRollTableRow {
+  range_start: number;
+  range_end: number;
+  title: string;
+  type: string[];
+  description: string;
+  dm_note: string;
+}
+
+/** Lightweight — no rows. See GrRollTable for full detail. */
+export interface GrRollTableSummary {
+  id: number;
+  title: string;
+  section_id: number | null;
+  die: string;
+  row_count: number;
+}
+
+export interface GrRollTable {
+  id: number;
+  title: string;
+  dm_notes: string;
+  section_id: number | null;
+  /** Computed from the stored rows, never stored — the smallest standard die covering the highest range_end. */
+  die: string;
+  rows: GrRollTableRow[];
+}
+
+export interface GrRollTableDetail {
+  ok: true;
+  module_id: number;
+  roll_table_id: number;
+  roll_table: GrRollTable;
+}
+
+/** Lightweight — no summary/notes body text. See GrSession for full detail. */
+export interface GrSessionSummary {
+  id: number;
+  title: string;
+  played_on: string | null;
+  xp_awarded: number | null;
+  gp_gained: number | null;
+}
+
+export interface GrSession {
+  id: number;
+  title: string;
+  played_on: string | null;
+  summary: string;
+  notes: string;
+  next_session_prep: string;
+  player_recap: string;
+  xp_awarded: number | null;
+  gp_gained: number | null;
+  loot_notes: string;
+  sections_covered: number[];
+}
+
+export interface GrSessionDetail {
+  ok: true;
+  module_id: number;
+  session_id: number;
+  session: GrSession;
+}
+
+export interface GrEra {
+  id: number;
+  name: string;
+  era_label: string | null;
+  age_id: number | null;
+  start_year: number | null;
+  end_year: number | null;
+  color: string;
+  description: string;
+  dm_notes: string;
+}
+
+export interface GrEraDetail {
+  ok: true;
+  era_id: number;
+  era: GrEra;
+}
+
+export interface GrHistoryEvent {
+  id: number;
+  title: string;
+  era_id: number | null;
+  age_id: number | null;
+  year_in_epoch: number | null;
+  month_number: number | null;
+  day: number | null;
+  body_html: string;
+  dm_notes: string;
+  is_secret: boolean;
+}
+
+export interface GrHistoryEventDetail {
+  ok: true;
+  event_id: number;
+  event: GrHistoryEvent;
+}
+
 /**
  * Client for Geektastic Realms' "General-Purpose API" — see
  * geektastic-realms/Docs/API.md. All routes live under `/api/v1/` on the
@@ -337,5 +443,116 @@ export class GeektasticRealmsClient {
       method: "PATCH",
       body: JSON.stringify({ encounter }),
     });
+  }
+
+  getEncounter(moduleId: number, encounterId: number): Promise<GrEncounterDetail> {
+    return this.request(`/modules/${moduleId}/encounters/${encounterId}`);
+  }
+
+  getHandout(moduleId: number, handoutId: number): Promise<GrHandoutDetail> {
+    return this.request(`/modules/${moduleId}/handouts/${handoutId}`);
+  }
+
+  createCampaign(campaign: Record<string, unknown>): Promise<{ ok: true; campaign_id: number; campaign: GrCampaignSummary }> {
+    return this.request("/campaigns", { method: "POST", body: JSON.stringify({ campaign }) });
+  }
+
+  updateCampaign(
+    id: number,
+    campaign: Record<string, unknown>
+  ): Promise<{ ok: true; campaign_id: number; campaign: GrCampaignSummary }> {
+    return this.request(`/campaigns/${id}`, { method: "PATCH", body: JSON.stringify({ campaign }) });
+  }
+
+  listRollTables(moduleId: number): Promise<{ ok: true; module_id: number; roll_tables: GrRollTableSummary[] }> {
+    return this.request(`/modules/${moduleId}/roll-tables`);
+  }
+
+  getRollTable(moduleId: number, rollTableId: number): Promise<GrRollTableDetail> {
+    return this.request(`/modules/${moduleId}/roll-tables/${rollTableId}`);
+  }
+
+  createRollTable(moduleId: number, rollTable: Record<string, unknown>): Promise<GrRollTableDetail> {
+    return this.request(`/modules/${moduleId}/roll-tables`, {
+      method: "POST",
+      body: JSON.stringify({ roll_table: rollTable }),
+    });
+  }
+
+  updateRollTable(moduleId: number, rollTableId: number, rollTable: Record<string, unknown>): Promise<GrRollTableDetail> {
+    return this.request(`/modules/${moduleId}/roll-tables/${rollTableId}`, {
+      method: "PATCH",
+      body: JSON.stringify({ roll_table: rollTable }),
+    });
+  }
+
+  listSessions(moduleId: number): Promise<{ ok: true; module_id: number; sessions: GrSessionSummary[] }> {
+    return this.request(`/modules/${moduleId}/sessions`);
+  }
+
+  getSession(moduleId: number, sessionId: number): Promise<GrSessionDetail> {
+    return this.request(`/modules/${moduleId}/sessions/${sessionId}`);
+  }
+
+  createSession(moduleId: number, session: Record<string, unknown>): Promise<GrSessionDetail> {
+    return this.request(`/modules/${moduleId}/sessions`, {
+      method: "POST",
+      body: JSON.stringify({ session }),
+    });
+  }
+
+  updateSession(moduleId: number, sessionId: number, session: Record<string, unknown>): Promise<GrSessionDetail> {
+    return this.request(`/modules/${moduleId}/sessions/${sessionId}`, {
+      method: "PATCH",
+      body: JSON.stringify({ session }),
+    });
+  }
+
+  listEras(): Promise<{ ok: true; eras: GrEra[] }> {
+    return this.request("/history/eras");
+  }
+
+  getEra(eraId: number): Promise<GrEraDetail> {
+    return this.request(`/history/eras/${eraId}`);
+  }
+
+  createEra(era: Record<string, unknown>): Promise<GrEraDetail> {
+    return this.request("/history/eras", { method: "POST", body: JSON.stringify({ era }) });
+  }
+
+  updateEra(eraId: number, era: Record<string, unknown>): Promise<GrEraDetail> {
+    return this.request(`/history/eras/${eraId}`, { method: "PATCH", body: JSON.stringify({ era }) });
+  }
+
+  listEvents(): Promise<{ ok: true; events: GrHistoryEvent[] }> {
+    return this.request("/history/events");
+  }
+
+  getEvent(eventId: number): Promise<GrHistoryEventDetail> {
+    return this.request(`/history/events/${eventId}`);
+  }
+
+  createEvent(event: Record<string, unknown>): Promise<GrHistoryEventDetail> {
+    return this.request("/history/events", { method: "POST", body: JSON.stringify({ event }) });
+  }
+
+  updateEvent(eventId: number, event: Record<string, unknown>): Promise<GrHistoryEventDetail> {
+    return this.request(`/history/events/${eventId}`, { method: "PATCH", body: JSON.stringify({ event }) });
+  }
+
+  deleteEntry(entryId: number): Promise<GrOkResponse> {
+    return this.request(`/entries/${entryId}`, { method: "DELETE" });
+  }
+
+  deleteSection(moduleId: number, sectionId: number): Promise<GrOkResponse> {
+    return this.request(`/modules/${moduleId}/sections/${sectionId}`, { method: "DELETE" });
+  }
+
+  deleteEncounter(moduleId: number, encounterId: number): Promise<GrOkResponse> {
+    return this.request(`/modules/${moduleId}/encounters/${encounterId}`, { method: "DELETE" });
+  }
+
+  deleteHandout(moduleId: number, handoutId: number): Promise<GrOkResponse> {
+    return this.request(`/modules/${moduleId}/handouts/${handoutId}`, { method: "DELETE" });
   }
 }
