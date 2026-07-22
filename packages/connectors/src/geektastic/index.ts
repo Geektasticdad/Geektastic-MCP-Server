@@ -50,6 +50,14 @@ const spellcastingSchema = z.object({
   ability: z.enum(["str", "dex", "con", "int", "wis", "cha"]),
   save_dc_override: z.number().int().nullable().optional(),
   attack_override: z.number().int().nullable().optional(),
+  description: z
+    .string()
+    .optional()
+    .describe(
+      'Plain-text spellcasting summary, e.g. "Eryssa is a 10th-level warlock. Her spellcasting ability is Charisma ' +
+        '(spell save DC 18, +10 to hit with spell attacks). She has 2 spell slots of 5th level that recharge on a ' +
+        'short or long rest." Rendered on the GR stat block display above the spell list.'
+    ),
 });
 
 /**

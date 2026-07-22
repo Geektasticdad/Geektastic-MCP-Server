@@ -28,8 +28,9 @@ rating, XP, a list of **features** (traits, actions, bonus actions, reactions,
 legendary/lair actions, spellcasting, regional effects), a list of **items**
 (weapons, armor, magic items, gear, currency, etc. with quantity, weight,
 value, and attunement info), an optional structured **spellcasting** profile
-(ability + printed save DC/attack), and an optional **spells** list (name +
-level + casting type — `slot`, `pact`, `at_will`, or `per_day`). The
+(ability + printed save DC/attack + a plain-text summary, e.g. "Eryssa is a
+10th-level warlock…"), and an optional **spells** list (name + level +
+casting type — `slot`, `pact`, `at_will`, or `per_day`). The
 free-text "spellcasting" feature above is independent of this — both can be
 set at once; the structured list exists specifically so a Foundry VTT
 connection can clone matched spells onto a created Actor, not to replace the

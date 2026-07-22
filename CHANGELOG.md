@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.3.1] - 2026-07-22
+
+### Added
+- `spellcastingSchema` gained a `description` field (GR `geektastic-realms` v1.28.0)
+  — a plain-text spellcasting summary, e.g. "Eryssa is a 10th-level warlock…",
+  round-tripped alongside `ability`/`save_dc_override`/`attack_override` through
+  `gr_create_statblock`/`gr_update_statblock`/`gr_get_statblock`.
+
 ## [1.3.0] - 2026-07-22
 
 ### Added
