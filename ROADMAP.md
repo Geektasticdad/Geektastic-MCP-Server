@@ -376,6 +376,19 @@ all six items shipped in one pass; total GR tool count 22 → 46. See
       Deletes for campaigns/roll tables/session logs remain unavailable — GR doesn't
       expose those `DELETE` endpoints yet.
 
+#### Phase 7.1 — Structured spellcasting field coverage ✅ shipped (v1.3.0)
+
+GR's Foundry VTT integration Stage 14 added an optional structured spellcasting
+profile + spell list to stat blocks (`geektastic-realms` v1.25.0–v1.26.0), but only
+on the Foundry-only `npc/prepare` endpoint at first — the general-purpose
+`/api/v1/statblocks` equivalent this connector actually talks to didn't exist until
+GR v1.27.0. Once it did, `statblockSchema` picked up the same `spellcasting`
+(ability/save DC/attack override) and `spells[]` (name/level/`usage_type`
+`slot`/`pact`/`at_will`/`per_day`/`uses_per_day`) fields, so `gr_create_statblock`/
+`gr_update_statblock`/`gr_get_statblock` can now round-trip them — no new tools
+needed, existing statblock tools just gained fields. See
+[Docs/05-GR-Tools-Reference.md](Docs/05-GR-Tools-Reference.md) "Stat blocks".
+
 ### Phase 8 — MCP surface beyond tools
 
 - [ ] **Prompts** — ship reusable MCP prompts encoding real DM workflows:

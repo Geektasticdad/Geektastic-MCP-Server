@@ -45,6 +45,27 @@ const featureSchema = z.object({
   description: z.string().optional().default(""),
 });
 
+/** Foundry VTT Stage 14 — optional structured spellcasting profile, one per stat block. */
+const spellcastingSchema = z.object({
+  ability: z.enum(["str", "dex", "con", "int", "wis", "cha"]),
+  save_dc_override: z.number().int().nullable().optional(),
+  attack_override: z.number().int().nullable().optional(),
+});
+
+/**
+ * A named spell on the structured spell list — matched against the world's synced
+ * Foundry compendiums by exact name (case-insensitive), not fuzzy. `usage_type`
+ * distinguishes standard/Pact Magic spell-slot casting (`slot`/`pact`, where `level`
+ * is the spell's slot level) from Innate Spellcasting (`at_will`/`per_day`, where
+ * `level` is unused and `per_day` additionally needs `uses_per_day`).
+ */
+const spellSchema = z.object({
+  name: z.string().min(1),
+  level: z.number().int().min(0).max(9).optional().default(0),
+  usage_type: z.enum(["slot", "pact", "at_will", "per_day"]).optional().default("slot"),
+  uses_per_day: z.number().int().min(1).max(99).nullable().optional(),
+});
+
 const itemSchema = z.object({
   name: z.string().min(1),
   category: z.enum(["trinket", "weapon", "armor", "magic_item", "ammunition", "tool", "gear", "currency"]),
@@ -83,6 +104,8 @@ const statblockSchema = z.object({
   challenge_rating: z.string().min(1),
   xp: z.number().int().nullable().optional(),
   proficiency_bonus: z.number().int().nullable().optional(),
+  spellcasting: spellcastingSchema.nullable().optional(),
+  spells: z.array(spellSchema).optional().default([]),
   features: z.array(featureSchema).optional().default([]),
   items: z.array(itemSchema).optional().default([]),
 });
@@ -302,7 +325,9 @@ const tools: ToolDefinition[] = [
     name: "gr_update_statblock",
     description:
       "Update an existing Geektastic Realms statblock by entry id. Replaces the entire " +
-      "features/items arrays with what's posted.",
+      "features/items/spells arrays with what's posted (omitting spells clears them, " +
+      "same as posting an empty array) — spellcasting is the one field that's a true " +
+      "partial update: omit it to leave unchanged, or pass null to clear it.",
     inputSchema: z.object({ entry_id: z.coerce.number().int(), statblock: statblockSchema }),
     async handler(input, cfg) {
       const { entry_id, statblock } = z

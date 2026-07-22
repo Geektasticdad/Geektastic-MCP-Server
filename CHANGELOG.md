@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-07-22
+
+### Added
+- **Structured spellcasting on `gr_create_statblock`/`gr_update_statblock`/
+  `gr_get_statblock`** — GR shipped `spellcasting`/`spells` on stat blocks
+  (Foundry VTT integration Stage 14) across `geektastic-realms` v1.25.0–v1.27.0,
+  the last of which added the `/api/v1/statblocks` equivalent this connector talks
+  to. `statblockSchema` now accepts an optional `spellcasting` object
+  (`ability`/`save_dc_override`/`attack_override`) and an optional `spells[]` array
+  (`name`/`level`/`usage_type`/`uses_per_day`, `usage_type` one of `slot`, `pact`,
+  `at_will`, `per_day`). Same replace-all semantics as `features`/`items` — omitting
+  `spells` on update clears it. See `Docs/05-GR-Tools-Reference.md` "Stat blocks".
+
 ## [1.2.0] - 2026-07-17
 
 ### Added

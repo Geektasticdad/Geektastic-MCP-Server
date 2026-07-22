@@ -20,14 +20,20 @@ etc.) attached to an entry.
 | `gr_search_statblocks` | Search stat blocks by name/title. Leave the query blank to list everything (capped at 100 results when you do search). |
 | `gr_get_statblock` | Fetch one stat block in full, by entry id. |
 | `gr_create_statblock` | Create a new entry with a stat block, in a given category. |
-| `gr_update_statblock` | Replace an existing stat block's fields (by entry id). Note: this replaces the entire `features`/`items` lists, not a merge. |
+| `gr_update_statblock` | Replace an existing stat block's fields (by entry id). Note: this replaces the entire `features`/`items`/`spells` lists, not a merge — omitting `spells` clears them, same as sending an empty array. `spellcasting` is the exception: omit it to leave unchanged, or send `null` to clear it. |
 
 A stat block includes: size, type, alignment, AC, HP, speed, the six ability
 scores, saves/skills/senses/languages, damage/condition modifiers, challenge
 rating, XP, a list of **features** (traits, actions, bonus actions, reactions,
-legendary/lair actions, spellcasting, regional effects), and a list of
-**items** (weapons, armor, magic items, gear, currency, etc. with quantity,
-weight, value, and attunement info).
+legendary/lair actions, spellcasting, regional effects), a list of **items**
+(weapons, armor, magic items, gear, currency, etc. with quantity, weight,
+value, and attunement info), an optional structured **spellcasting** profile
+(ability + printed save DC/attack), and an optional **spells** list (name +
+level + casting type — `slot`, `pact`, `at_will`, or `per_day`). The
+free-text "spellcasting" feature above is independent of this — both can be
+set at once; the structured list exists specifically so a Foundry VTT
+connection can clone matched spells onto a created Actor, not to replace the
+readable trait text.
 
 ## Campaigns
 
