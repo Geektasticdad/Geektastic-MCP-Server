@@ -63,6 +63,30 @@ const spellcastingSchema = z.object({
         '(spell save DC 18, +10 to hit with spell attacks). She has 2 spell slots of 5th level that recharge on a ' +
         'short or long rest." Rendered on the GR stat block display above the spell list.'
     ),
+  caster_level: z
+    .number()
+    .int()
+    .min(1)
+    .max(20)
+    .nullable()
+    .optional()
+    .describe("1-20, e.g. the '10' in \"Eryssa is a 10th-level warlock.\" Drives Foundry's automatic spell-slot table."),
+});
+
+/**
+ * Which of the six ability saving throws are proficient — always present on a
+ * statblock (unlike `spellcasting`, never omitted/null), defaulting to all false.
+ * Independent of the free-text `saving_throws` line (e.g. "Str +10, Con +9"), which
+ * only ever drove GR's own display/static-export; this is what the live Foundry
+ * connection actually reads to set `abilities.*.proficient` on the Actor.
+ */
+const savingThrowProficienciesSchema = z.object({
+  str: z.boolean().optional().default(false),
+  dex: z.boolean().optional().default(false),
+  con: z.boolean().optional().default(false),
+  int: z.boolean().optional().default(false),
+  wis: z.boolean().optional().default(false),
+  cha: z.boolean().optional().default(false),
 });
 
 /**
@@ -118,6 +142,7 @@ const statblockSchema = z.object({
   xp: z.number().int().nullable().optional(),
   proficiency_bonus: z.number().int().nullable().optional(),
   spellcasting: spellcastingSchema.nullable().optional(),
+  saving_throw_proficiencies: savingThrowProficienciesSchema.optional(),
   spells: z.array(spellSchema).optional().default([]),
   features: z.array(featureSchema).optional().default([]),
   items: z.array(itemSchema).optional().default([]),
@@ -339,8 +364,11 @@ const tools: ToolDefinition[] = [
     description:
       "Update an existing Geektastic Realms statblock by entry id. Replaces the entire " +
       "features/items/spells arrays with what's posted (omitting spells clears them, " +
-      "same as posting an empty array) — spellcasting is the one field that's a true " +
-      "partial update: omit it to leave unchanged, or pass null to clear it.",
+      "same as posting an empty array) — spellcasting is a true partial update: omit " +
+      "it to leave unchanged, or pass null to clear it. saving_throw_proficiencies is " +
+      "similar but always whole-object: omit the key to leave all six unchanged, or " +
+      "post the object to set exactly those six (any ability missing from it is set " +
+      "to false, not left alone).",
     inputSchema: z.object({ entry_id: z.coerce.number().int(), statblock: statblockSchema }),
     async handler(input, cfg) {
       const { entry_id, statblock } = z

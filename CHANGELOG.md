@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.3.3] - 2026-07-22
+
+### Added
+- `spellcastingSchema.caster_level` (1-20, GR `geektastic-realms` v1.29.0) — the
+  spellcaster's level, e.g. the "10" in "Eryssa is a 10th-level warlock."
+- `statblockSchema.saving_throw_proficiencies` — six booleans (`str`/`dex`/`con`/
+  `int`/`wis`/`cha`), always present unlike `spellcasting`. Whole-object on write:
+  omit the key to leave unchanged, or post it to set exactly those six (any ability
+  missing from the object becomes `false`).
+
 ## [1.3.2] - 2026-07-22
 
 ### Fixed
