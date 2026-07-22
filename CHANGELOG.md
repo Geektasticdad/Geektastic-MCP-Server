@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.3.2] - 2026-07-22
+
+### Fixed
+- `spellcastingSchema.ability` is now optional (GR `geektastic-realms` v1.28.1) — GR
+  found its own API was silently dropping `spellcasting.description` whenever no
+  ability was set, since it required both together server-side. A client can now
+  post `spellcasting: { description: "..." }` alone.
+
 ## [1.3.1] - 2026-07-22
 
 ### Added

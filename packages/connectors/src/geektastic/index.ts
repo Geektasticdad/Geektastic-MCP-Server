@@ -45,9 +45,14 @@ const featureSchema = z.object({
   description: z.string().optional().default(""),
 });
 
-/** Foundry VTT Stage 14 — optional structured spellcasting profile, one per stat block. */
+/**
+ * Foundry VTT Stage 14 — optional structured spellcasting profile, one per stat
+ * block. `ability` is optional (not just its override fields) — a DM may want just
+ * the plain-text `description` set before deciding the mechanical details, same as
+ * GR's own stat block display and Foundry export already allow.
+ */
 const spellcastingSchema = z.object({
-  ability: z.enum(["str", "dex", "con", "int", "wis", "cha"]),
+  ability: z.enum(["str", "dex", "con", "int", "wis", "cha"]).optional(),
   save_dc_override: z.number().int().nullable().optional(),
   attack_override: z.number().int().nullable().optional(),
   description: z
