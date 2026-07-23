@@ -232,7 +232,12 @@ const rollTableRowSchema = z.object({
 const rollTableSchema = z.object({
   title: z.string().min(1),
   dm_notes: z.string().nullable().optional(),
-  section_id: z.number().int().nullable().optional().describe("Omit or null for an adventure-level table."),
+  section_id: z
+    .number()
+    .int()
+    .nullable()
+    .optional()
+    .describe("Omit or null for an adventure-level table. Ignored when creating/updating a world-level table (no module_id) — those never have a section."),
   rows: z
     .array(rollTableRowSchema)
     .optional()
@@ -757,13 +762,17 @@ const tools: ToolDefinition[] = [
   {
     name: "gr_list_roll_tables",
     description:
-      "List every roll table in a module (lightweight — id, title, die, row count; adventure-level tables " +
-      "have section_id: null). Use gr_get_roll_table to read a specific table's rows.",
-    inputSchema: z.object({ module_id: z.coerce.number().int() }),
+      "List roll tables (lightweight — id, title, die, row count). Pass module_id to list that module's " +
+      "own tables (adventure-level ones have section_id: null); omit module_id to list the world's shared " +
+      "roll table library instead — tables built once and embeddable via /rolltable into any module in " +
+      "the world. Use gr_get_roll_table to read a specific table's rows.",
+    inputSchema: z.object({ module_id: z.coerce.number().int().optional() }),
     async handler(input, cfg) {
-      const { module_id } = z.object({ module_id: z.coerce.number().int() }).parse(input);
+      const { module_id } = z.object({ module_id: z.coerce.number().int().optional() }).parse(input);
       try {
-        return toResult(await client(cfg).listRollTables(module_id));
+        return toResult(
+          module_id !== undefined ? await client(cfg).listRollTables(module_id) : await client(cfg).listWorldRollTables()
+        );
       } catch (err) {
         return toErrorResult(err);
       }
@@ -771,14 +780,20 @@ const tools: ToolDefinition[] = [
   },
   {
     name: "gr_get_roll_table",
-    description: "Fetch one roll table's full detail, including every row, by module id + roll table id.",
-    inputSchema: z.object({ module_id: z.coerce.number().int(), roll_table_id: z.coerce.number().int() }),
+    description:
+      "Fetch one roll table's full detail, including every row, by roll table id. Pass module_id for a " +
+      "module-scoped table, or omit it to look up a world-level library table instead.",
+    inputSchema: z.object({ module_id: z.coerce.number().int().optional(), roll_table_id: z.coerce.number().int() }),
     async handler(input, cfg) {
       const { module_id, roll_table_id } = z
-        .object({ module_id: z.coerce.number().int(), roll_table_id: z.coerce.number().int() })
+        .object({ module_id: z.coerce.number().int().optional(), roll_table_id: z.coerce.number().int() })
         .parse(input);
       try {
-        return toResult(await client(cfg).getRollTable(module_id, roll_table_id));
+        return toResult(
+          module_id !== undefined
+            ? await client(cfg).getRollTable(module_id, roll_table_id)
+            : await client(cfg).getWorldRollTable(roll_table_id)
+        );
       } catch (err) {
         return toErrorResult(err);
       }
@@ -787,16 +802,22 @@ const tools: ToolDefinition[] = [
   {
     name: "gr_create_roll_table",
     description:
-      "Create a roll table within a module — wandering monsters, loot, rumors, etc. Adventure-level " +
-      "(omit section_id) or attributed to a specific section. Each row needs at least range_start " +
+      "Create a roll table — wandering monsters, loot, rumors, etc. Pass module_id to create it inside " +
+      "that module (adventure-level by omitting section_id, or attributed to a specific section); omit " +
+      "module_id to create it in the world's shared roll table library instead — built once, then " +
+      "embeddable via /rolltable into any module in the world. Each row needs at least range_start " +
       "(range_end defaults to range_start); the die size is computed automatically from the highest range_end.",
-    inputSchema: z.object({ module_id: z.coerce.number().int(), roll_table: rollTableSchema }),
+    inputSchema: z.object({ module_id: z.coerce.number().int().optional(), roll_table: rollTableSchema }),
     async handler(input, cfg) {
       const { module_id, roll_table } = z
-        .object({ module_id: z.coerce.number().int(), roll_table: rollTableSchema })
+        .object({ module_id: z.coerce.number().int().optional(), roll_table: rollTableSchema })
         .parse(input);
       try {
-        return toResult(await client(cfg).createRollTable(module_id, roll_table));
+        return toResult(
+          module_id !== undefined
+            ? await client(cfg).createRollTable(module_id, roll_table)
+            : await client(cfg).createWorldRollTable(roll_table)
+        );
       } catch (err) {
         return toErrorResult(err);
       }
@@ -805,23 +826,28 @@ const tools: ToolDefinition[] = [
   {
     name: "gr_update_roll_table",
     description:
-      "Update an existing roll table by id. Sending `rows` replaces the entire list — fetch the table " +
-      "first (gr_get_roll_table) if you only want to add or edit one row rather than resetting them all.",
+      "Update an existing roll table by id — pass module_id for a module-scoped table, or omit it to " +
+      "update a world-level library table instead. Sending `rows` replaces the entire list — fetch the " +
+      "table first (gr_get_roll_table) if you only want to add or edit one row rather than resetting them all.",
     inputSchema: z.object({
-      module_id: z.coerce.number().int(),
+      module_id: z.coerce.number().int().optional(),
       roll_table_id: z.coerce.number().int(),
       roll_table: rollTableSchema,
     }),
     async handler(input, cfg) {
       const { module_id, roll_table_id, roll_table } = z
         .object({
-          module_id: z.coerce.number().int(),
+          module_id: z.coerce.number().int().optional(),
           roll_table_id: z.coerce.number().int(),
           roll_table: rollTableSchema,
         })
         .parse(input);
       try {
-        return toResult(await client(cfg).updateRollTable(module_id, roll_table_id, roll_table));
+        return toResult(
+          module_id !== undefined
+            ? await client(cfg).updateRollTable(module_id, roll_table_id, roll_table)
+            : await client(cfg).updateWorldRollTable(roll_table_id, roll_table)
+        );
       } catch (err) {
         return toErrorResult(err);
       }

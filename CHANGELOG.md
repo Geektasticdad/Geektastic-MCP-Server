@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.3.4] - 2026-07-23
+
+### Added
+- `gr_create_roll_table`, `gr_update_roll_table`, `gr_list_roll_tables`, and
+  `gr_get_roll_table` now support the world-level roll table library (GR
+  `geektastic-realms` v1.34.2, Roadmap 3.4) — omit `module_id` to create/read/update
+  a table in the world's shared library instead of inside one module. A world-level
+  table has no `section_id` and is embeddable via `/rolltable` into any module in
+  the world. Previously `module_id` was required, so there was no way to create a
+  table at the world level through the MCP server at all.
+
 ## [1.3.3] - 2026-07-22
 
 ### Added

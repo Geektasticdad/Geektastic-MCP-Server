@@ -207,7 +207,8 @@ export interface GrRollTable {
 
 export interface GrRollTableDetail {
   ok: true;
-  module_id: number;
+  /** Absent for a world-level table (not attached to any module) — see the library methods below. */
+  module_id?: number;
   roll_table_id: number;
   roll_table: GrRollTable;
 }
@@ -481,6 +482,34 @@ export class GeektasticRealmsClient {
 
   updateRollTable(moduleId: number, rollTableId: number, rollTable: Record<string, unknown>): Promise<GrRollTableDetail> {
     return this.request(`/modules/${moduleId}/roll-tables/${rollTableId}`, {
+      method: "PATCH",
+      body: JSON.stringify({ roll_table: rollTable }),
+    });
+  }
+
+  /**
+   * World-level roll table library (Roadmap 3.4) — tables with no module_id,
+   * built once and embeddable via /rolltable into any module in the world. A
+   * separate collection from a module's own tables (listRollTables above), not a
+   * filtered view of them.
+   */
+  listWorldRollTables(): Promise<{ ok: true; roll_tables: GrRollTableSummary[] }> {
+    return this.request(`/roll-tables`);
+  }
+
+  getWorldRollTable(rollTableId: number): Promise<GrRollTableDetail> {
+    return this.request(`/roll-tables/${rollTableId}`);
+  }
+
+  createWorldRollTable(rollTable: Record<string, unknown>): Promise<GrRollTableDetail> {
+    return this.request(`/roll-tables`, {
+      method: "POST",
+      body: JSON.stringify({ roll_table: rollTable }),
+    });
+  }
+
+  updateWorldRollTable(rollTableId: number, rollTable: Record<string, unknown>): Promise<GrRollTableDetail> {
+    return this.request(`/roll-tables/${rollTableId}`, {
       method: "PATCH",
       body: JSON.stringify({ roll_table: rollTable }),
     });

@@ -130,12 +130,20 @@ during play. A table can be adventure-level or attributed to a specific
 section, and is embeddable anywhere via the web editor's `/rolltable`
 slash command regardless of that attribution.
 
+A table can also live at the **world level** instead of inside any module —
+built once and embeddable via `/rolltable` into every adventure in that world.
+All four tools below take an *optional* `module_id`: pass it for a
+module-scoped table, or omit it to operate on the world's shared roll table
+library instead. These are two separate collections, not one filtered by the
+other — `gr_list_roll_tables` with no `module_id` lists only the world
+library, not every table in the world.
+
 | Tool | What it does |
 |---|---|
-| `gr_list_roll_tables` | List every roll table in a module (lightweight — id, title, computed die, row count; no rows). |
-| `gr_get_roll_table` | Fetch one table's full detail, including every row, by module id + roll table id. |
-| `gr_create_roll_table` | Create a roll table in a module. Each row needs at least a `range_start` (`range_end` defaults to it); the die size (d4–d100) is computed automatically from the highest `range_end`, never set directly. |
-| `gr_update_roll_table` | Update an existing table by id. |
+| `gr_list_roll_tables` | List roll tables (lightweight — id, title, computed die, row count; no rows). `module_id` set → that module's own tables; omitted → the world's shared library. |
+| `gr_get_roll_table` | Fetch one table's full detail, including every row, by roll table id (+ `module_id` for a module-scoped table). |
+| `gr_create_roll_table` | Create a roll table. With `module_id`: adventure-level or attributed to a section. Without: created in the world's shared library (no section). Each row needs at least a `range_start` (`range_end` defaults to it); the die size (d4–d100) is computed automatically from the highest `range_end`, never set directly. |
+| `gr_update_roll_table` | Update an existing table by id (+ `module_id` for a module-scoped table). |
 
 **Important:** sending `rows` on `gr_update_roll_table` **replaces the entire
 list**, the same as `adversaries` above — fetch the table first with

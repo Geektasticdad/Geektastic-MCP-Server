@@ -358,7 +358,10 @@ all six items shipped in one pass; total GR tool count 22 → 46. See
 - [x] **Roll Tables** — `gr_list_roll_tables` / `gr_get_roll_table` /
       `gr_create_roll_table` / `gr_update_roll_table` (rows included; the single most
       generative-AI-friendly content type — wandering monsters, loot, rumors).
-      Lightweight list + full-detail-by-id, same split as sections.
+      Lightweight list + full-detail-by-id, same split as sections. **v1.3.4**: all
+      four also work at the world level — omit `module_id` to list/create/read/update
+      a table in the world's shared roll table library instead of inside one module
+      (GR v1.34.2, Roadmap 3.4).
 - [x] **Campaign writes** — `gr_create_campaign` / `gr_update_campaign`.
 - [x] **Individual reads** — `gr_get_encounter` / `gr_get_handout` — fetch one by id
       without pulling the whole section.
