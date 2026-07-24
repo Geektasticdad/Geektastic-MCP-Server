@@ -23,6 +23,8 @@ instead.
 6. [Troubleshooting](06-Troubleshooting.md) — common problems and fixes.
 7. [Geektastic Family Tree Tools Reference](07-FT-Tools-Reference.md) — what each
    tool does, in plain language.
+8. [Geektastic Realms Prompts Reference](08-GR-Prompts-Reference.md) — the
+   reusable session-prep/recap/statblock/encounter-building prompts.
 
 ## What this server does, in one paragraph
 

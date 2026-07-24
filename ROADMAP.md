@@ -272,8 +272,9 @@ volumes:
 
 > Status: Phases 1–6 are **built, deployed, and in real use** — v1.2.0 is running as a
 > Docker stack, serving Claude Desktop/Claude.ai over OAuth 2.1 and Claude Code over
-> Bearer tokens, with 46 Geektastic Realms tools and 69 Geektastic Family Tree tools
-> live (see [CHANGELOG.md](CHANGELOG.md)). Phase 7 is also now shipped (see below).
+> Bearer tokens, with dozens of Geektastic Realms and Geektastic Family Tree tools
+> live (see [CHANGELOG.md](CHANGELOG.md)). Phase 7 is also now shipped, and Phase 8's
+> Prompts + response-size-discipline items just landed in **v1.4.0** (see below).
 > Remaining Phase 6 items (tracked Prisma migrations, a full security pass, automated
 > tests) roll forward into **Phase 9** below. Forward work is planned in
 > "Delivery Phases — what's next" following this section.
@@ -399,15 +400,21 @@ both picked up here the same way. See
 
 ### Phase 8 — MCP surface beyond tools
 
-- [ ] **Prompts** — ship reusable MCP prompts encoding real DM workflows:
-      *session-prep* (read module outline + session log + in-progress sections, draft
-      the prep sheet), *recap-writer*, *statblock-from-description*,
-      *populate-encounter* (pick adversaries by CR budget from existing statblocks).
+- [x] **Prompts** ✅ shipped (v1.4.0) — reusable MCP prompts
+      encoding real DM workflows: `gr_session_prep` (reads module outline + latest
+      session log, asks the model to pull upcoming sections itself, drafts the prep
+      sheet), `gr_recap_writer`, `gr_statblock_from_description`,
+      `gr_populate_encounter` (pick adversaries by CR budget from existing
+      statblocks). See [CHANGELOG.md](CHANGELOG.md),
+      [Docs/08-GR-Prompts-Reference.md](Docs/08-GR-Prompts-Reference.md), and
+      [Tech_Docs/07-Connector-SDK.md](Tech_Docs/07-Connector-SDK.md) "Prompts".
 - [ ] **Resources** — expose read-heavy content (module outlines, entry bodies) as MCP
       resources so clients that prefer resource attachment over tool calls can browse.
-- [ ] **Response-size discipline** — codify the v1.0.4 lesson (outline vs full-content
-      endpoints) as a connector-SDK convention: any list/detail tool must have a
-      bounded worst case.
+- [x] **Response-size discipline** ✅ codified alongside Prompts — see
+      [Tech_Docs/07-Connector-SDK.md](Tech_Docs/07-Connector-SDK.md) "Response-size
+      discipline": any list/detail tool *or prompt handler* must have a bounded worst
+      case, demonstrated by `gr_session_prep` fetching only the next 1-2 sections
+      rather than walking the whole module.
 
 ### Phase 9 — Engineering hardening (carried from Phase 6)
 

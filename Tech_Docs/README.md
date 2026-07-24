@@ -1,7 +1,7 @@
 # Geektastic MCP Server — Technical Documentation
 
 Engineering reference for the Geektastic MCP Server codebase (current version
-`1.0.5`). For the end-user/admin manual, see [`../Docs`](../Docs/README.md)
+`1.4.0`). For the end-user/admin manual, see [`../Docs`](../Docs/README.md)
 instead.
 
 ## Contents

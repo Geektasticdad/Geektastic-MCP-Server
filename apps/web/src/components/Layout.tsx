@@ -32,6 +32,9 @@ export function Layout() {
               <NavLink to="/tools" className={({ isActive }) => `${navItem} ${isActive ? navItemActive : navItemInactive}`}>
                 Tools
               </NavLink>
+              <NavLink to="/prompts" className={({ isActive }) => `${navItem} ${isActive ? navItemActive : navItemInactive}`}>
+                Prompts
+              </NavLink>
               <NavLink to="/tokens" className={({ isActive }) => `${navItem} ${isActive ? navItemActive : navItemInactive}`}>
                 Tokens
               </NavLink>

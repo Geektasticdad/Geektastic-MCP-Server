@@ -21,6 +21,35 @@ export interface ToolDefinition {
   handler(input: unknown, cfg: ConnectorConfig): Promise<ToolResult>;
 }
 
+export interface PromptArgumentDefinition {
+  name: string;
+  description?: string;
+  required?: boolean;
+}
+
+export interface PromptMessage {
+  role: "user" | "assistant";
+  /** Text-only content for v1 — covers every prompt built so far. */
+  text: string;
+}
+
+export interface PromptResult {
+  description?: string;
+  messages: PromptMessage[];
+}
+
+export interface PromptDefinition {
+  /** Globally unique, namespaced prompt name, e.g. "gr_session_prep". */
+  name: string;
+  description: string;
+  arguments?: PromptArgumentDefinition[];
+  /**
+   * MCP prompt arguments are always plain strings on the wire
+   * (unlike a tool's arbitrary-JSON input) — handlers parse/coerce internally.
+   */
+  handler(args: Record<string, string>, cfg: ConnectorConfig): Promise<PromptResult>;
+}
+
 /**
  * Everything needed to plug a new application into the MCP server.
  * Implement this interface to add an app beyond Geektastic Realms —
@@ -37,4 +66,6 @@ export interface AppConnector {
   healthCheck(cfg: ConnectorConfig): Promise<HealthCheckResult>;
   /** Tool set contributed by this connector for a given connection's config. */
   getTools(cfg: ConnectorConfig): ToolDefinition[];
+  /** Prompt set contributed by this connector, if any — optional so not every connector needs one. */
+  getPrompts?(cfg: ConnectorConfig): PromptDefinition[];
 }

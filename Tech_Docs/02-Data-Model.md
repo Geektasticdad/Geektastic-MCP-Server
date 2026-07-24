@@ -62,6 +62,21 @@ only tools explicitly recorded as `enabled: false` are filtered out
 inverts this: it collects the *disabled* set, then subtracts it from all known
 tool names).
 
+### `prompt_settings` (`PromptSetting`)
+
+Per-connection, per-prompt enable/disable override — a verbatim structural
+mirror of `ToolSetting` (added in Phase 8 for MCP Prompts support), including
+the same "absence means enabled" semantics.
+
+| Column | Type | Notes |
+|---|---|---|
+| `id` | uuid, PK | |
+| `connectionId` | uuid, FK → `AppConnection`, `Cascade` | |
+| `promptName` | string | e.g. `"gr_session_prep"` |
+| `enabled` | boolean | default `true` |
+
+Unique on `(connectionId, promptName)`.
+
 ### `mcp_tokens` (`McpToken`)
 
 Static bearer tokens for non-OAuth MCP clients (e.g. Claude Code CLI).
@@ -98,6 +113,29 @@ specifically because `McpToken` and `OAuthAccessToken` are different models —
 a single `tokenId` FK can't point at either. Playground-originated calls have
 both null (see `playground.routes.ts`, which passes `mcpTokenId: null` and
 omits `oauthAccessTokenId`).
+
+### `prompt_call_logs` (`PromptCallLog`)
+
+One row per prompt invocation (`prompts/get` via `/mcp`, or the Testing
+Playground's prompt tab) — a structural mirror of `ToolCallLog`, kept as a
+**separate** table rather than folding prompts into `ToolCallLog` with a
+discriminator column. Every prior "second concept" addition in this codebase
+(Tools → Playground → Tokens → OAuth Clients) has been purely additive, never
+a rename/merge, so mirroring the existing model exactly is lower-risk (zero
+touch to the tool-call path) and consistent with house style — the Logs page
+gained a Tool/Prompt tab instead.
+
+| Column | Type | Notes |
+|---|---|---|
+| `id` | uuid, PK | |
+| `tokenId` | uuid, nullable, FK → `McpToken`, `SetNull` | |
+| `oauthAccessTokenId` | uuid, nullable, FK → `OAuthAccessToken`, `SetNull` | |
+| `connectionId` | uuid, nullable, FK → `AppConnection`, `SetNull` | |
+| `promptName` | string | |
+| `status` | enum `success` \| `error` (reuses `ToolCallStatus`) | |
+| `durationMs` | int | |
+| `errorSummary` | string, nullable | truncated to 1000 chars in `logPromptCall()`, same as tool logging |
+| `createdAt` | datetime | indexed |
 
 ### `settings` (`Setting`)
 

@@ -1,26 +1,76 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { api, ApiError } from "../api/client";
-import type { ToolCallLogEntry } from "@geektastic/shared";
+import type { PromptCallLogEntry, ToolCallLogEntry } from "@geektastic/shared";
+
+const segmentButton = "rounded-md px-4 py-1.5 text-sm font-medium transition-colors";
+const segmentActive = "bg-indigo-600 text-white";
+const segmentInactive = "bg-slate-800 text-slate-300 hover:bg-slate-700";
+
+interface NormalizedLogRow {
+  id: string;
+  name: string;
+  status: "success" | "error";
+  durationMs: number;
+  errorSummary: string | null;
+  createdAt: string;
+}
 
 export function Logs() {
+  const [kind, setKind] = useState<"tool" | "prompt">("tool");
   const [status, setStatus] = useState<"" | "success" | "error">("");
-  const [toolName, setToolName] = useState("");
+  const [nameFilter, setNameFilter] = useState("");
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ["logs", status, toolName],
+    queryKey: ["logs", kind, status, nameFilter],
     queryFn: () => {
       const params = new URLSearchParams();
       if (status) params.set("status", status);
-      if (toolName) params.set("toolName", toolName);
-      return api.get<{ logs: ToolCallLogEntry[] }>(`/api/logs?${params.toString()}`);
+      if (kind === "tool") {
+        if (nameFilter) params.set("toolName", nameFilter);
+        return api.get<{ logs: ToolCallLogEntry[] }>(`/api/logs?${params.toString()}`).then((res) => res.logs);
+      }
+      if (nameFilter) params.set("promptName", nameFilter);
+      return api.get<{ logs: PromptCallLogEntry[] }>(`/api/prompt-logs?${params.toString()}`).then((res) => res.logs);
     },
     refetchInterval: 10000,
   });
 
+  const rows: NormalizedLogRow[] = (data ?? []).map((log) => ({
+    id: log.id,
+    name: "toolName" in log ? log.toolName : log.promptName,
+    status: log.status,
+    durationMs: log.durationMs,
+    errorSummary: log.errorSummary,
+    createdAt: log.createdAt,
+  }));
+
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-semibold text-white">Tool call logs</h1>
+      <h1 className="text-2xl font-semibold text-white">{kind === "tool" ? "Tool call logs" : "Prompt call logs"}</h1>
+
+      <div className="flex gap-2">
+        <button
+          type="button"
+          className={`${segmentButton} ${kind === "tool" ? segmentActive : segmentInactive}`}
+          onClick={() => {
+            setKind("tool");
+            setNameFilter("");
+          }}
+        >
+          Tool Calls
+        </button>
+        <button
+          type="button"
+          className={`${segmentButton} ${kind === "prompt" ? segmentActive : segmentInactive}`}
+          onClick={() => {
+            setKind("prompt");
+            setNameFilter("");
+          }}
+        >
+          Prompt Calls
+        </button>
+      </div>
 
       <div className="flex gap-3">
         <select
@@ -33,9 +83,9 @@ export function Logs() {
           <option value="error">Error</option>
         </select>
         <input
-          value={toolName}
-          onChange={(e) => setToolName(e.target.value)}
-          placeholder="Filter by tool name"
+          value={nameFilter}
+          onChange={(e) => setNameFilter(e.target.value)}
+          placeholder={kind === "tool" ? "Filter by tool name" : "Filter by prompt name"}
           className="rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white"
         />
       </div>
@@ -53,7 +103,7 @@ export function Logs() {
           <table className="w-full text-left text-sm">
             <thead className="bg-slate-900 text-slate-400">
               <tr>
-                <th className="px-4 py-2">Tool</th>
+                <th className="px-4 py-2">{kind === "tool" ? "Tool" : "Prompt"}</th>
                 <th className="px-4 py-2">Status</th>
                 <th className="px-4 py-2">Duration</th>
                 <th className="px-4 py-2">Error</th>
@@ -61,9 +111,9 @@ export function Logs() {
               </tr>
             </thead>
             <tbody>
-              {data?.logs.map((log) => (
+              {rows.map((log) => (
                 <tr key={log.id} className="border-t border-slate-800 align-top">
-                  <td className="px-4 py-2 font-mono text-xs text-slate-200">{log.toolName}</td>
+                  <td className="px-4 py-2 font-mono text-xs text-slate-200">{log.name}</td>
                   <td className={`px-4 py-2 ${log.status === "success" ? "text-emerald-400" : "text-red-400"}`}>
                     {log.status}
                   </td>
@@ -72,7 +122,7 @@ export function Logs() {
                   <td className="px-4 py-2 text-slate-400">{new Date(log.createdAt).toLocaleString()}</td>
                 </tr>
               ))}
-              {data?.logs.length === 0 && (
+              {rows.length === 0 && (
                 <tr>
                   <td colSpan={5} className="px-4 py-3 text-slate-500">
                     No log entries match.

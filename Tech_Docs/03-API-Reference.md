@@ -55,6 +55,15 @@ There is no delete-user endpoint by design — disable via `PATCH status`.
 | `GET /api/tools` | — | `{ tools: ToolSummary[] }` — every tool from every connection (regardless of that connection's own enabled state — this differs from `aggregateTools()`, which only includes enabled connections; the Tools page shows everything so an admin can toggle tools even on a currently-disabled connection). |
 | `POST /api/tools/toggle` | `{ connectionId, toolName, enabled }` | Upserts a `ToolSetting` row on `(connectionId, toolName)`. `204`. |
 
+## Prompts — `/api/prompts` (admin only; `prompts.routes.ts`)
+
+Verbatim structural mirror of `/api/tools`, for MCP prompts.
+
+| Method & path | Body | Notes |
+|---|---|---|
+| `GET /api/prompts` | — | `{ prompts: PromptSummary[] }` — every prompt from every connection whose connector implements `getPrompts` (regardless of the connection's own enabled state, same rationale as `GET /api/tools`). |
+| `POST /api/prompts/toggle` | `{ connectionId, promptName, enabled }` | Upserts a `PromptSetting` row on `(connectionId, promptName)`. `204`. |
+
 ## Tokens — `/api/tokens` (admin only; `tokens.routes.ts`)
 
 | Method & path | Body | Notes |
@@ -80,22 +89,33 @@ surface; `/oauth/*` is the actual protocol surface OAuth clients talk to.
 |---|---|---|
 | `GET /api/logs` | `status?` (`success`\|`error`), `toolName?` (substring, case-insensitive), `connectionId?`, `limit` (1–200, default 50), `cursor?` | Cursor-paginated, `orderBy: createdAt desc`. Returns `{ logs, nextCursor }` — `nextCursor` is the last row's `id`, or `null` if the page wasn't full (i.e. no more results). |
 
+## Prompt Logs — `/api/prompt-logs` (any authenticated user; `promptLogs.routes.ts`)
+
+Verbatim structural mirror of `/api/logs`, against `PromptCallLog`.
+
+| Method & path | Query params | Notes |
+|---|---|---|
+| `GET /api/prompt-logs` | `status?`, `promptName?` (substring, case-insensitive), `connectionId?`, `limit`, `cursor?` | Same cursor-pagination contract as `/api/logs`. Returns `{ logs, nextCursor }`. |
+
 ## Playground — `/api/playground` (any authenticated user; `playground.routes.ts`)
 
-Reuses the exact same tool-aggregation and handler-invocation path as `/mcp`
-(`loadActiveConnections()` + `aggregateTools()` from `@geektastic/connectors`)
-so a result here is guaranteed identical to what an MCP client would get.
+Reuses the exact same tool/prompt-aggregation and handler-invocation path as
+`/mcp` (`loadActiveConnections()` + `aggregateTools()`/`aggregatePrompts()`
+from `@geektastic/connectors`) so a result here is guaranteed identical to
+what an MCP client would get.
 
 | Method & path | Body | Notes |
 |---|---|---|
 | `GET /api/playground/tools` | — | `{ tools }` — only tools from enabled connections that are themselves enabled. Each tool's `inputSchema` is converted from its Zod schema to JSON Schema (`zod-to-json-schema`) so the Web UI can render a form. |
 | `POST /api/playground/invoke` | `{ connectionId, toolName, input }` (CSRF-protected) | `404` if that tool isn't currently enabled/found. On success, calls the real handler against the real connection, logs the call (with `mcpTokenId: null` — playground calls are attributable to a user session, not a token, though the log row itself doesn't currently record *which* user), and returns `{ result }`. On handler exception, still logs the failure, then returns `500 { error }`. |
+| `GET /api/playground/prompts` | — | `{ prompts }` — only prompts from enabled connections that are themselves enabled, each with its raw `arguments: PromptArgumentDefinition[]` (no JSON-Schema conversion needed — prompt args are already a flat list of string fields). |
+| `POST /api/playground/prompts/render` | `{ connectionId, promptName, args: Record<string,string> }` (CSRF-protected) | `404` if that prompt isn't currently enabled/found. On success, calls the real prompt handler directly (bypassing the MCP transport), logs via `logPromptCall`, and returns `{ result }` — a `PromptResult` (`{ description?, messages }`). On handler exception, logs the failure and returns `500 { error }` (note: this differs from the live `/mcp` path, where a prompt error propagates as a JSON-RPC error rather than an HTTP 500 — the playground route catches it into a normal HTTP error response instead, so the Web UI can render it inline). |
 
 ## Dashboard — `/api/dashboard` (any authenticated user; `dashboard.routes.ts`)
 
 | Method & path | Notes |
 |---|---|
-| `GET /api/dashboard/summary` | Returns `{ connections, activeTokenCount, recentErrorRate, recentLogs }`. `connections` is per-connection health (skips the check entirely and reports `{ ok: false, detail: "disabled" }` for disabled connections, to avoid an unnecessary network call). `activeTokenCount` counts non-revoked `McpToken` rows (OAuth tokens aren't included in this count). `recentErrorRate` is the error fraction of the last 10 `ToolCallLog` rows server-wide (`0` if there are none). `recentLogs` is those same last 10, trimmed to display fields. |
+| `GET /api/dashboard/summary` | Returns `{ connections, activeTokenCount, promptCallCount, recentErrorRate, recentLogs }`. `connections` is per-connection health (skips the check entirely and reports `{ ok: false, detail: "disabled" }` for disabled connections, to avoid an unnecessary network call). `activeTokenCount` counts non-revoked `McpToken` rows (OAuth tokens aren't included in this count). `promptCallCount` is a total count of all `PromptCallLog` rows ever (not windowed). `recentErrorRate` is the error fraction of the last 10 `ToolCallLog` rows server-wide (`0` if there are none) — tool calls only, not prompts. `recentLogs` is those same last 10, trimmed to display fields. |
 
 ## OAuth protocol endpoints (not under `/api`)
 

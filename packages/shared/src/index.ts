@@ -30,6 +30,21 @@ export interface ToolSummary {
   enabled: boolean;
 }
 
+export interface PromptArgumentSummary {
+  name: string;
+  description?: string;
+  required?: boolean;
+}
+
+export interface PromptSummary {
+  connectionId: string;
+  connectionName: string;
+  name: string;
+  description: string;
+  enabled: boolean;
+  arguments?: PromptArgumentSummary[];
+}
+
 export interface McpTokenSummary {
   id: string;
   name: string;
@@ -53,6 +68,16 @@ export interface ToolCallLogEntry {
   id: string;
   connectionId: string | null;
   toolName: string;
+  status: ToolCallStatus;
+  durationMs: number;
+  errorSummary: string | null;
+  createdAt: string;
+}
+
+export interface PromptCallLogEntry {
+  id: string;
+  connectionId: string | null;
+  promptName: string;
   status: ToolCallStatus;
   durationMs: number;
   errorSummary: string | null;

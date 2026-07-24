@@ -5,6 +5,7 @@ import { Login } from "./pages/Login";
 import { Dashboard } from "./pages/Dashboard";
 import { Connections } from "./pages/Connections";
 import { Tools } from "./pages/Tools";
+import { Prompts } from "./pages/Prompts";
 import { Tokens } from "./pages/Tokens";
 import { OAuthClients } from "./pages/OAuthClients";
 import { OAuthConsent } from "./pages/OAuthConsent";
@@ -66,6 +67,14 @@ export function App() {
           element={
             <RequireAdmin>
               <Tools />
+            </RequireAdmin>
+          }
+        />
+        <Route
+          path="prompts"
+          element={
+            <RequireAdmin>
+              <Prompts />
             </RequireAdmin>
           }
         />

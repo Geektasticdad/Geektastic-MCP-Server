@@ -52,6 +52,8 @@ model AppConnection {
 
   toolSettings          ToolSetting[]
   toolCallLogs          ToolCallLog[]
+  promptSettings        PromptSetting[]
+  promptCallLogs        PromptCallLog[]
 
   @@map("app_connections")
 }
@@ -67,6 +69,17 @@ model ToolSetting {
   @@map("tool_settings")
 }
 
+model PromptSetting {
+  id           String        @id @default(uuid())
+  connectionId String
+  connection   AppConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+  promptName   String
+  enabled      Boolean       @default(true)
+
+  @@unique([connectionId, promptName])
+  @@map("prompt_settings")
+}
+
 model McpToken {
   id            String    @id @default(uuid())
   name          String
@@ -79,6 +92,7 @@ model McpToken {
   createdBy     User?     @relation("TokenCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
 
   toolCallLogs  ToolCallLog[]
+  promptCallLogs PromptCallLog[]
 
   @@map("mcp_tokens")
 }
@@ -104,6 +118,24 @@ model ToolCallLog {
 
   @@index([createdAt])
   @@map("tool_call_logs")
+}
+
+model PromptCallLog {
+  id                 String            @id @default(uuid())
+  tokenId            String?
+  token              McpToken?         @relation(fields: [tokenId], references: [id], onDelete: SetNull)
+  oauthAccessTokenId String?
+  oauthAccessToken   OAuthAccessToken? @relation(fields: [oauthAccessTokenId], references: [id], onDelete: SetNull)
+  connectionId       String?
+  connection         AppConnection?    @relation(fields: [connectionId], references: [id], onDelete: SetNull)
+  promptName         String
+  status             ToolCallStatus
+  durationMs         Int
+  errorSummary       String?
+  createdAt          DateTime          @default(now())
+
+  @@index([createdAt])
+  @@map("prompt_call_logs")
 }
 
 model Setting {
@@ -168,6 +200,7 @@ model OAuthAccessToken {
   lastUsedAt DateTime?
 
   toolCallLogs ToolCallLog[]
+  promptCallLogs PromptCallLog[]
 
   @@map("oauth_access_tokens")
 }

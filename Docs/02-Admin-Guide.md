@@ -82,6 +82,21 @@ See [Geektastic Realms Tools Reference](05-GR-Tools-Reference.md) and
 [Geektastic Family Tree Tools Reference](07-FT-Tools-Reference.md) for what
 each tool actually does.
 
+## Prompts
+
+The **Prompts** page is the same idea as **Tools**, but for MCP **prompts** —
+reusable, user-invocable conversation templates rather than something the
+model calls on its own. It lists every prompt contributed by every
+connection, grouped by connection name, with a checkbox to enable or disable
+each one individually.
+
+- A prompt is enabled by default the moment its connection is added.
+- Disabling a prompt here removes it from what MCP clients see (`prompts/list`
+  over `/mcp`) **and** from the Testing Playground, immediately.
+- Today only **Geektastic Realms** connections contribute prompts — see
+  [Geektastic Realms Prompts Reference](08-GR-Prompts-Reference.md) for what
+  each one does.
+
 ## Tokens
 
 **Tokens** are the credentials a static, non-OAuth MCP client (like the Claude
@@ -159,19 +174,20 @@ records reference the user.
 ## Logs (admin view)
 
 Logs are covered in the [User Guide](03-User-Guide.md#logs) since every
-logged-in user can see them — admins see exactly the same page. Use the
-**status** and **tool name** filters to narrow down errors from a specific
-integration.
+logged-in user can see them — admins see exactly the same page, with separate
+**Tool Calls** and **Prompt Calls** tabs. Use the **status** and **name**
+filters to narrow down errors from a specific integration.
 
 ## Recommended setup order for a fresh deployment
 
 1. Log in as the bootstrap admin, change the password immediately (**Profile**).
 2. Add your Geektastic Realms **Connection** and confirm it shows **Healthy**.
-3. Review **Tools** and disable anything you don't want exposed yet.
+3. Review **Tools** and **Prompts** and disable anything you don't want exposed
+   yet.
 4. Create a **Token** for each static MCP client (e.g. Claude Code CLI), or
    leave OAuth clients to self-register when Claude Desktop/Claude.ai connect.
 5. Create accounts for any other team members under **Users**, choosing roles
    carefully — only give **admin** to people who should manage secrets and
    tokens.
-6. Try a tool end-to-end from the **Testing Playground** before handing a token
-   to a real MCP client.
+6. Try a tool and a prompt end-to-end from the **Testing Playground** before
+   handing a token to a real MCP client.

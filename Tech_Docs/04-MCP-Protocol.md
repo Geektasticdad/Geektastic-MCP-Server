@@ -96,6 +96,39 @@ JSON-stringify their success payload into a single `text` content block
 (`toResult()` in `geektastic/index.ts`), and turn any thrown error into an
 `isError: true` result with the error message as the text (`toErrorResult()`).
 
+## Prompts
+
+`buildMcpServer(auth)` also registers MCP **prompts** (`prompts/list`/
+`prompts/get`), right after the tool-registration loop — same per-request
+rebuild, same reason (a toggled prompt takes effect on the next request, no
+cache to invalidate). See [Connector SDK → Prompts](07-Connector-SDK.md#prompts-srcgeektasticpromptsts)
+for what the four shipped Geektastic Realms prompts actually do.
+
+1. Calls `aggregatePrompts(connections)` (`@geektastic/connectors`) — same
+   shape as `aggregateTools`, but sourced from each connector's optional
+   `getPrompts(config)` and each connection's `enabledPromptNames` (computed
+   in `loadActiveConnections()` from the `PromptSetting` table, mirroring
+   `ToolSetting`).
+2. For each, calls `server.registerPrompt(name, { description, argsSchema },
+   handlerWrapper)`. `argsSchema` is built by `toPromptArgsShape()` from the
+   prompt's `PromptArgumentDefinition[]` — a flat `z.string()` (optional
+   unless `required`) per argument, since **MCP prompt arguments are always
+   plain strings on the wire** (`GetPromptRequestParamsSchema.arguments:
+   Record<string, string>`), unlike a tool's arbitrary-JSON input. The SDK
+   auto-wires `prompts/list`/`prompts/get` once `registerPrompt` is called —
+   no manual protocol handler needed, same as `registerTool`.
+3. The registered handler wraps the prompt's real `handler(args, config)`:
+   `cleanPromptArgs()` first drops any `undefined`-valued optional argument
+   (so the handler always sees a plain `Record<string, string>`), times the
+   call, and always logs the outcome via `logPromptCall()`. On success, the
+   returned `PromptResult` (`{ description?, messages: [{role, text}] }`) is
+   mapped into the SDK's `GetPromptResult` shape (`text` → `{ type: "text",
+   text }` content). On a thrown error, the failure is logged and then
+   **rethrown** — unlike the tool wrapper, which catches and returns an
+   `isError: true` result, `GetPromptResult` has no such soft-error
+   convention, so letting the SDK turn the exception into a JSON-RPC error
+   response is the correct MCP-shaped behavior here.
+
 ## Rate limiting
 
 `mcpRateLimiter` (`express-rate-limit`): 120 requests/minute, keyed by the raw

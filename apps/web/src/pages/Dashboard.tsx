@@ -20,6 +20,7 @@ interface RecentLog {
 interface DashboardSummary {
   connections: ConnectionHealth[];
   activeTokenCount: number;
+  promptCallCount: number;
   recentErrorRate: number;
   recentLogs: RecentLog[];
 }
@@ -39,9 +40,10 @@ export function Dashboard() {
     <div className="space-y-8">
       <h1 className="text-2xl font-semibold text-white">Dashboard</h1>
 
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-4 gap-4">
         <StatCard label="Connections" value={data.connections.length} />
         <StatCard label="Active MCP tokens" value={data.activeTokenCount} />
+        <StatCard label="Prompt calls" value={data.promptCallCount} />
         <StatCard label="Recent error rate" value={`${Math.round(data.recentErrorRate * 100)}%`} />
       </div>
 

@@ -7,6 +7,48 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.4.0] - 2026-07-23
+
+### Added
+- **MCP Prompts support** (ROADMAP.md Phase 8, part 1) — a second MCP
+  capability alongside Tools. Connectors can now optionally contribute
+  `PromptDefinition`s (`AppConnector.getPrompts?`) in addition to tools;
+  `packages/connectors/src/registry.ts` gained `aggregatePrompts()` mirroring
+  `aggregateTools()`, and `mcp/server.ts`'s `buildMcpServer()` registers them
+  via the SDK's `registerPrompt`, wiring up `prompts/list`/`prompts/get`
+  automatically. New Prisma models `PromptSetting`/`PromptCallLog` mirror
+  `ToolSetting`/`ToolCallLog` (kept as separate tables rather than folding
+  prompts into the existing tool tables — lower-risk, and consistent with
+  every prior purely-additive phase in this changelog). New admin API
+  (`/api/prompts`, `/api/prompt-logs`, `/api/playground/prompts*`) and Web UI
+  (a new **Prompts** admin page; a Tool/Prompt tab on the Testing Playground
+  and the Logs page) mirror the existing Tools surface.
+- **Four Geektastic Realms prompts** (`packages/connectors/src/geektastic/prompts.ts`),
+  each actively fetching bounded context via the existing
+  `GeektasticRealmsClient` before handing the model a task:
+  - `gr_session_prep` — reads a module's outline plus its most recent session
+    log, then asks the model to pull the next unplayed section(s) itself and
+    draft a full prep sheet.
+  - `gr_recap_writer` — turns raw session notes into a polished player recap
+    plus a DM-facing continuity list, using the previous session's recap for
+    continuity if a `module_id` is given.
+  - `gr_statblock_from_description` — turns a natural-language creature
+    concept into a CR-calibrated stat block design brief, ready for
+    `gr_create_statblock`.
+  - `gr_populate_encounter` — searches existing stat blocks and asks the
+    model to pick a CR-budget-balanced adversary roster, ready for
+    `gr_create_encounter`.
+  - Unlike tools, MCP prompt arguments are always plain strings on the wire,
+    and `GetPromptResult` has no `isError` convention — a failed prompt call
+    is logged to `PromptCallLog` and then rethrown, letting the MCP SDK
+    surface a proper JSON-RPC error rather than a "successful" result with an
+    error message baked into it.
+- New docs: `Docs/08-GR-Prompts-Reference.md` (end-user reference for the
+  four prompts); `Tech_Docs/04-MCP-Protocol.md`, `07-Connector-SDK.md`
+  (including a codified "response-size discipline" convention for prompt
+  handlers), `02-Data-Model.md`, and `03-API-Reference.md` all gained Prompts
+  coverage.
+
 ## [1.3.4] - 2026-07-23
 
 ### Added

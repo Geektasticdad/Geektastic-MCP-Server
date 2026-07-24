@@ -8,10 +8,11 @@ export const dashboardRouter = Router();
 dashboardRouter.use(requireAuth);
 
 dashboardRouter.get("/summary", async (_req, res) => {
-  const [connections, activeTokenCount, recentLogs] = await Promise.all([
+  const [connections, activeTokenCount, recentLogs, promptCallCount] = await Promise.all([
     prisma.appConnection.findMany(),
     prisma.mcpToken.count({ where: { revokedAt: null } }),
     prisma.toolCallLog.findMany({ orderBy: { createdAt: "desc" }, take: 10 }),
+    prisma.promptCallLog.count(),
   ]);
 
   const connectionHealth = await Promise.all(
@@ -41,6 +42,7 @@ dashboardRouter.get("/summary", async (_req, res) => {
   res.json({
     connections: connectionHealth,
     activeTokenCount,
+    promptCallCount,
     recentErrorRate: recentLogs.length > 0 ? errorCount / recentLogs.length : 0,
     recentLogs: recentLogs.map((l) => ({
       id: l.id,

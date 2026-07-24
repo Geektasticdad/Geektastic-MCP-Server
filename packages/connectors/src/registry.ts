@@ -1,4 +1,4 @@
-import type { AppConnector, ConnectorConfig, ToolDefinition } from "./types.js";
+import type { AppConnector, ConnectorConfig, PromptDefinition, ToolDefinition } from "./types.js";
 import { geektasticRealmsConnector } from "./geektastic/index.js";
 import { familyTreeConnector } from "./family-tree/index.js";
 
@@ -28,6 +28,7 @@ export interface ActiveConnection {
   connector: AppConnector;
   config: ConnectorConfig;
   enabledToolNames: Set<string>;
+  enabledPromptNames: Set<string>;
 }
 
 export interface AggregatedTool {
@@ -53,4 +54,37 @@ export function aggregateTools(connections: ActiveConnection[]): AggregatedTool[
     }
   }
   return tools;
+}
+
+export interface AggregatedPrompt {
+  connectionId: string;
+  connectionName: string;
+  definition: PromptDefinition;
+}
+
+/**
+ * Builds the flat list of prompts exposed over MCP: only from enabled
+ * connections/connectors that contribute prompts, and only prompts not
+ * explicitly disabled for that connection. If two active connections
+ * contribute a prompt with the same name (e.g. two geektastic-realms
+ * connections), the first one wins — mirrors aggregateTools' existing
+ * behavior for the same latent multi-connection collision case.
+ */
+export function aggregatePrompts(connections: ActiveConnection[]): AggregatedPrompt[] {
+  const seen = new Set<string>();
+  const prompts: AggregatedPrompt[] = [];
+  for (const conn of connections) {
+    if (!conn.connector.getPrompts) continue;
+    for (const definition of conn.connector.getPrompts(conn.config)) {
+      if (!conn.enabledPromptNames.has(definition.name)) continue;
+      if (seen.has(definition.name)) continue;
+      seen.add(definition.name);
+      prompts.push({
+        connectionId: conn.connectionId,
+        connectionName: conn.connectionName,
+        definition,
+      });
+    }
+  }
+  return prompts;
 }
