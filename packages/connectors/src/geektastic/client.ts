@@ -226,6 +226,11 @@ export interface GrSession {
   id: number;
   title: string;
   played_on: string | null;
+  /** Optional in-world date stamp (independent of played_on and the world's current-date pointer). */
+  age_id: number | null;
+  year_in_epoch: number | null;
+  month_number: number | null;
+  day: number | null;
   summary: string;
   notes: string;
   next_session_prep: string;
@@ -241,6 +246,20 @@ export interface GrSessionDetail {
   module_id: number;
   session_id: number;
   session: GrSession;
+}
+
+/** The world's current in-world date — a pointer, not a log entry. Null if unset or no calendar. */
+export interface GrCurrentDate {
+  age_id: number | null;
+  year_in_epoch: number | null;
+  month_number: number | null;
+  day: number | null;
+  formatted: string;
+}
+
+export interface GrCurrentDateResponse {
+  ok: true;
+  current_date: GrCurrentDate | null;
 }
 
 export interface GrEra {
@@ -534,6 +553,18 @@ export class GeektasticRealmsClient {
     return this.request(`/modules/${moduleId}/sessions/${sessionId}`, {
       method: "PATCH",
       body: JSON.stringify({ session }),
+    });
+  }
+
+  /** The world's current in-world date (Roadmap 3.6) — a pointer, not a log entry. */
+  getCurrentDate(): Promise<GrCurrentDateResponse> {
+    return this.request("/calendar/current-date");
+  }
+
+  setCurrentDate(currentDate: Record<string, unknown>): Promise<GrCurrentDateResponse> {
+    return this.request("/calendar/current-date", {
+      method: "PATCH",
+      body: JSON.stringify({ current_date: currentDate }),
     });
   }
 

@@ -369,11 +369,16 @@ all six items shipped in one pass; total GR tool count 22 → 46. See
 - [x] **Session logs** — `gr_list_sessions` / `gr_get_session` / `gr_create_session` /
       `gr_update_session`: "here are my messy notes, write the recap and next-session
       prep" is a marquee MCP use case, and reads give Claude campaign continuity.
+      **v1.4.2**: gained an optional in-world date stamp (`age_id`/`year_in_epoch`/
+      `month_number`/`day`, GR v1.35.0, Roadmap 3.6) — independent of `played_on`
+      and of the world's current-date pointer.
 - [x] **World history** — era/event tools so worldbuilding chats can file timeline
       events as they invent them. Gated by GR's `history` resource scope — a
       connection's token needs that scope granted (in addition to
       `entries`/`modules`/`campaigns`/`foundry`) before these tools return anything
-      but a 403.
+      but a 403. **v1.4.2**: `gr_get_current_date` / `gr_set_current_date` join this
+      scope — the world's current in-world date (a pointer, not a log entry), so a
+      client can date newly-generated journal-style content correctly.
 - [x] **Deletes** — `gr_delete_entry` / `gr_delete_section` / `gr_delete_encounter` /
       `gr_delete_handout`. Gated behind the existing per-tool disable so an admin can
       run a no-delete server; all four are irreversible (no undo on the GR side).

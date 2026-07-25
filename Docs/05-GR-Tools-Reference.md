@@ -164,6 +164,24 @@ recap to open next time with.
 **Important:** sending `sections_covered` on `gr_update_session` **replaces
 the entire list**, same pattern as adversaries/roll table rows.
 
+All four also carry an optional **in-world date stamp** — `age_id`/
+`year_in_epoch`/`month_number`/`day`, the same shape as a history event's date
+fields — independent of `played_on` (the real-world date the session happened)
+and of the world's current-date pointer below (logging a session doesn't move
+"now" forward). `age_id`, if given, must reference a calendar age in this world.
+
+## Current date
+
+The world's current in-world date — a pointer to "now" in the campaign
+calendar, set from the web app's Calendar page. Use this to date newly-
+generated journal-style content (session recaps, history events) correctly.
+**Requires `history` scope**, same as World history below.
+
+| Tool | What it does |
+|---|---|
+| `gr_get_current_date` | Fetch the world's current in-world date. `null` if the world has no calendar, or has one but hasn't set a current date yet. |
+| `gr_set_current_date` | Set it — **overwrites** the existing pointer, does not append a log entry. Every field is optional: omit to leave unchanged, send `null` to clear. Fails if the world has no calendar yet (create one from the web app first). |
+
 ## World history
 
 Eras (named historical periods) and events (discrete moments in the world's

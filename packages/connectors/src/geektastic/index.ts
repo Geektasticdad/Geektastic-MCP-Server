@@ -263,6 +263,19 @@ const sessionLogSchema = z.object({
     .nullable()
     .optional()
     .describe("YYYY-MM-DD"),
+  age_id: z
+    .number()
+    .int()
+    .nullable()
+    .optional()
+    .describe(
+      "Optional in-world date stamp for this session (independent of played_on and the world's " +
+        "current-date pointer — logging a session doesn't move \"now\" forward). Must reference a " +
+        "calendar age already in this world."
+    ),
+  year_in_epoch: z.coerce.number().int().nullable().optional().describe("Part of the optional in-world date stamp."),
+  month_number: z.coerce.number().int().nullable().optional().describe("Part of the optional in-world date stamp."),
+  day: z.coerce.number().int().nullable().optional().describe("Part of the optional in-world date stamp."),
   summary: z.string().nullable().optional(),
   notes: z.string().nullable().optional(),
   next_session_prep: z.string().nullable().optional(),
@@ -293,6 +306,18 @@ const eraSchema = z.object({
   color: z.string().nullable().optional().describe("Hex color for the timeline bar, e.g. #6a89a8. Defaults to #6a89a8 on create."),
   description: z.string().nullable().optional(),
   dm_notes: z.string().nullable().optional().describe("DM-only — never shown publicly."),
+});
+
+const currentDateSchema = z.object({
+  age_id: z
+    .number()
+    .int()
+    .nullable()
+    .optional()
+    .describe("Must reference a calendar age already in this world's calendar. Omit to leave unchanged, or null to clear."),
+  year_in_epoch: z.coerce.number().int().nullable().optional().describe("Omit to leave unchanged, or null to clear."),
+  month_number: z.coerce.number().int().nullable().optional().describe("Omit to leave unchanged, or null to clear."),
+  day: z.coerce.number().int().nullable().optional().describe("Omit to leave unchanged, or null to clear."),
 });
 
 const historyEventSchema = z.object({
@@ -873,7 +898,8 @@ const tools: ToolDefinition[] = [
     name: "gr_get_session",
     description:
       "Fetch one session log's full detail — summary, notes, next_session_prep, player_recap, xp/gp/loot, " +
-      "and sections_covered — for 'previously on…' continuity.",
+      "sections_covered, and its optional in-world date stamp (age_id/year_in_epoch/month_number/day) — " +
+      "for 'previously on…' continuity.",
     inputSchema: z.object({ module_id: z.coerce.number().int(), session_id: z.coerce.number().int() }),
     async handler(input, cfg) {
       const { module_id, session_id } = z
@@ -890,7 +916,8 @@ const tools: ToolDefinition[] = [
     name: "gr_create_session",
     description:
       "Log a new session for a module — hand this messy notes and it becomes the recap, next-session prep, " +
-      "and player recap. xp_awarded/gp_gained store exactly what's sent (0 is a valid awarded amount).",
+      "and player recap. xp_awarded/gp_gained store exactly what's sent (0 is a valid awarded amount). " +
+      "Optionally stamp when this happened in the campaign calendar via age_id/year_in_epoch/month_number/day.",
     inputSchema: z.object({ module_id: z.coerce.number().int(), session: sessionLogSchema }),
     async handler(input, cfg) {
       const { module_id, session } = z
@@ -923,6 +950,39 @@ const tools: ToolDefinition[] = [
         .parse(input);
       try {
         return toResult(await client(cfg).updateSession(module_id, session_id, session));
+      } catch (err) {
+        return toErrorResult(err);
+      }
+    },
+  },
+  {
+    name: "gr_get_current_date",
+    description:
+      "Fetch this world's current in-world date (Roadmap 3.6) — a pointer to \"now\" in the campaign " +
+      "calendar, set from the web app's Calendar page, not a log entry. `current_date` is null if the " +
+      "world has no calendar, or has one but hasn't set a current date yet. Use this to date newly-" +
+      "generated journal-style content (session recaps, history events) correctly. Requires `history` scope.",
+    inputSchema: z.object({}),
+    async handler(_input, cfg) {
+      try {
+        return toResult(await client(cfg).getCurrentDate());
+      } catch (err) {
+        return toErrorResult(err);
+      }
+    },
+  },
+  {
+    name: "gr_set_current_date",
+    description:
+      "Set this world's current in-world date — overwrites the existing pointer, it does not append a " +
+      "log entry (for that, use gr_create_session's or gr_create_event's own date fields instead). Every " +
+      "field is optional: omit a field to leave it unchanged, or send it as null to clear it. Fails with " +
+      "422 if this world has no calendar set up yet (create one from the web app's Calendar page first).",
+    inputSchema: z.object({ current_date: currentDateSchema }),
+    async handler(input, cfg) {
+      const { current_date } = z.object({ current_date: currentDateSchema }).parse(input);
+      try {
+        return toResult(await client(cfg).setCurrentDate(current_date));
       } catch (err) {
         return toErrorResult(err);
       }

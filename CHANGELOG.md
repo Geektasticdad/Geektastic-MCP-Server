@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.4.2] - 2026-07-24
+
+### Added
+- `gr_get_current_date` / `gr_set_current_date` — GR's world-level current
+  in-world date (GR `geektastic-realms` v1.35.0, Roadmap 3.6): a pointer to
+  "now" in the campaign calendar, settable from the web app's Calendar page.
+  Lets a client date newly-generated journal-style content (session recaps,
+  history events) correctly. Requires `history` scope. `gr_set_current_date`
+  overwrites the pointer — it does not append a log entry.
+- `gr_create_session` / `gr_update_session` / `gr_get_session` now support an
+  optional in-world date stamp on a session log — `age_id`/`year_in_epoch`/
+  `month_number`/`day`, the same shape as a history event's date fields.
+  Independent of `played_on` (the real-world date) and of the world's
+  current-date pointer — logging a session doesn't move "now" forward.
+
 ## [1.4.1] - 2026-07-24
 
 ### Changed
