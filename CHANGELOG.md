@@ -7,6 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.4.1] - 2026-07-24
+
+### Changed
+- Documented two Geektastic Family Tree platform changes that landed since
+  the connector was last updated (`v0.22.0`–`v0.25.0`) — no schema/endpoint
+  changes were needed since neither altered `/api/v1/*`'s shape, only what
+  it returns/allows for a given token:
+  - **Living-person privacy** (`v0.22.0`) — a living person's private
+    details are redacted for viewer/contributor-role tokens; noted on
+    `ft_get_person` and in `Docs/07-FT-Tools-Reference.md`.
+  - **API token access level + expiry** (`v0.25.0`) — Family Tree tokens can
+    now be scoped **read-only** and given an expiry date; `ft_get_gaps_report`/
+    `ft_get_duplicates_report` now require editor/admin role (403 otherwise).
+    `Docs/02-Admin-Guide.md` now recommends creating the Family Tree
+    connection's token **read-only**, matching Family Tree's own documented
+    guidance for "a research assistant (e.g. an MCP server)" — a read-only
+    token gets a clean 403 on any write before it reaches an endpoint, so
+    the connector can never mutate tree data unless deliberately given a
+    full-access token.
+  - Confirmed via `geektastic-family-tree/CHANGELOG.md` and `docs/API.md`'s
+    own git history that no other release between `v0.18.0` and the current
+    `v1.6.2` touched the JSON API's documented surface — every other feature
+    in that range (task priorities/due dates, checklist dismissals, external
+    search links, search attempt log, task findings notes) is web-UI-only.
+
 ## [1.4.0] - 2026-07-23
 
 ### Added

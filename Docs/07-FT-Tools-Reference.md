@@ -5,11 +5,24 @@ admin can enable/disable each one individually under **Tools** (see
 [Administrator Guide](02-Admin-Guide.md#tools)) — if a tool you expect isn't
 showing up for your MCP client, check there first.
 
-The connection's API key is a per-user token (Account menu → API Tokens in the
-Family Tree web app), so every tool call acts as that user — including their
-per-tree role (viewer/contributor/editor/admin). Read tools (`ft_list_*`,
-`ft_get_*`, `ft_search*`) need any role; write tools need at least **editor**
-on the tree.
+The connection's API key is a per-user token (Admin menu → API Tokens in the
+Family Tree web app, admin-only to create), so every tool call acts as that
+user — including their per-tree role (viewer/contributor/editor/admin) and
+the token's own access level. Read tools (`ft_list_*`, `ft_get_*`,
+`ft_search*`) need any role; write tools need at least **editor** on the
+tree, and are rejected outright (`403`) if the connection's token was
+created **read-only** in Family Tree — the recommended setup for an MCP
+connection, see [Administrator Guide](02-Admin-Guide.md#adding-a-geektastic-family-tree-connection).
+
+**Living-person privacy:** a person flagged `is_living` has their private
+details (events, photos, notes, birth/death years) hidden from
+`ft_get_person` and everywhere else they'd appear (search results, family
+members, pedigree/descendant trees) unless the token's role is
+**editor**/**admin** on that tree — a viewer/contributor token gets a
+redacted profile back, same as the web app shows. `ft_get_gaps_report` and
+`ft_get_duplicates_report` require editor/admin outright (`403` for
+viewer/contributor) since both would otherwise reveal exactly the ages this
+protects.
 
 Almost every tool takes a `tree_id` — get valid ids from `ft_list_trees` first.
 

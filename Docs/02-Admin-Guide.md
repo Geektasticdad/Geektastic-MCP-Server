@@ -38,16 +38,32 @@ Realms and update the connection.
 4. **Base URL**: the root URL of your Family Tree instance, e.g.
    `https://tree.example.com` — **do not** include `/api` or any path suffix;
    the server adds `/api/v1` itself.
-5. **API key**: a personal API token generated from the account menu → **API
-   Tokens** panel inside the Family Tree app itself. It's prefixed `gtk_`.
-   Unlike Realms' per-world tokens, this token acts as the specific user who
-   created it — every tool call sees exactly the trees and role (viewer/
-   contributor/editor/admin) that user has.
+5. **API key**: a personal API token generated from the **Admin** menu →
+   **API Tokens** panel inside the Family Tree app itself (token management
+   there is admin-only — you'll need an admin account on that tree). It's
+   prefixed `gtk_`. Unlike Realms' per-world tokens, this token acts as the
+   specific user who created it — every tool call sees exactly the trees and
+   role (viewer/contributor/editor/admin) that user has, and a living
+   person's private details (events, photos, notes, birth/death years) are
+   only visible through editor/admin-role tokens — a viewer/contributor
+   token gets a redacted profile, same as in the web app.
 6. Click **Add connection**.
 
 The API key is encrypted before it's stored and is never shown again in the UI
 after creation — if you lose track of it, generate a new one in the Family
 Tree app and update the connection.
+
+**Recommended: create the token as read-only.** When creating the token in
+Family Tree, its **access level** defaults to full read+write, but the app
+itself suggests **read-only** for exactly this use case (a research
+assistant that only needs to look things up) — a read-only token gets a
+clean `403` on every `POST`/`PUT`/`DELETE` before it reaches any endpoint,
+so an MCP client can never accidentally create, edit, or delete tree data no
+matter what an AI assistant is asked to do with it. Only use a full-access
+token if you actually want the assistant able to add/edit records. Tokens
+can also be given an optional **expiry date** in Family Tree, after which
+this connection's health check will start failing with "This API token has
+expired." until you generate a new one.
 
 ### Managing an existing connection
 

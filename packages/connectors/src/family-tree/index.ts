@@ -7,9 +7,14 @@ import { FamilyTreeClient, parseConfig } from "./client.js";
  * geektastic-family-tree/docs/API.md). All routes live under `/api/v1/` on
  * the instance's root origin — the client always prepends `/api/v1` itself,
  * so `baseUrl` should be just the origin (no path suffix). Auth is a
- * per-user Bearer token from that user's Account menu -> API Tokens panel;
- * it acts as that user with their existing per-tree role (viewer/
- * contributor/editor/admin). Write endpoints require at least editor.
+ * per-user Bearer token from that user's Admin -> API Tokens panel (token
+ * management there is admin-only as of Family Tree v0.25.0); it acts as
+ * that user with their existing per-tree role (viewer/contributor/editor/
+ * admin) *and* the token's own access level. Write endpoints require at
+ * least editor role, and are rejected outright with 403 if the token itself
+ * was created read-only (the recommended scope for this connector) or has
+ * expired. A living person's private details are redacted for
+ * viewer/contributor-role tokens (Family Tree v0.22.0).
  */
 
 const configSchema = z.object({
@@ -305,7 +310,9 @@ const tools: ToolDefinition[] = [
   tool(
     "ft_get_person",
     "Full profile for one person: names, events (with citations), parent/spouse families (resolved), " +
-      "media, notes, citations, research_tasks, dna_matches, and relationship to the tree's home person.",
+      "media, notes, citations, research_tasks, dna_matches, and relationship to the tree's home person. " +
+      "If this person is_living and the connection's token role is only viewer/contributor, the profile " +
+      "comes back redacted (no events/media/notes, null birth/death dates) — same privacy rule as the web app.",
     z.object({ tree_id: treeIdSchema, id: z.coerce.number().int() }),
     (i, cfg) => client(cfg).getPerson(i.tree_id, i.id),
   ),
@@ -726,14 +733,18 @@ const tools: ToolDefinition[] = [
   ),
   tool(
     "ft_get_gaps_report",
-    "Data-quality report: unsourced_people, uncited_events, old_living_people, conflicting_dates.",
+    "Data-quality report: unsourced_people, uncited_events, old_living_people, conflicting_dates. " +
+      "Requires the connection's token to have editor/admin role on this tree (403 for viewer/contributor) " +
+      "since this would otherwise reveal living people's ages.",
     z.object({ tree_id: treeIdSchema }),
     (i, cfg) => client(cfg).getGapsReport(i.tree_id),
   ),
   tool(
     "ft_get_duplicates_report",
     "Clusters of 2+ people sharing a name and a close-enough (or both-unknown) birth year. " +
-      "Conservative on purpose (exact name match only, no fuzzy/soundex).",
+      "Conservative on purpose (exact name match only, no fuzzy/soundex). Requires the connection's token " +
+      "to have editor/admin role on this tree (403 for viewer/contributor) for the same reason as " +
+      "ft_get_gaps_report.",
     z.object({ tree_id: treeIdSchema }),
     (i, cfg) => client(cfg).getDuplicatesReport(i.tree_id),
   ),
