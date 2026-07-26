@@ -248,6 +248,39 @@ export interface GrSessionDetail {
   session: GrSession;
 }
 
+/** Lightweight — no `text` body. See GrQuestItem for full detail. */
+export interface GrQuestItemSummary {
+  id: number;
+  kind: "quest" | "secret";
+  title: string;
+  status: "unrevealed" | "revealed" | "resolved";
+  entry_id: number | null;
+  section_id: number | null;
+  revealed_session_id: number | null;
+}
+
+export interface GrQuestItem {
+  id: number;
+  kind: "quest" | "secret";
+  title: string;
+  /** Rich HTML. */
+  text: string;
+  status: "unrevealed" | "revealed" | "resolved";
+  entry_id: number | null;
+  entry_title: string | null;
+  section_id: number | null;
+  section_title: string | null;
+  revealed_session_id: number | null;
+  session_title: string | null;
+}
+
+export interface GrQuestItemDetail {
+  ok: true;
+  module_id: number;
+  quest_item_id: number;
+  quest_item: GrQuestItem;
+}
+
 /** The world's current in-world date — a pointer, not a log entry. Null if unset or no calendar. */
 export interface GrCurrentDate {
   age_id: number | null;
@@ -554,6 +587,32 @@ export class GeektasticRealmsClient {
       method: "PATCH",
       body: JSON.stringify({ session }),
     });
+  }
+
+  listQuestItems(moduleId: number): Promise<{ ok: true; module_id: number; quest_items: GrQuestItemSummary[] }> {
+    return this.request(`/modules/${moduleId}/quest-items`);
+  }
+
+  getQuestItem(moduleId: number, questItemId: number): Promise<GrQuestItemDetail> {
+    return this.request(`/modules/${moduleId}/quest-items/${questItemId}`);
+  }
+
+  createQuestItem(moduleId: number, questItem: Record<string, unknown>): Promise<GrQuestItemDetail> {
+    return this.request(`/modules/${moduleId}/quest-items`, {
+      method: "POST",
+      body: JSON.stringify({ quest_item: questItem }),
+    });
+  }
+
+  updateQuestItem(moduleId: number, questItemId: number, questItem: Record<string, unknown>): Promise<GrQuestItemDetail> {
+    return this.request(`/modules/${moduleId}/quest-items/${questItemId}`, {
+      method: "PATCH",
+      body: JSON.stringify({ quest_item: questItem }),
+    });
+  }
+
+  deleteQuestItem(moduleId: number, questItemId: number): Promise<GrOkResponse> {
+    return this.request(`/modules/${moduleId}/quest-items/${questItemId}`, { method: "DELETE" });
   }
 
   /** The world's current in-world date (Roadmap 3.6) — a pointer, not a log entry. */

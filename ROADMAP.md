@@ -372,6 +372,13 @@ all six items shipped in one pass; total GR tool count 22 → 46. See
       **v1.4.2**: gained an optional in-world date stamp (`age_id`/`year_in_epoch`/
       `month_number`/`day`, GR v1.35.0, Roadmap 3.6) — independent of `played_on`
       and of the world's current-date pointer.
+- [x] **Quest Log** — `gr_list_quest_items` / `gr_get_quest_item` / `gr_create_quest_item`
+      / `gr_update_quest_item` / `gr_delete_quest_item` (GR v1.35.4, Roadmap 3.3): short
+      index-card **quests** and **secrets/clues** for a module, each with a title,
+      rich-text description, status, and optional links to an entry/section/revealing
+      session. Unlike session logs and roll tables, this one **does** get a delete
+      tool — quest items are disposable index cards, and the GR API exposes a matching
+      `DELETE` endpoint.
 - [x] **World history** — era/event tools so worldbuilding chats can file timeline
       events as they invent them. Gated by GR's `history` resource scope — a
       connection's token needs that scope granted (in addition to

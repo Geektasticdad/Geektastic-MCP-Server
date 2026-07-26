@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.4.3] - 2026-07-25
+
+### Added
+- `gr_list_quest_items` / `gr_get_quest_item` / `gr_create_quest_item` /
+  `gr_update_quest_item` / `gr_delete_quest_item` — GR's Quest Log (Roadmap
+  3.3, general API added in GR `geektastic-realms` v1.35.4): short index-card
+  **quests** and **secrets/clues** for a module, each with a title, rich-text
+  description, status (`unrevealed` / `revealed` / `resolved`), and optional
+  links to an entry/section/revealing session. `gr_list_quest_items` is
+  lightweight (no rich-text body); `gr_get_quest_item` returns full detail
+  with resolved link titles.
+
 ## [1.4.2] - 2026-07-24
 
 ### Added

@@ -170,6 +170,27 @@ fields — independent of `played_on` (the real-world date the session happened)
 and of the world's current-date pointer below (logging a session doesn't move
 "now" forward). `age_id`, if given, must reference a calendar age in this world.
 
+## Quests & secrets
+
+The Quest Log — short index-card entries for things the party might learn or
+pursue in *any* order, not tied to play sequence (**quests** and
+**secrets/clues**, distinguished by `kind`).
+
+| Tool | What it does |
+|---|---|
+| `gr_list_quest_items` | List every quest/secret item tracked for a module (lightweight — kind, title, status, linked ids, no rich-text body). |
+| `gr_get_quest_item` | Fetch one item's full detail: rich-text description, status, and any linked article/section/revealing session (with resolved titles). |
+| `gr_create_quest_item` | Add a quest or secret/clue to a module's Quest Log. |
+| `gr_update_quest_item` | Update an existing item by id — every field optional. Commonly used to advance `status` (`unrevealed` → `revealed` → `resolved`) as the party learns or resolves it. |
+| `gr_delete_quest_item` | Permanently delete a quest/secret item. No undo. |
+
+A quest item has a `kind` (`quest` or `secret`, defaults to `quest`), a short
+**title** (the label shown wherever it's listed), a rich-text **text**
+description, a **status**, and three optional links: `entry_id` (any entry in
+this world — no stat block required), `section_id` (a section in this
+module), and `revealed_session_id` (a session log in this module, for
+"revealed in session N").
+
 ## Current date
 
 The world's current in-world date — a pointer to "now" in the campaign

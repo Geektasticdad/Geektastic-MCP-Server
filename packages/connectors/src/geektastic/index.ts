@@ -292,6 +292,21 @@ const sessionLogSchema = z.object({
     ),
 });
 
+const questItemSchema = z.object({
+  kind: z.enum(["quest", "secret"]).optional().describe("Defaults to quest."),
+  title: z.string().min(1).describe("Short label shown wherever this item is listed."),
+  text: z.string().nullable().optional().describe("Rich text — the full description, shown when the item is opened."),
+  entry_id: z.number().int().nullable().optional().describe("Optional linked article — must be an entry in this world (no stat block required)."),
+  section_id: z.number().int().nullable().optional().describe("Optional linked section — must belong to this module."),
+  status: z.enum(["unrevealed", "revealed", "resolved"]).optional().describe("Defaults to unrevealed."),
+  revealed_session_id: z
+    .number()
+    .int()
+    .nullable()
+    .optional()
+    .describe("Optional — which session log revealed this item. Must belong to this module."),
+});
+
 const eraSchema = z.object({
   name: z.string().min(1),
   era_label: z.string().nullable().optional().describe('Compact badge, e.g. "Era I".'),
@@ -950,6 +965,95 @@ const tools: ToolDefinition[] = [
         .parse(input);
       try {
         return toResult(await client(cfg).updateSession(module_id, session_id, session));
+      } catch (err) {
+        return toErrorResult(err);
+      }
+    },
+  },
+  {
+    name: "gr_list_quest_items",
+    description:
+      "List every quest/secret item tracked for a module's Quest Log (Roadmap 3.3) — lightweight, no " +
+      "`text` body. Use gr_get_quest_item to read one item's full rich-text description.",
+    inputSchema: z.object({ module_id: z.coerce.number().int() }),
+    async handler(input, cfg) {
+      const { module_id } = z.object({ module_id: z.coerce.number().int() }).parse(input);
+      try {
+        return toResult(await client(cfg).listQuestItems(module_id));
+      } catch (err) {
+        return toErrorResult(err);
+      }
+    },
+  },
+  {
+    name: "gr_get_quest_item",
+    description:
+      "Fetch one quest/secret item's full detail — kind, title, rich-text description, status, and any " +
+      "linked article/section/revealing session (with resolved titles).",
+    inputSchema: z.object({ module_id: z.coerce.number().int(), quest_item_id: z.coerce.number().int() }),
+    async handler(input, cfg) {
+      const { module_id, quest_item_id } = z
+        .object({ module_id: z.coerce.number().int(), quest_item_id: z.coerce.number().int() })
+        .parse(input);
+      try {
+        return toResult(await client(cfg).getQuestItem(module_id, quest_item_id));
+      } catch (err) {
+        return toErrorResult(err);
+      }
+    },
+  },
+  {
+    name: "gr_create_quest_item",
+    description:
+      "Add a quest or secret/clue to a module's Quest Log — a short index card for something the party " +
+      "might learn or pursue in any order, not tied to play sequence.",
+    inputSchema: z.object({ module_id: z.coerce.number().int(), quest_item: questItemSchema }),
+    async handler(input, cfg) {
+      const { module_id, quest_item } = z
+        .object({ module_id: z.coerce.number().int(), quest_item: questItemSchema })
+        .parse(input);
+      try {
+        return toResult(await client(cfg).createQuestItem(module_id, quest_item));
+      } catch (err) {
+        return toErrorResult(err);
+      }
+    },
+  },
+  {
+    name: "gr_update_quest_item",
+    description:
+      "Update an existing quest/secret item by id — every field optional, only what's sent changes. " +
+      "Commonly used to advance status (unrevealed → revealed → resolved) as the party learns or resolves it.",
+    inputSchema: z.object({
+      module_id: z.coerce.number().int(),
+      quest_item_id: z.coerce.number().int(),
+      quest_item: questItemSchema,
+    }),
+    async handler(input, cfg) {
+      const { module_id, quest_item_id, quest_item } = z
+        .object({
+          module_id: z.coerce.number().int(),
+          quest_item_id: z.coerce.number().int(),
+          quest_item: questItemSchema,
+        })
+        .parse(input);
+      try {
+        return toResult(await client(cfg).updateQuestItem(module_id, quest_item_id, quest_item));
+      } catch (err) {
+        return toErrorResult(err);
+      }
+    },
+  },
+  {
+    name: "gr_delete_quest_item",
+    description: "Permanently delete a quest/secret item from the Quest Log. There is no undo.",
+    inputSchema: z.object({ module_id: z.coerce.number().int(), quest_item_id: z.coerce.number().int() }),
+    async handler(input, cfg) {
+      const { module_id, quest_item_id } = z
+        .object({ module_id: z.coerce.number().int(), quest_item_id: z.coerce.number().int() })
+        .parse(input);
+      try {
+        return toResult(await client(cfg).deleteQuestItem(module_id, quest_item_id));
       } catch (err) {
         return toErrorResult(err);
       }
