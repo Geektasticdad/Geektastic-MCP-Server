@@ -410,6 +410,29 @@ added `spellcasting.caster_level` (1-20) and a top-level `saving_throw_proficien
 both picked up here the same way. See
 [Docs/05-GR-Tools-Reference.md](Docs/05-GR-Tools-Reference.md) "Stat blocks".
 
+#### Phase 7.2 — Structured Activities & Feature Details field coverage
+
+GR Roadmap 2.8 adds an optional structured Activities layer (Attack/Cast/Check/
+Damage/Heal/Save) and Feature Details (required level, repeatable, Magical/Trait
+properties, usage limits) to stat block features and items, threaded through
+`/api/v1/statblocks` alongside the existing structured-spellcasting fields (Phase
+7.1's model). No new tools needed — `featureSchema`/`itemSchema` (used by
+`gr_create_statblock`/`gr_update_statblock`/`gr_get_statblock`) just gain fields,
+same pattern as 7.1:
+
+- [ ] `featureSchema` gains `level`, `repeatable`, `is_magical`/`is_trait`, `uses`
+      (`{max, recovery_period}`), and `activities[]` — a discriminated union on
+      `activity_type` (`attack`/`cast`/`check`/`damage`/`heal`/`save`), each
+      variant exposing only the fields relevant to that type (e.g. `attack_bonus`/
+      `attack_type` for Attack, `save_ability`/`save_dc`/`save_effect` for Save).
+- [ ] `itemSchema` gains `uses` (same shape) and `activities[]` (same schema,
+      though Cast is rarely relevant on a weapon/item in practice).
+- [ ] Docs: `Docs/05-GR-Tools-Reference.md` "Stat blocks" section gains an
+      Activities/Feature-Details description, same section Phase 7.1's
+      spellcasting fields are documented in.
+
+**GR dependency:** Roadmap 2.8 — not yet shipped.
+
 ### Phase 8 — MCP surface beyond tools
 
 - [x] **Prompts** ✅ shipped (v1.4.0) — reusable MCP prompts
