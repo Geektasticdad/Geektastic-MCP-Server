@@ -31,6 +31,108 @@ const abilityScoresSchema = z.object({
   cha: z.number().int(),
 });
 
+/**
+ * Roadmap 2.8 follow-up — one damage part on an Attack/Save/Damage/Heal Activity,
+ * e.g. a poisoned dagger's Attack activity carrying both {"formula": "1d4",
+ * "damage_type": "piercing"} and {"formula": "3d6", "damage_type": "poison"}. A
+ * Heal activity only ever uses the first part — dnd5e's `healing` field is a
+ * single value, not a list.
+ */
+const damagePartSchema = z.object({
+  formula: z
+    .string()
+    .min(1)
+    .describe(
+      'Dice notation, e.g. "2d6 + 4". A simple "NdM [+/- bonus]" shape is parsed into structured dice on the ' +
+        "Foundry side; anything more complex (multiple dice terms, a flat number, free text) is passed through " +
+        "as a custom formula instead."
+    ),
+  damage_type: z
+    .enum([
+      "acid",
+      "bludgeoning",
+      "cold",
+      "fire",
+      "force",
+      "lightning",
+      "necrotic",
+      "piercing",
+      "poison",
+      "psychic",
+      "radiant",
+      "slashing",
+      "thunder",
+    ])
+    .nullable()
+    .optional(),
+});
+
+/**
+ * Roadmap 2.8 — a structured dnd5e Activity attached to a feature or item, so a
+ * synced Feature/Weapon arrives in Foundry with a real rollable button instead of
+ * inert flavor text. Deliberately no "cast" activity_type — an NPC's Innate
+ * Spellcasting Cast activities are generated entirely module-side from the stat
+ * block's own Spell List (`spells[]` above) once spells are cloned during Foundry
+ * sync; there's nothing to hand-enter here, and no Foundry UUID this connector
+ * could supply ahead of that sync happening in a specific world.
+ */
+const activitySchema = z.object({
+  activity_type: z.enum(["attack", "check", "damage", "heal", "save"]),
+  name: z.string().nullable().optional().describe('Optional label shown on the activity itself, e.g. "Bite".'),
+  activation_type: z
+    .enum(["action", "bonus", "reaction", "legendary", "lair", "special", "none"])
+    .optional()
+    .default("action")
+    .describe(
+      '"none" means passive — dnd5e shows the feature as Passive automatically whenever none of its activities ' +
+        "has an activation cost, so there's no separate Passive flag to set."
+    ),
+  activation_value: z.number().int().nullable().optional(),
+  range_value: z.string().nullable().optional(),
+  range_units: z.enum(["ft", "mi", "self", "touch", "spec"]).optional().default("ft"),
+  target_count: z.string().nullable().optional(),
+  target_type: z.string().nullable().optional(),
+  ability: z
+    .enum(["str", "dex", "con", "int", "wis", "cha"])
+    .nullable()
+    .optional()
+    .describe("Attack's attack-roll ability, or Check's ability."),
+  attack_bonus: z.string().nullable().optional().describe('Attack only, e.g. "+5".'),
+  attack_type: z.enum(["melee", "ranged"]).nullable().optional().describe("Attack only."),
+  save_ability: z.enum(["str", "dex", "con", "int", "wis", "cha"]).nullable().optional().describe("Save only."),
+  save_dc: z.number().int().nullable().optional().describe("Save only."),
+  save_effect: z.enum(["none", "half"]).optional().default("none").describe("Save only — effect on a successful save."),
+  check_skill_or_tool: z
+    .string()
+    .nullable()
+    .optional()
+    .describe(
+      "Check only. A Foundry skill abbreviation (acr, ani, arc, ath, dec, his, ins, itm, inv, med, nat, prc, prf, " +
+        "per, rel, slt, ste, sur) resolves to a real skill check; anything else is treated as a free-text tool name."
+    ),
+  check_dc: z.number().int().nullable().optional().describe("Check only."),
+  damage_parts: z
+    .array(damagePartSchema)
+    .optional()
+    .default([])
+    .describe(
+      "One or more damage parts, for Attack/Save/Damage/Heal. Most activities need just one, e.g. " +
+        '[{"formula": "2d6 + 4", "damage_type": "slashing"}] — but a creature/weapon that deals more than one ' +
+        'kind of damage in one hit can list several, e.g. a poisoned dagger: [{"formula": "1d4", "damage_type": ' +
+        '"piercing"}, {"formula": "3d6", "damage_type": "poison"}]. A Heal activity only uses the first part.'
+    ),
+});
+
+/** Roadmap 2.8 — a feature's or item's limited-uses pool, e.g. a wand's charges or a Breath Weapon's "Recharge 5-6". */
+const usesSchema = z.object({
+  max: z.string().nullable().optional().describe('A number or a dice formula, e.g. "3" or "1d4".'),
+  recovery_period: z
+    .enum(["lr", "sr", "day", "dawn", "dusk", "recharge", "special"])
+    .nullable()
+    .optional()
+    .describe("lr = long rest, sr = short rest."),
+});
+
 const featureSchema = z.object({
   type: z.enum([
     "trait",
@@ -44,6 +146,23 @@ const featureSchema = z.object({
   ]),
   name: z.string().min(1),
   description: z.string().optional().default(""),
+  level: z
+    .number()
+    .int()
+    .min(1)
+    .max(20)
+    .nullable()
+    .optional()
+    .describe("Roadmap 2.8 — required-level prerequisite, e.g. a feature that only applies from a certain level on."),
+  repeatable: z.boolean().optional().default(false).describe("Roadmap 2.8."),
+  is_magical: z
+    .boolean()
+    .optional()
+    .default(false)
+    .describe('Roadmap 2.8 — dnd5e\'s real feat "properties" enum (mgc). Not "Feature Type" (hardcoded Monster Feature) or "Passive" (dnd5e derives it automatically).'),
+  is_trait: z.boolean().optional().default(false).describe('Roadmap 2.8 — dnd5e\'s "trait" feat property.'),
+  uses: usesSchema.nullable().optional().describe("Roadmap 2.8."),
+  activities: z.array(activitySchema).optional().default([]).describe("Roadmap 2.8 — see activitySchema."),
 });
 
 /**
@@ -115,6 +234,8 @@ const itemSchema = z.object({
   requires_attunement: z.boolean().optional().default(false),
   attunement_description: z.string().optional().default(""),
   notes: z.string().optional().default(""),
+  uses: usesSchema.nullable().optional().describe("Roadmap 2.8 — same limited-uses pool as a feature's, e.g. a wand's charges."),
+  activities: z.array(activitySchema).optional().default([]).describe("Roadmap 2.8 — see activitySchema."),
 });
 
 /** gr-statblock-v1 — see Docs/statblock-template.json in the geektastic-realms repo. */

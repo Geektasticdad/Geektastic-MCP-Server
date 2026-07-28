@@ -410,28 +410,41 @@ added `spellcasting.caster_level` (1-20) and a top-level `saving_throw_proficien
 both picked up here the same way. See
 [Docs/05-GR-Tools-Reference.md](Docs/05-GR-Tools-Reference.md) "Stat blocks".
 
-#### Phase 7.2 — Structured Activities & Feature Details field coverage
+#### Phase 7.2 — Structured Activities & Feature Details field coverage ✅ shipped (v1.4.4)
 
-GR Roadmap 2.8 adds an optional structured Activities layer (Attack/Cast/Check/
-Damage/Heal/Save) and Feature Details (required level, repeatable, Magical/Trait
+GR Roadmap 2.8 added an optional structured Activities layer (Attack/Check/Damage/
+Heal/Save) and Feature Details (required level, repeatable, Magical/Trait
 properties, usage limits) to stat block features and items, threaded through
 `/api/v1/statblocks` alongside the existing structured-spellcasting fields (Phase
 7.1's model). No new tools needed — `featureSchema`/`itemSchema` (used by
-`gr_create_statblock`/`gr_update_statblock`/`gr_get_statblock`) just gain fields,
-same pattern as 7.1:
+`gr_create_statblock`/`gr_update_statblock`/`gr_get_statblock`) just gained
+fields, same pattern as 7.1:
 
-- [ ] `featureSchema` gains `level`, `repeatable`, `is_magical`/`is_trait`, `uses`
-      (`{max, recovery_period}`), and `activities[]` — a discriminated union on
-      `activity_type` (`attack`/`cast`/`check`/`damage`/`heal`/`save`), each
-      variant exposing only the fields relevant to that type (e.g. `attack_bonus`/
-      `attack_type` for Attack, `save_ability`/`save_dc`/`save_effect` for Save).
-- [ ] `itemSchema` gains `uses` (same shape) and `activities[]` (same schema,
-      though Cast is rarely relevant on a weapon/item in practice).
-- [ ] Docs: `Docs/05-GR-Tools-Reference.md` "Stat blocks" section gains an
-      Activities/Feature-Details description, same section Phase 7.1's
-      spellcasting fields are documented in.
+- [x] `featureSchema` gained `level`, `repeatable`, `is_magical`/`is_trait`, and
+      `uses` (`{max, recovery_period}`).
+- [x] `featureSchema`/`itemSchema` both gained `activities[]` — each entry has
+      `activity_type` (`attack`/`check`/`damage`/`heal`/`save` — **no `cast`**:
+      corrected from this section's original draft once GR actually shipped, since
+      GR's own `stat_block_activities.activity_type` enum deliberately excludes it
+      — Cast activities are generated entirely on the Foundry Connect module side
+      from the stat block's own `spells[]` list, never sent by a client), plus
+      activation/range/target and type-specific fields (`attack_bonus`/
+      `attack_type` for Attack, `save_ability`/`save_dc`/`save_effect` for Save,
+      `check_skill_or_tool`/`check_dc` for Check).
+- [x] **`damage_parts[]` (not a single formula/type pair)** — corrected from this
+      section's original draft: GR's own Roadmap 2.8 shipped with a single
+      `damage_formula`/`damage_type` pair per activity, then added a same-day
+      follow-up lifting that to a repeatable list (e.g. a poisoned dagger's Attack
+      activity: `1d4` piercing + `3d6` poison), matching dnd5e's real
+      `damage.parts[]` array. `activitySchema.damage_parts` picked up the list
+      shape directly rather than shipping the single-pair version first.
+- [x] `itemSchema` gained `uses` (same shape as `featureSchema`'s) and
+      `activities[]` (same schema).
+- [x] Docs: [Docs/05-GR-Tools-Reference.md](Docs/05-GR-Tools-Reference.md) "Stat
+      blocks" section gained an Activities/Feature-Details description, same
+      section Phase 7.1's spellcasting fields are documented in.
 
-**GR dependency:** Roadmap 2.8 — not yet shipped.
+**GR dependency:** Roadmap 2.8 — shipped in GR v2.0.0–v2.0.2.
 
 ### Phase 8 — MCP surface beyond tools
 

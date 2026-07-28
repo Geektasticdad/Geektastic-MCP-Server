@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.4.4] - 2026-07-28
+
+### Added
+- **Structured Activities & Feature Details field coverage (Phase 7.2, GR
+  Roadmap 2.8, general API added in GR `geektastic-realms` v2.0.0–v2.0.2).** No
+  new tools — `featureSchema`/`itemSchema` (used by `gr_create_statblock`/
+  `gr_update_statblock`/`gr_get_statblock`) gained fields, same pattern as
+  Phase 7.1's spellcasting fields. `featureSchema` gained `level`,
+  `repeatable`, `is_magical`/`is_trait`, and `uses` (`{max,
+  recovery_period}`); both `featureSchema` and `itemSchema` gained
+  `activities[]` — structured Attack/Check/Damage/Heal/Save activities
+  (activation, range, target, type-specific fields, and one or more
+  `damage_parts` — `{formula, damage_type}` — on Attack/Save/Damage/Heal, so a
+  poisoned dagger's Attack activity can carry both its weapon damage and a
+  poison coating as separate parts). Deliberately no "cast" `activity_type` —
+  Innate Spellcasting's Cast activities are generated entirely on the Foundry
+  Connect module side from the existing `spells[]` list once spells are
+  cloned during sync, not sent by any client. See
+  [Docs/05-GR-Tools-Reference.md](Docs/05-GR-Tools-Reference.md) "Stat
+  blocks".
+
 ## [1.4.3] - 2026-07-25
 
 ### Added

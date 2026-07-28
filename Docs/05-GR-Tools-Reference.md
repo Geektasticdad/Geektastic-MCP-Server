@@ -38,6 +38,29 @@ profile — both can be set at once; the structured data exists specifically so 
 connection can clone matched spells onto a created Actor, not to replace the
 readable trait text.
 
+Every **feature** and **item** can also carry structured **Feature Details**
+and **Activities**, so a synced feature/weapon arrives in Foundry as a real,
+clickable rollable thing instead of description text a GM has to read and roll
+by hand. **Feature Details** (features only): `level` (1-20 required-level
+prerequisite), `repeatable`, `is_magical`/`is_trait` (dnd5e's real feat
+properties — not "Feature Type," which stays hardcoded Monster Feature, and
+not "Passive," which dnd5e derives automatically whenever a feature has no
+activity with an activation cost). **`uses`** (features and items): a
+limited-uses pool, e.g. a wand's charges or a Breath Weapon's "Recharge 5-6" —
+`{max, recovery_period}` where `recovery_period` is one of `lr`/`sr`/`day`/
+`dawn`/`dusk`/`recharge`/`special`. **`activities`** (features and items): a
+list of structured Attack/Check/Damage/Heal/Save activities — activation
+cost, range, target, and type-specific fields (attack bonus + melee/ranged for
+Attack; save ability/DC/effect for Save; skill or tool + DC for Check), plus
+one or more **damage parts** (`{formula, damage_type}`) on Attack/Save/Damage/
+Heal — most activities need only one, but a creature/weapon that deals more
+than one kind of damage in a single hit (e.g. a poisoned dagger: `1d4`
+piercing plus `3d6` poison) can list several; a Heal activity only ever uses
+the first part. There's deliberately no "Cast" activity type — an NPC's
+Innate Spellcasting Cast activities are generated entirely on the Foundry
+module side from the **spells** list above, once spells are cloned during
+sync, so there's nothing to send here.
+
 ## Campaigns
 
 A campaign is a named arc grouping several adventure modules together.
