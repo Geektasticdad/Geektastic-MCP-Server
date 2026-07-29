@@ -98,18 +98,36 @@ not a numeric id. Image, gallery, and map fields can't be set through this API
 ## Adventure modules
 
 A module is a full adventure: a tree of **Acts → Chapters → Scenes**, plus
-**Appendices**, each of which can contain **encounters** and **handouts**.
+**Appendices**, each of which can contain **encounters**, **related articles**,
+and **handouts**.
 
 | Tool | What it does |
 |---|---|
 | `gr_list_modules` | List every module in the world. |
-| `gr_get_module` | Fetch a module's outline: its Act/Chapter/Scene/Appendix structure, **without** body text (encounters/handouts show as name-only stubs). A full module can be hundreds of KB of text, so this stays lightweight — use `gr_get_section` to read the actual content. |
+| `gr_get_module` | Fetch a module's outline: its Act/Chapter/Scene/Appendix structure, **without** body text (encounters/related articles/handouts show as name-only stubs). A full module can be hundreds of KB of text, so this stays lightweight — use `gr_get_section` to read the actual content. |
 | `gr_create_module` | Create a new module (title, summary, overview, level range, party size, status, visibility, campaign). Sections aren't created here — use `gr_create_section` afterward. |
 | `gr_update_module` | Update a module's own fields by id. |
 | `gr_search_sections` | Find an Act/Chapter/Scene/Appendix by title across **every** module in the world, when you don't already know which module it's in. |
-| `gr_get_section` | Fetch one section's **full content** — body text, complete encounters and handouts, and one level of child sections (their titles only, not their content) — by module id + section id. This is how you actually read a scene. |
+| `gr_get_section` | Fetch one section's **full content** — body text, complete encounters, related articles, and handouts, and one level of child sections (their titles only, not their content) — by module id + section id. This is how you actually read a scene. |
 | `gr_create_section` | Create an Act, Chapter, Scene, or Appendix inside a module. If it has a parent (e.g. a Chapter inside an Act), pass the parent's section id. |
 | `gr_update_section` | Update an existing section's type/title/body/parent by id. |
+
+### Related articles
+
+Pull an existing lore entry (an NPC, a location, an item — anything found via
+`gr_search_entries`) into an adventure as a **Related Article**. A link can be
+adventure-level or attributed to a specific section; section-attributed links
+still roll up into the module's own related-articles list, tagged with which
+section they came from — same behavior `gr_get_module`'s outline and
+`gr_list_related_articles` both show.
+
+| Tool | What it does |
+|---|---|
+| `gr_list_related_articles` | List every related-article link in a module — adventure-level and section-attributed together, in one flat list. |
+| `gr_get_related_article` | Fetch a single link by id, with its resolved entry title/category/section. |
+| `gr_create_related_article` | Link an entry to a module, optionally attributed to a section. Linking an entry already linked to this module updates its section/note instead of erroring or duplicating it — a module can only link a given entry once. |
+| `gr_update_related_article` | Move a link between sections (or to/from adventure-level) and/or change its context note, by id. The linked entry itself can't be changed — delete and re-create to point at a different entry. |
+| `gr_delete_related_article` | Unlink an article. The entry itself is untouched — only the link is removed. No undo (though relinking is one call away). |
 
 ### Handouts
 
@@ -256,10 +274,13 @@ token's scopes on the Geektastic Realms side first (see
 ## A note on deletes
 
 None of the delete tools above (`gr_delete_entry`, `gr_delete_section`,
-`gr_delete_encounter`, `gr_delete_handout`) have an undo. If you'd rather your
-MCP clients couldn't delete anything, disable these four tools individually
-under **Tools** (see [Administrator Guide](02-Admin-Guide.md#tools)) — every
-other tool on this page is unaffected.
+`gr_delete_encounter`, `gr_delete_handout`, `gr_delete_related_article`) have
+an undo. If you'd rather your MCP clients couldn't delete anything, disable
+these five tools individually under **Tools** (see
+[Administrator Guide](02-Admin-Guide.md#tools)) — every other tool on this
+page is unaffected. (`gr_delete_related_article` only removes the *link* —
+the linked entry itself is never touched, so it's lower-stakes than the other
+four.)
 
 ## Not yet available
 

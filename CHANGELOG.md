@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.4.5] - 2026-07-29
+
+### Added
+- **Related Articles** — 5 new Geektastic Realms tools:
+  `gr_list_related_articles` / `gr_get_related_article` /
+  `gr_create_related_article` / `gr_update_related_article` /
+  `gr_delete_related_article`. A "related article" links an existing entry to
+  a module, optionally attributed to a section — the same feature the GR web
+  app calls "Related Articles," previously web-app-only. Required a
+  corresponding new general-purpose API surface on the Geektastic Realms side
+  (`Api\RelatedArticleController`, `GET/POST /api/v1/modules/{id}/related-articles`,
+  `GET/PATCH/DELETE .../related-articles/{linkId}`) — see that project's
+  CHANGELOG.md and Tech_Docs/API.md. `gr_get_module`'s outline and
+  `gr_get_section`'s full detail both now also include `related_articles`
+  (module-level/per-section stubs in the outline, full detail in section
+  detail — mirroring exactly how Handouts/Roll Tables already split).
+  Section-attributed links roll up into the module's own list, matching the
+  web app's existing "roll up to the adventure-level panel" behavior — no new
+  rollup behavior invented, just exposed. See
+  [Docs/05-GR-Tools-Reference.md](Docs/05-GR-Tools-Reference.md) "Related
+  articles" and
+  [Tech_Docs/07-Connector-SDK.md](Tech_Docs/07-Connector-SDK.md).
+
 ## [1.4.4] - 2026-07-28
 
 ### Added

@@ -119,6 +119,8 @@ export interface GrSectionStub {
 
 export interface GrSectionFull extends GrSection {
   encounters: GrEncounter[];
+  /** Full detail for links attributed to this section — see GrRelatedArticle. */
+  related_articles: GrRelatedArticle[];
   handouts: GrHandout[];
   /** One level only — no grandchildren, no body text. Call getSection() again to drill further. */
   children: GrSectionStub[];
@@ -129,6 +131,41 @@ export interface GrSectionFullDetail {
   module_id: number;
   section_id: number;
   section: GrSectionFull;
+}
+
+/**
+ * A "Related Article" link (module_entry_links on the GR side) between a
+ * module and an existing lore entry, optionally attributed to one section.
+ * Section-attributed links roll up into the module's own related_articles
+ * list — same behavior as Handouts/Roll Tables.
+ */
+export interface GrRelatedArticle {
+  /** The link's own id (distinct from entry_id) — use this to update/delete the link. */
+  id: number;
+  entry_id: number;
+  title: string;
+  category: string;
+  context_note: string | null;
+}
+
+/** Lightweight stub — module-level or per-section, inside gr-module-v1's outline. */
+export interface GrRelatedArticleStub {
+  id: number;
+  entry_id: number;
+  title: string;
+}
+
+/** One row from the flat "every link in this module" list — includes section attribution. */
+export interface GrRelatedArticleListItem extends GrRelatedArticle {
+  section_id: number | null;
+  section_title: string | null;
+}
+
+export interface GrRelatedArticleDetail {
+  ok: true;
+  module_id: number;
+  related_article_id: number;
+  related_article: GrRelatedArticleListItem;
 }
 
 export interface GrHandout {
@@ -468,6 +505,36 @@ export class GeektasticRealmsClient {
       method: "PATCH",
       body: JSON.stringify({ section }),
     });
+  }
+
+  listRelatedArticles(moduleId: number): Promise<{ ok: true; module_id: number; related_articles: GrRelatedArticleListItem[] }> {
+    return this.request(`/modules/${moduleId}/related-articles`);
+  }
+
+  getRelatedArticle(moduleId: number, linkId: number): Promise<GrRelatedArticleDetail> {
+    return this.request(`/modules/${moduleId}/related-articles/${linkId}`);
+  }
+
+  createRelatedArticle(moduleId: number, relatedArticle: Record<string, unknown>): Promise<GrRelatedArticleDetail> {
+    return this.request(`/modules/${moduleId}/related-articles`, {
+      method: "POST",
+      body: JSON.stringify({ related_article: relatedArticle }),
+    });
+  }
+
+  updateRelatedArticle(
+    moduleId: number,
+    linkId: number,
+    relatedArticle: Record<string, unknown>
+  ): Promise<GrRelatedArticleDetail> {
+    return this.request(`/modules/${moduleId}/related-articles/${linkId}`, {
+      method: "PATCH",
+      body: JSON.stringify({ related_article: relatedArticle }),
+    });
+  }
+
+  deleteRelatedArticle(moduleId: number, linkId: number): Promise<GrOkResponse> {
+    return this.request(`/modules/${moduleId}/related-articles/${linkId}`, { method: "DELETE" });
   }
 
   createHandout(moduleId: number, handout: Record<string, unknown>): Promise<GrHandoutDetail> {

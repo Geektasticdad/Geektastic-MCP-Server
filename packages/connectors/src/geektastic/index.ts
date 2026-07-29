@@ -308,6 +308,25 @@ const handoutSchema = z.object({
   media_id: z.number().int().nullable().optional(),
 });
 
+/**
+ * A "Related Article" link — module_entry_links on the GR side. Links an
+ * existing entry to a module, optionally attributed to a section (in which
+ * case it rolls up into the module's own related_articles, same behavior as
+ * Handouts/Roll Tables). entry_id is only present here (create), not on
+ * update — the link can be re-sectioned/renoted, but not repointed at a
+ * different entry; unlink and relink instead.
+ */
+const relatedArticleCreateSchema = z.object({
+  entry_id: z.coerce.number().int().describe("Entry id to link — find one via gr_search_entries."),
+  section_id: z.coerce.number().int().nullable().optional().describe("Omit or null for an adventure-level link."),
+  context_note: z.string().nullable().optional().describe("Short free-text note, capped at 255 characters."),
+});
+
+const relatedArticleUpdateSchema = z.object({
+  section_id: z.coerce.number().int().nullable().optional(),
+  context_note: z.string().nullable().optional(),
+});
+
 const encounterAdversaryInputSchema = z.object({
   entry_id: z.coerce.number().int().describe("Entry id of a creature with a stat block in this world — find one via gr_search_statblocks."),
   quantity: z.coerce.number().int().min(1).optional().describe("Defaults to 1."),
@@ -767,6 +786,97 @@ const tools: ToolDefinition[] = [
         .parse(input);
       try {
         return toResult(await client(cfg).updateSection(module_id, section_id, section));
+      } catch (err) {
+        return toErrorResult(err);
+      }
+    },
+  },
+  {
+    name: "gr_list_related_articles",
+    description:
+      "List every Related Article link in a module — both adventure-level and section-attributed, " +
+      "in one flat list (adventure-level first). gr_get_module/gr_get_section instead split these into " +
+      "module-level vs. per-section stubs matching the outline tree.",
+    inputSchema: z.object({ module_id: z.coerce.number().int() }),
+    async handler(input, cfg) {
+      const { module_id } = z.object({ module_id: z.coerce.number().int() }).parse(input);
+      try {
+        return toResult(await client(cfg).listRelatedArticles(module_id));
+      } catch (err) {
+        return toErrorResult(err);
+      }
+    },
+  },
+  {
+    name: "gr_get_related_article",
+    description: "Fetch a single Related Article link by id, with its resolved entry/category/section info.",
+    inputSchema: z.object({ module_id: z.coerce.number().int(), link_id: z.coerce.number().int() }),
+    async handler(input, cfg) {
+      const { module_id, link_id } = z
+        .object({ module_id: z.coerce.number().int(), link_id: z.coerce.number().int() })
+        .parse(input);
+      try {
+        return toResult(await client(cfg).getRelatedArticle(module_id, link_id));
+      } catch (err) {
+        return toErrorResult(err);
+      }
+    },
+  },
+  {
+    name: "gr_create_related_article",
+    description:
+      "Link an existing entry to a module as a Related Article — omit section_id for an adventure-level " +
+      "link, or attribute it to a section so it rolls up into the module's own related-articles list. " +
+      "A module can only link a given entry once — linking one already linked here updates its " +
+      "section/note instead of erroring or duplicating it.",
+    inputSchema: z.object({ module_id: z.coerce.number().int(), related_article: relatedArticleCreateSchema }),
+    async handler(input, cfg) {
+      const { module_id, related_article } = z
+        .object({ module_id: z.coerce.number().int(), related_article: relatedArticleCreateSchema })
+        .parse(input);
+      try {
+        return toResult(await client(cfg).createRelatedArticle(module_id, related_article));
+      } catch (err) {
+        return toErrorResult(err);
+      }
+    },
+  },
+  {
+    name: "gr_update_related_article",
+    description:
+      "Update an existing Related Article link's section attribution and/or context note by id. " +
+      "The linked entry itself can't be changed here — delete and re-create the link to point at a " +
+      "different entry.",
+    inputSchema: z.object({
+      module_id: z.coerce.number().int(),
+      link_id: z.coerce.number().int(),
+      related_article: relatedArticleUpdateSchema,
+    }),
+    async handler(input, cfg) {
+      const { module_id, link_id, related_article } = z
+        .object({
+          module_id: z.coerce.number().int(),
+          link_id: z.coerce.number().int(),
+          related_article: relatedArticleUpdateSchema,
+        })
+        .parse(input);
+      try {
+        return toResult(await client(cfg).updateRelatedArticle(module_id, link_id, related_article));
+      } catch (err) {
+        return toErrorResult(err);
+      }
+    },
+  },
+  {
+    name: "gr_delete_related_article",
+    description: "Unlink a Related Article by id. The linked entry itself is untouched — only the link is removed.",
+    inputSchema: z.object({ module_id: z.coerce.number().int(), link_id: z.coerce.number().int() }),
+    async handler(input, cfg) {
+      const { module_id, link_id } = z
+        .object({ module_id: z.coerce.number().int(), link_id: z.coerce.number().int() })
+        .parse(input);
+      try {
+        return toResult(await client(cfg).deleteRelatedArticle(module_id, link_id));
       } catch (err) {
         return toErrorResult(err);
       }

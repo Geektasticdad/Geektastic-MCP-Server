@@ -391,6 +391,16 @@ all six items shipped in one pass; total GR tool count 22 → 46. See
       run a no-delete server; all four are irreversible (no undo on the GR side).
       Deletes for campaigns/roll tables/session logs remain unavailable — GR doesn't
       expose those `DELETE` endpoints yet.
+- [x] **Related Articles** — `gr_list_related_articles` / `gr_get_related_article` /
+      `gr_create_related_article` / `gr_update_related_article` /
+      `gr_delete_related_article`: link an existing entry to a module, optionally
+      attributed to a section — the GR web app's "Related Articles" feature
+      (`module_entry_links`), previously web-app-only. Required a new
+      general-purpose API surface on the GR side (`Api\RelatedArticleController`)
+      built alongside this connector work. Section-attributed links roll up into
+      the module's own list and `gr_get_module`'s outline, same "roll up to the
+      adventure-level panel" behavior the web app already has — not a new rollup
+      design, just exposed via the general-purpose API for the first time.
 
 #### Phase 7.1 — Structured spellcasting field coverage ✅ shipped (v1.3.0, `description` field in v1.3.1, `caster_level`/`saving_throw_proficiencies` in v1.3.3)
 

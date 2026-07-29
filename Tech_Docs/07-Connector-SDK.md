@@ -146,13 +146,18 @@ Calls `GET /api/v1/ping`. On success, returns `{ ok: true, detail: "<world
 name> (Realms v<version>)" }`; on failure, `{ ok: false, detail:
 "<error message>" }`.
 
-### Tool catalog (22 tools)
+### Tool catalog
 
 All handlers follow the same shape: parse `input` with the tool's own Zod
 schema, call the matching `GeektasticRealmsClient` method, wrap the result
 with `toResult()` (JSON-stringify into one text content block) or catch and
 return `toErrorResult()` (the error message as an `isError: true` result —
-never a thrown exception past the handler boundary).
+never a thrown exception past the handler boundary). The table below has
+grown incrementally and isn't exhaustive (roll tables, session logs, quest
+items, world history, current-date, and deletes all followed later, each
+in the same style) — see
+[Docs/05-GR-Tools-Reference.md](../Docs/05-GR-Tools-Reference.md) for the
+complete, currently-accurate tool list.
 
 | Tool | Input schema (key fields) | Client method |
 |---|---|---|
@@ -174,6 +179,11 @@ never a thrown exception past the handler boundary).
 | `gr_get_section` | `{ module_id, section_id: coerced int }` | `getSection` |
 | `gr_create_section` | `{ module_id: coerced int, section }` | `createSection` |
 | `gr_update_section` | `{ module_id, section_id: coerced int, section }` | `updateSection` |
+| `gr_list_related_articles` | `{ module_id: coerced int }` | `listRelatedArticles` |
+| `gr_get_related_article` | `{ module_id, link_id: coerced int }` | `getRelatedArticle` |
+| `gr_create_related_article` | `{ module_id: coerced int, related_article }` | `createRelatedArticle` |
+| `gr_update_related_article` | `{ module_id, link_id: coerced int, related_article }` | `updateRelatedArticle` |
+| `gr_delete_related_article` | `{ module_id, link_id: coerced int }` | `deleteRelatedArticle` |
 | `gr_create_handout` | `{ module_id: coerced int, handout }` | `createHandout` |
 | `gr_update_handout` | `{ module_id, handout_id: coerced int, handout }` | `updateHandout` |
 | `gr_create_encounter` | `{ module_id, section_id: coerced int, encounter }` | `createEncounter` |
@@ -241,6 +251,21 @@ settable via `custom_fields`).
   `adversaries` array (`{ entry_id, name, category, quantity }`) — names and
   categories are joined server-side (on the Geektastic Realms side) from
   each `entry_id`.
+- **Related Articles** (`gr_*_related_article*`) are links (`module_entry_links`
+  on the GR side) between an existing entry and a module, optionally
+  attributed to one section. `entry_id` is only accepted on
+  `gr_create_related_article` — the link's section/note can be updated via
+  `gr_update_related_article`, but not which entry it points at (delete +
+  recreate instead). GR's API treats a repeat `gr_create_related_article` for
+  an entry already linked to that module as an update (moves/renotes the
+  existing link) rather than an error or a duplicate — the underlying
+  `module_entry_links` table has a `UNIQUE (module_id, entry_id)` constraint.
+  Section-attributed links roll up into `gr_get_module`'s top-level
+  `related_articles` stubs and `gr_list_related_articles`' flat list, exactly
+  like Handouts/Roll Tables already do — this was the first tool addition
+  built directly against a Geektastic Realms feature that pre-dated any
+  general-purpose API exposure (previously web-app-only via
+  `App\Models\ModuleEntryLink`).
 
 ### Not yet exposed
 
