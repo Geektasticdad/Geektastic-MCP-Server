@@ -2,6 +2,7 @@ import { z } from "zod";
 import type { AppConnector, ConnectorConfig, HealthCheckResult, ToolDefinition } from "../types.js";
 import { GeektasticRealmsClient, parseConfig } from "./client.js";
 import { getGeektasticPrompts } from "./prompts.js";
+import { getCampaignBuilderPrompts } from "./campaign/index.js";
 
 /**
  * Connector for Geektastic Realms' "General-Purpose API" (see
@@ -1511,6 +1512,6 @@ export const geektasticRealmsConnector: AppConnector = {
     return tools;
   },
   getPrompts(_cfg) {
-    return getGeektasticPrompts();
+    return [...getGeektasticPrompts(), ...getCampaignBuilderPrompts()];
   },
 };

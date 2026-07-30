@@ -466,13 +466,30 @@ fields, same pattern as 7.1:
       statblocks). See [CHANGELOG.md](CHANGELOG.md),
       [Docs/08-GR-Prompts-Reference.md](Docs/08-GR-Prompts-Reference.md), and
       [Tech_Docs/07-Connector-SDK.md](Tech_Docs/07-Connector-SDK.md) "Prompts".
+- [ ] **Campaign Builder prompts** — six new prompts converting the
+      `dm-campaign-builder` Claude Code skill's modes into MCP prompts, usable
+      from any MCP client without that skill installed: `campaign_arc_builder`,
+      `campaign_arc_reviewer`, `campaign_faction_builder`,
+      `campaign_faction_reviewer`, `campaign_module_builder`,
+      `campaign_module_reviewer`. Unlike the four existing prompts, these read
+      no live Geektastic Realms data — each is a static instructional template
+      (transcribed verbatim from that skill's SKILL.md) plus argument-value
+      interpolation, bundled onto the existing `geektastic-realms` connector
+      rather than a new connector (avoids an extra field-less "connection" a
+      user would otherwise have to create purely to unlock them). See
+      `packages/connectors/src/geektastic/campaign/`,
+      [Docs/08-GR-Prompts-Reference.md](Docs/08-GR-Prompts-Reference.md), and
+      [Tech_Docs/07-Connector-SDK.md](Tech_Docs/07-Connector-SDK.md).
 - [ ] **Resources** — expose read-heavy content (module outlines, entry bodies) as MCP
       resources so clients that prefer resource attachment over tool calls can browse.
 - [x] **Response-size discipline** ✅ codified alongside Prompts — see
       [Tech_Docs/07-Connector-SDK.md](Tech_Docs/07-Connector-SDK.md) "Response-size
       discipline": any list/detail tool *or prompt handler* must have a bounded worst
       case, demonstrated by `gr_session_prep` fetching only the next 1-2 sections
-      rather than walking the whole module.
+      rather than walking the whole module. The Campaign Builder prompts above are the
+      one deliberate exception worth noting explicitly: their response size is large
+      but *fixed* (a static instructional template, not data-driven), so a future
+      reader shouldn't mistake that size for a violation of this rule.
 
 ### Phase 9 — Engineering hardening (carried from Phase 6)
 

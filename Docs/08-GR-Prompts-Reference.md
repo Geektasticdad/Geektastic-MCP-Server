@@ -52,6 +52,77 @@ encounter, showing its math, then create it with `gr_create_encounter`.
 where the encounter goes and the target difficulty budget. `theme`
 (optional) — narrows the candidate search (e.g. "swamp", "undead").
 
+## Campaign Builder Prompts
+
+Unlike the four prompts above, these six don't read anything from your connected
+Geektastic Realms world — each is a self-contained instructional template
+(converted from the `dm-campaign-builder` Claude Code skill) that seeds the model
+with a complete design or review brief, using only the argument values you supply.
+That makes them usable from any MCP client, not just Claude Code.
+
+### `campaign_arc_builder`
+
+Design a complete, playable multi-session story arc — inciting incident, escalating
+beats, a mandatory "false victory" moment, key NPCs, faction involvement, a climax,
+two possible endings, and seeds for the next arc — plus a compliance table showing
+which of the six arc-design principles the result satisfies.
+
+**Arguments:** `campaign_setting`, `party_level_range`, `session_count`, `tone`
+(all required). `world_details`, `central_conflict`, `pc_hooks` (optional).
+
+### `campaign_arc_reviewer`
+
+Evaluate an existing arc against the same six design principles Arc Builder uses —
+three-act structure, the BBEG standard, the false-victory beat, anti-railroading,
+three-pillar balance, escalating stakes — and produce a ranked, actionable critique
+without rewriting the arc.
+
+**Arguments:** `arc_document` (required). `party_level_range`, `session_count`,
+`world_details` (optional).
+
+### `campaign_faction_builder`
+
+Create a fully developed organization: identity (public face vs. true purpose),
+a three-tier leadership hierarchy with personal secrets, short/long-term goals and
+methods, membership and resources, a relationship table with at least one
+"complicated" faction, and three player interaction points plus adventure hooks.
+
+**Arguments:** `faction_type`, `power_level`, `location`, `relationship_to_players`
+(all required). `faction_name`, `existing_factions`, `world_details` (optional).
+
+### `campaign_faction_reviewer`
+
+Evaluate an existing faction document against Faction Builder's own quality bar —
+identity coherence, leadership distinctiveness, goal/method consistency, membership
+and weakness quality, the relationship table, player interaction points, and hook
+quality — with a ranked, actionable critique.
+
+**Arguments:** `faction_document` (required). `other_factions`, `world_details`
+(optional).
+
+### `campaign_module_builder`
+
+Design a complete adventure module — Acts, Chapters, and fully scripted Scenes (quest
+log, beats, DM context, read-aloud text, DM-only notes, encounter integration,
+treasure, transitions), supporting NPCs, and a full villain-depth antagonist
+(backstory, worldview, a plan mapped to the module's acts, escalation beats,
+lieutenants, and a complete stat block), plus encounter balance and rewards summaries.
+
+**Arguments:** `campaign_setting`, `party_level`, `party_size`, `module_length`,
+`tone` (all required). `module_title`, `world_details`, `primary_villain`,
+`hook_preference`, `pc_connections` (optional).
+
+### `campaign_module_reviewer`
+
+Audit an existing adventure module against the same design bar — hook quality,
+three-pillar coverage, encounter quality, pacing, NPC/villain presence, encounter
+balance, and railroading risk — with a ranked critique. If no primary villain is
+identifiable in the module, it offers to build one and, given villain details,
+appends a full Villain section mapped to the module's existing acts.
+
+**Arguments:** `module_document` (required). `party_level`, `party_size`,
+`world_details` (optional).
+
 ## Trying these out
 
 Use the **Testing Playground**'s Prompts tab to run any of these from your

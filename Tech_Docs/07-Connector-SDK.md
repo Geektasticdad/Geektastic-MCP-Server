@@ -121,6 +121,13 @@ pattern: it fetches the lightweight module outline, the *single* most recent
 session log, and only the next 1-2 sections still needed — never the whole
 remaining module.
 
+The Campaign Builder prompts (`src/geektastic/campaign/`, see below) are a
+deliberate exception worth calling out explicitly: their response text is large
+(each embeds a full instructional template verbatim) but **fixed**, not
+data-driven — the same size every call regardless of world size or history
+length. That's a different kind of "bounded" than the data-fetching prompts
+above, not a violation of this rule.
+
 ## The Geektastic Realms connector
 
 `id: "geektastic-realms"`. Talks to Geektastic Realms' `/api/v1/*`
@@ -297,3 +304,36 @@ error is the correct way to signal failure; `mcp/server.ts`'s prompt wrapper
 logs it to `PromptCallLog` and then rethrows, letting the SDK surface a
 JSON-RPC error to the client rather than a "successful" prompt with an error
 baked into its text.
+
+## Campaign Builder prompts (`src/geektastic/campaign/`)
+
+Six more prompts, converted from the `dm-campaign-builder` Claude Code skill's
+six modes (`D:\github\dm-toolkit\dm-campaign-builder\SKILL.md`) — see
+`ROADMAP.md` Phase 8 "Campaign Builder prompts". `getCampaignBuilderPrompts():
+PromptDefinition[]` (`campaign/index.ts`) is spread into
+`geektasticRealmsConnector.getPrompts` alongside `getGeektasticPrompts()` in
+`geektastic/index.ts`, rather than living on a new connector — these prompts
+never call `GeektasticRealmsClient` at all, but the current architecture has
+no connector-less prompt path, and bundling them here means using them needs
+no extra field-less "connection" in the dashboard.
+
+One file per mode, each exporting a single `PromptDefinition`; a shared
+`helpers.ts` provides `requireArg`/`optionalArg`/`renderInputs`/`userMessage`
+(small local re-implementations of the same-shaped helpers in `../prompts.ts`,
+which doesn't export them). Every handler's message is built the same way:
+a `# User-Supplied Inputs` block from whichever arguments were actually given
+(blank optional ones are omitted, matching the source skill's own "optional
+fields never block progress" rule), followed by that mode's entire generation
+or review specification transcribed verbatim from `SKILL.md` — no summarizing.
+The three Builder modes additionally append a `Campaign World Integration`
+block, but only when a world-details argument was supplied, mirroring the
+skill's own conditional-activation logic.
+
+| Prompt | Arguments | What the handler fetches |
+|---|---|---|
+| `campaign_arc_builder` | `campaign_setting`, `party_level_range`, `session_count`, `tone` (required); `world_details`, `central_conflict`, `pc_hooks` (optional) | Nothing — static instructional template, argument values interpolated in. |
+| `campaign_arc_reviewer` | `arc_document` (required); `party_level_range`, `session_count`, `world_details` (optional) | Nothing. |
+| `campaign_faction_builder` | `faction_type`, `power_level`, `location`, `relationship_to_players` (required); `faction_name`, `existing_factions`, `world_details` (optional) | Nothing. `world_details` isn't in the source skill's own input table for this mode, but its Campaign World Integration section clearly expects one — added here so that section has something to trigger on, consistent with the other two Builder modes. |
+| `campaign_faction_reviewer` | `faction_document` (required); `other_factions`, `world_details` (optional) | Nothing. |
+| `campaign_module_builder` | `campaign_setting`, `party_level`, `party_size`, `module_length`, `tone` (required); `module_title`, `world_details`, `primary_villain`, `hook_preference`, `pc_connections` (optional) | Nothing. |
+| `campaign_module_reviewer` | `module_document` (required); `party_level`, `party_size`, `world_details` (optional) | Nothing. Includes the source skill's villain-offer workflow verbatim (offers to build a villain if none is identifiable in the supplied module, referencing `campaign_module_builder`'s own Villain section format). |

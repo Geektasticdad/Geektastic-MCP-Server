@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.5.0] - 2026-07-29
+
+### Added
+- **Campaign Builder prompts (Phase 8).** Six new MCP prompts converting the
+  `dm-campaign-builder` Claude Code skill's six modes into standalone,
+  argument-driven prompts usable from any MCP client, not just Claude Code:
+  `campaign_arc_builder`, `campaign_arc_reviewer`, `campaign_faction_builder`,
+  `campaign_faction_reviewer`, `campaign_module_builder`,
+  `campaign_module_reviewer`. Unlike the four existing prompts
+  (`gr_session_prep` etc.), these read no live Geektastic Realms data — each
+  is a static instructional template (transcribed verbatim from that skill's
+  SKILL.md) plus the caller's argument values interpolated in, bundled onto
+  the existing `geektastic-realms` connector (`src/geektastic/campaign/`)
+  rather than a new connector, so using them needs no extra field-less
+  "connection" in the dashboard. `campaign_module_reviewer` includes the
+  source skill's villain-offer workflow verbatim. See
+  [Docs/08-GR-Prompts-Reference.md](Docs/08-GR-Prompts-Reference.md) and
+  [Tech_Docs/07-Connector-SDK.md](Tech_Docs/07-Connector-SDK.md).
+
 ## [1.4.5] - 2026-07-29
 
 ### Added
