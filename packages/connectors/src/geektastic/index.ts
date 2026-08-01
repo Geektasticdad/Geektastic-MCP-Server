@@ -594,6 +594,22 @@ const tools: ToolDefinition[] = [
     },
   },
   {
+    name: "gr_list_categories",
+    description:
+      "List this world's entry categories (NPCs, Factions, Locations, etc.), each with its full custom field " +
+      "schema — key, label, type, required, writable, options (select/multiselect), reference_category_id " +
+      "(reference). Call this before gr_create_entry/gr_update_entry to know which category_id and " +
+      "custom_fields keys are valid.",
+    inputSchema: z.object({}),
+    async handler(_input, cfg) {
+      try {
+        return toResult(await client(cfg).listCategories());
+      } catch (err) {
+        return toErrorResult(err);
+      }
+    },
+  },
+  {
     name: "gr_search_entries",
     description:
       "Search this world's lore entries (any category — NPCs, locations, items, etc.) by title, or " +

@@ -57,6 +57,33 @@ export interface GrEntrySummary {
   category_id: number;
 }
 
+export interface GrCategoryField {
+  key: string;
+  label: string;
+  type: string;
+  help_text: string | null;
+  required: boolean;
+  /** false for image/gallery/map — file-upload fields with no JSON equivalent in entry.custom_fields. */
+  writable: boolean;
+  /** Flat choice list for select/multiselect; null for every other type. */
+  options: string[] | null;
+  /** The category a "reference" field points to; null for every other type. */
+  reference_category_id: number | null;
+  default_value: unknown;
+}
+
+export interface GrCategory {
+  category_id: number;
+  name: string;
+  slug: string;
+  singular_label: string | null;
+  plural_label: string | null;
+  icon: string | null;
+  color: string | null;
+  supports_stat_block: boolean;
+  fields: GrCategoryField[];
+}
+
 export interface GrEntryDetail {
   ok: true;
   entry_id: number;
@@ -440,6 +467,10 @@ export class GeektasticRealmsClient {
 
   getCampaign(id: number): Promise<{ ok: true; campaign: GrCampaignSummary }> {
     return this.request(`/campaigns/${id}`);
+  }
+
+  listCategories(): Promise<{ ok: true; categories: GrCategory[] }> {
+    return this.request("/categories");
   }
 
   searchEntries(categoryId?: number, query?: string): Promise<{ ok: true; entries: GrEntrySummary[] }> {

@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.5.1] - 2026-07-31
+
+### Added
+- **`gr_list_categories`** — lists a world's entry categories (NPCs, Factions,
+  Locations, etc.) with each one's full custom field schema: key, label,
+  type, required, `writable` (false for image/gallery/map — file-upload
+  fields with no JSON equivalent in `custom_fields`), `options`
+  (select/multiselect), and `reference_category_id` (reference). Gives the
+  model the schema it needs before calling `gr_create_entry`/`gr_update_entry`
+  without already knowing a world's category setup. Built against a new
+  `GET /api/v1/categories` on the Geektastic Realms side (`entries` scope,
+  same as the existing entry tools). See
+  [Docs/05-GR-Tools-Reference.md](Docs/05-GR-Tools-Reference.md).
+
 ## [1.5.0] - 2026-07-29
 
 ### Added

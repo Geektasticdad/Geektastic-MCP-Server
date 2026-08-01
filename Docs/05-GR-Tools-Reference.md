@@ -84,6 +84,7 @@ differ per category.
 
 | Tool | What it does |
 |---|---|
+| `gr_list_categories` | List every category in the world with its full custom field schema — key, label, type, required, writable, options (select/multiselect), reference_category_id (reference). Call this first to know which `category_id` and `custom_fields` keys are valid. |
 | `gr_search_entries` | Search entries by title, optionally scoped to one category. Omit the query to list a whole category. |
 | `gr_get_entry` | Fetch one entry in full (including its `custom_fields` and `tags`), by id. |
 | `gr_create_entry` | Create a new entry in a given category. |
@@ -93,7 +94,8 @@ An entry has a title, summary, body (HTML), status (draft/published/archived),
 visibility (private/members/public), an optional parent entry, tags, and the
 category-specific `custom_fields` object — keyed by each field's stable name,
 not a numeric id. Image, gallery, and map fields can't be set through this API
-(they're read-only here).
+(they're read-only here) — `gr_list_categories`' `writable: false` flags these
+ahead of time.
 
 ## Adventure modules
 

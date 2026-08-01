@@ -136,6 +136,8 @@ Concrete tools, implemented in `packages/connectors/src/geektastic/index.ts` and
 `client.ts` against the real `gr-statblock-v1`/`gr-entry-v1`/`gr-module-v1` formats:
 - `gr_search_statblocks` / `gr_get_statblock` / `gr_create_statblock` / `gr_update_statblock`
 - `gr_list_campaigns` / `gr_get_campaign`
+- `gr_list_categories` — a world's entry categories with their full custom
+  field schema (key/label/type/required/writable/options/reference_category_id)
 - `gr_search_entries` / `gr_get_entry` / `gr_create_entry` / `gr_update_entry` — any
   category's lore entries, with a category-specific `custom_fields` bag
 - `gr_list_modules` / `gr_get_module` (lightweight outline — no body text) /

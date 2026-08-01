@@ -54,7 +54,7 @@ export interface McpAuthContext {
  * so that toggling a tool or connection in the Web UI takes effect immediately.
  */
 export async function buildMcpServer(auth: McpAuthContext): Promise<McpServer> {
-  const server = new McpServer({ name: "geektastic-mcp-server", version: "1.5.0" });
+  const server = new McpServer({ name: "geektastic-mcp-server", version: "1.5.1" });
 
   const connections = await loadActiveConnections();
   for (const tool of aggregateTools(connections)) {
