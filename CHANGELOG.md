@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.5.2] - 2026-08-02
+
+### Added
+- **`gr_get_campaign` now returns a campaign's module list and rollup stats**
+  (Roadmap 3.7 Phase D) — `modules` (id/title/slug/status) and `stats`
+  (`sections_total`/`sections_done`/`sections_in_progress`, `session_count`,
+  `last_played_on`), aggregated across every adventure in the campaign.
+  `gr_create_campaign`/`gr_update_campaign` return the same richer shape;
+  `gr_list_campaigns` stays lightweight.
+- **`gr_list_quest_items`/`gr_get_quest_item`/`gr_create_quest_item`/
+  `gr_update_quest_item`/`gr_delete_quest_item` all gained an optional
+  `campaign_id`**, alongside the existing `module_id` (now also optional) —
+  pass whichever scope the item belongs to. Lets a quest/secret live on a
+  whole campaign instead of one adventure, for threads that span multiple
+  modules (a season-long villain arc). Matches the precedent
+  `gr_create_roll_table` already set for optional `module_id` (module-scoped
+  vs. world-level), rather than adding a parallel set of campaign-only tools.
+  A campaign-scoped item never has a `section_id`. Built against new GR-side
+  endpoints under `/api/v1/campaigns/{id}/quest-items` — the existing
+  module-scoped endpoints and this package's own module-scoped call sites are
+  completely unchanged.
+
 ## [1.5.1] - 2026-07-31
 
 ### Added

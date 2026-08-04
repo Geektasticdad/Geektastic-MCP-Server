@@ -135,7 +135,9 @@ automatically.
 Concrete tools, implemented in `packages/connectors/src/geektastic/index.ts` and
 `client.ts` against the real `gr-statblock-v1`/`gr-entry-v1`/`gr-module-v1` formats:
 - `gr_search_statblocks` / `gr_get_statblock` / `gr_create_statblock` / `gr_update_statblock`
-- `gr_list_campaigns` / `gr_get_campaign`
+- `gr_list_campaigns` / `gr_get_campaign` — the latter includes a campaign's
+  module list and rollup stats (section progress, session count, last-played
+  date; Roadmap 3.7 Phase D, GR v2.13.0/MCP v1.5.2)
 - `gr_list_categories` — a world's entry categories with their full custom
   field schema (key/label/type/required/writable/options/reference_category_id)
 - `gr_search_entries` / `gr_get_entry` / `gr_create_entry` / `gr_update_entry` — any

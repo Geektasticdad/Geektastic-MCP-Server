@@ -438,14 +438,25 @@ const questItemSchema = z.object({
   title: z.string().min(1).describe("Short label shown wherever this item is listed."),
   text: z.string().nullable().optional().describe("Rich text — the full description, shown when the item is opened."),
   entry_id: z.number().int().nullable().optional().describe("Optional linked article — must be an entry in this world (no stat block required)."),
-  section_id: z.number().int().nullable().optional().describe("Optional linked section — must belong to this module."),
+  section_id: z
+    .number()
+    .int()
+    .nullable()
+    .optional()
+    .describe(
+      "Optional linked section — must belong to this module. Ignored for a campaign-scoped item " +
+        "(Roadmap 3.7 Phase B) — a section belongs to one module, meaningless at campaign scope."
+    ),
   status: z.enum(["unrevealed", "revealed", "resolved"]).optional().describe("Defaults to unrevealed."),
   revealed_session_id: z
     .number()
     .int()
     .nullable()
     .optional()
-    .describe("Optional — which session log revealed this item. Must belong to this module."),
+    .describe(
+      "Optional — which session log revealed this item. For a module-scoped item, must belong to that " +
+        "module; for a campaign-scoped item, must belong to a session in any of that campaign's adventures."
+    ),
 });
 
 const eraSchema = z.object({
@@ -582,7 +593,10 @@ const tools: ToolDefinition[] = [
   },
   {
     name: "gr_get_campaign",
-    description: "Fetch a single Geektastic Realms campaign by id.",
+    description:
+      "Fetch a single Geektastic Realms campaign by id — includes its module list and rollup stats " +
+      "(Roadmap 3.7 Phase D): section-completion progress, session count, and the most recently played " +
+      "session's date, aggregated across every adventure in the campaign.",
     inputSchema: z.object({ id: z.coerce.number().int() }),
     async handler(input, cfg) {
       const { id } = z.object({ id: z.coerce.number().int() }).parse(input);
@@ -1221,13 +1235,23 @@ const tools: ToolDefinition[] = [
   {
     name: "gr_list_quest_items",
     description:
-      "List every quest/secret item tracked for a module's Quest Log (Roadmap 3.3) — lightweight, no " +
-      "`text` body. Use gr_get_quest_item to read one item's full rich-text description.",
-    inputSchema: z.object({ module_id: z.coerce.number().int() }),
+      "List every quest/secret item tracked for a module's Quest Log (Roadmap 3.3), or for a campaign's " +
+      "cross-module threads instead (Roadmap 3.7 Phase B) — pass module_id for the former, campaign_id " +
+      "for the latter. Lightweight, no `text` body. Use gr_get_quest_item to read one item's full " +
+      "rich-text description.",
+    inputSchema: z.object({ module_id: z.coerce.number().int().optional(), campaign_id: z.coerce.number().int().optional() }),
     async handler(input, cfg) {
-      const { module_id } = z.object({ module_id: z.coerce.number().int() }).parse(input);
+      const { module_id, campaign_id } = z
+        .object({ module_id: z.coerce.number().int().optional(), campaign_id: z.coerce.number().int().optional() })
+        .parse(input);
       try {
-        return toResult(await client(cfg).listQuestItems(module_id));
+        if (module_id !== undefined) {
+          return toResult(await client(cfg).listQuestItems(module_id));
+        }
+        if (campaign_id !== undefined) {
+          return toResult(await client(cfg).listCampaignQuestItems(campaign_id));
+        }
+        throw new Error("Provide either module_id or campaign_id.");
       } catch (err) {
         return toErrorResult(err);
       }
@@ -1237,14 +1261,30 @@ const tools: ToolDefinition[] = [
     name: "gr_get_quest_item",
     description:
       "Fetch one quest/secret item's full detail — kind, title, rich-text description, status, and any " +
-      "linked article/section/revealing session (with resolved titles).",
-    inputSchema: z.object({ module_id: z.coerce.number().int(), quest_item_id: z.coerce.number().int() }),
+      "linked article/section/revealing session (with resolved titles). Pass module_id for a module-scoped " +
+      "item or campaign_id for a campaign-scoped one (Roadmap 3.7 Phase B) — whichever scope the item " +
+      "actually belongs to.",
+    inputSchema: z.object({
+      module_id: z.coerce.number().int().optional(),
+      campaign_id: z.coerce.number().int().optional(),
+      quest_item_id: z.coerce.number().int(),
+    }),
     async handler(input, cfg) {
-      const { module_id, quest_item_id } = z
-        .object({ module_id: z.coerce.number().int(), quest_item_id: z.coerce.number().int() })
+      const { module_id, campaign_id, quest_item_id } = z
+        .object({
+          module_id: z.coerce.number().int().optional(),
+          campaign_id: z.coerce.number().int().optional(),
+          quest_item_id: z.coerce.number().int(),
+        })
         .parse(input);
       try {
-        return toResult(await client(cfg).getQuestItem(module_id, quest_item_id));
+        if (module_id !== undefined) {
+          return toResult(await client(cfg).getQuestItem(module_id, quest_item_id));
+        }
+        if (campaign_id !== undefined) {
+          return toResult(await client(cfg).getCampaignQuestItem(campaign_id, quest_item_id));
+        }
+        throw new Error("Provide either module_id or campaign_id.");
       } catch (err) {
         return toErrorResult(err);
       }
@@ -1253,15 +1293,30 @@ const tools: ToolDefinition[] = [
   {
     name: "gr_create_quest_item",
     description:
-      "Add a quest or secret/clue to a module's Quest Log — a short index card for something the party " +
-      "might learn or pursue in any order, not tied to play sequence.",
-    inputSchema: z.object({ module_id: z.coerce.number().int(), quest_item: questItemSchema }),
+      "Add a quest or secret/clue to a module's Quest Log, or to a campaign's cross-module threads instead " +
+      "(Roadmap 3.7 Phase B) — pass module_id for the former, campaign_id for the latter. A short index " +
+      "card for something the party might learn or pursue in any order, not tied to play sequence.",
+    inputSchema: z.object({
+      module_id: z.coerce.number().int().optional(),
+      campaign_id: z.coerce.number().int().optional(),
+      quest_item: questItemSchema,
+    }),
     async handler(input, cfg) {
-      const { module_id, quest_item } = z
-        .object({ module_id: z.coerce.number().int(), quest_item: questItemSchema })
+      const { module_id, campaign_id, quest_item } = z
+        .object({
+          module_id: z.coerce.number().int().optional(),
+          campaign_id: z.coerce.number().int().optional(),
+          quest_item: questItemSchema,
+        })
         .parse(input);
       try {
-        return toResult(await client(cfg).createQuestItem(module_id, quest_item));
+        if (module_id !== undefined) {
+          return toResult(await client(cfg).createQuestItem(module_id, quest_item));
+        }
+        if (campaign_id !== undefined) {
+          return toResult(await client(cfg).createCampaignQuestItem(campaign_id, quest_item));
+        }
+        throw new Error("Provide either module_id or campaign_id.");
       } catch (err) {
         return toErrorResult(err);
       }
@@ -1271,22 +1326,31 @@ const tools: ToolDefinition[] = [
     name: "gr_update_quest_item",
     description:
       "Update an existing quest/secret item by id — every field optional, only what's sent changes. " +
-      "Commonly used to advance status (unrevealed → revealed → resolved) as the party learns or resolves it.",
+      "Commonly used to advance status (unrevealed → revealed → resolved) as the party learns or resolves " +
+      "it. Pass module_id or campaign_id (Roadmap 3.7 Phase B) matching whichever scope the item belongs to.",
     inputSchema: z.object({
-      module_id: z.coerce.number().int(),
+      module_id: z.coerce.number().int().optional(),
+      campaign_id: z.coerce.number().int().optional(),
       quest_item_id: z.coerce.number().int(),
       quest_item: questItemSchema,
     }),
     async handler(input, cfg) {
-      const { module_id, quest_item_id, quest_item } = z
+      const { module_id, campaign_id, quest_item_id, quest_item } = z
         .object({
-          module_id: z.coerce.number().int(),
+          module_id: z.coerce.number().int().optional(),
+          campaign_id: z.coerce.number().int().optional(),
           quest_item_id: z.coerce.number().int(),
           quest_item: questItemSchema,
         })
         .parse(input);
       try {
-        return toResult(await client(cfg).updateQuestItem(module_id, quest_item_id, quest_item));
+        if (module_id !== undefined) {
+          return toResult(await client(cfg).updateQuestItem(module_id, quest_item_id, quest_item));
+        }
+        if (campaign_id !== undefined) {
+          return toResult(await client(cfg).updateCampaignQuestItem(campaign_id, quest_item_id, quest_item));
+        }
+        throw new Error("Provide either module_id or campaign_id.");
       } catch (err) {
         return toErrorResult(err);
       }
@@ -1294,14 +1358,30 @@ const tools: ToolDefinition[] = [
   },
   {
     name: "gr_delete_quest_item",
-    description: "Permanently delete a quest/secret item from the Quest Log. There is no undo.",
-    inputSchema: z.object({ module_id: z.coerce.number().int(), quest_item_id: z.coerce.number().int() }),
+    description:
+      "Permanently delete a quest/secret item from the Quest Log (module_id) or a campaign's cross-module " +
+      "threads (campaign_id, Roadmap 3.7 Phase B). There is no undo.",
+    inputSchema: z.object({
+      module_id: z.coerce.number().int().optional(),
+      campaign_id: z.coerce.number().int().optional(),
+      quest_item_id: z.coerce.number().int(),
+    }),
     async handler(input, cfg) {
-      const { module_id, quest_item_id } = z
-        .object({ module_id: z.coerce.number().int(), quest_item_id: z.coerce.number().int() })
+      const { module_id, campaign_id, quest_item_id } = z
+        .object({
+          module_id: z.coerce.number().int().optional(),
+          campaign_id: z.coerce.number().int().optional(),
+          quest_item_id: z.coerce.number().int(),
+        })
         .parse(input);
       try {
-        return toResult(await client(cfg).deleteQuestItem(module_id, quest_item_id));
+        if (module_id !== undefined) {
+          return toResult(await client(cfg).deleteQuestItem(module_id, quest_item_id));
+        }
+        if (campaign_id !== undefined) {
+          return toResult(await client(cfg).deleteCampaignQuestItem(campaign_id, quest_item_id));
+        }
+        throw new Error("Provide either module_id or campaign_id.");
       } catch (err) {
         return toErrorResult(err);
       }

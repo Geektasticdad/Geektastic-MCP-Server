@@ -67,13 +67,21 @@ A campaign is a named arc grouping several adventure modules together.
 
 | Tool | What it does |
 |---|---|
-| `gr_list_campaigns` | List every campaign in the world. |
-| `gr_get_campaign` | Fetch one campaign by id. |
+| `gr_list_campaigns` | List every campaign in the world (lightweight — no module list or stats). |
+| `gr_get_campaign` | Fetch one campaign by id, including its module list and rollup stats. |
 | `gr_create_campaign` | Create a new campaign (title, summary, description, status). |
 | `gr_update_campaign` | Update an existing campaign by id. |
 
 A campaign's cover image is web-editor-only — there's no tool to set it (same
 treatment as an entry's image/gallery/map custom fields).
+
+`gr_get_campaign` (and the `campaign` object `gr_create_campaign`/
+`gr_update_campaign` return) includes `modules` — that campaign's adventures
+(id/title/slug/status) — and `stats`: `sections_total`/`sections_done`/
+`sections_in_progress` (section-completion progress across every adventure in
+the campaign), `session_count`, and `last_played_on` (the most recently
+played session's date across the whole campaign, or `null` if none logged
+yet).
 
 ## Lore entries (any category)
 
@@ -221,11 +229,20 @@ pursue in *any* order, not tied to play sequence (**quests** and
 
 | Tool | What it does |
 |---|---|
-| `gr_list_quest_items` | List every quest/secret item tracked for a module (lightweight — kind, title, status, linked ids, no rich-text body). |
+| `gr_list_quest_items` | List every quest/secret item tracked for a module or a campaign (lightweight — kind, title, status, linked ids, no rich-text body). |
 | `gr_get_quest_item` | Fetch one item's full detail: rich-text description, status, and any linked article/section/revealing session (with resolved titles). |
-| `gr_create_quest_item` | Add a quest or secret/clue to a module's Quest Log. |
+| `gr_create_quest_item` | Add a quest or secret/clue to a module's Quest Log, or to a campaign's cross-module threads. |
 | `gr_update_quest_item` | Update an existing item by id — every field optional. Commonly used to advance `status` (`unrevealed` → `revealed` → `resolved`) as the party learns or resolves it. |
 | `gr_delete_quest_item` | Permanently delete a quest/secret item. No undo. |
+
+All five tools take **either** `module_id` **or** `campaign_id`, never both —
+whichever scope the item belongs to. A quest/secret can live on one specific
+adventure (the original Roadmap 3.3 behavior), or on a whole campaign for
+threads that span more than one adventure (a season-long villain arc,
+Roadmap 3.7 Phase B) — a campaign-scoped item never has a `section_id` (a
+section belongs to one adventure, meaningless at campaign scope), and its
+`revealed_session_id` can reference a session from *any* of the campaign's
+adventures rather than one specific one.
 
 A quest item has a `kind` (`quest` or `secret`, defaults to `quest`), a short
 **title** (the label shown wherever it's listed), a rich-text **text**

@@ -51,6 +51,22 @@ export interface GrCampaignSummary {
   status: string;
 }
 
+/**
+ * getCampaign()/createCampaign()/updateCampaign() return this richer shape
+ * (Roadmap 3.7 Phase D) — listCampaigns() stays GrCampaignSummary, matching
+ * GR's own lightweight-list/full-detail split for /api/v1/campaigns.
+ */
+export interface GrCampaignDetail extends GrCampaignSummary {
+  modules: Array<{ id: number; title: string; slug: string; status: string }>;
+  stats: {
+    sections_total: number;
+    sections_done: number;
+    sections_in_progress: number;
+    session_count: number;
+    last_played_on: string | null;
+  };
+}
+
 export interface GrEntrySummary {
   entry_id: number;
   title: string;
@@ -312,14 +328,19 @@ export interface GrSessionDetail {
   session: GrSession;
 }
 
-/** Lightweight — no `text` body. See GrQuestItem for full detail. */
+/**
+ * Lightweight — no `text` body. See GrQuestItem for full detail. `section_id`
+ * is only ever present for a module-scoped item — a campaign-scoped item
+ * (Roadmap 3.7 Phase B) never carries one, since a section belongs to one
+ * module, meaningless at campaign scope.
+ */
 export interface GrQuestItemSummary {
   id: number;
   kind: "quest" | "secret";
   title: string;
   status: "unrevealed" | "revealed" | "resolved";
   entry_id: number | null;
-  section_id: number | null;
+  section_id?: number | null;
   revealed_session_id: number | null;
 }
 
@@ -332,15 +353,19 @@ export interface GrQuestItem {
   status: "unrevealed" | "revealed" | "resolved";
   entry_id: number | null;
   entry_title: string | null;
-  section_id: number | null;
-  section_title: string | null;
+  section_id?: number | null;
+  section_title?: string | null;
   revealed_session_id: number | null;
   session_title: string | null;
+  /** Campaign-scoped items only — which of the campaign's adventures the revealing session belongs to. */
+  session_module_title?: string | null;
 }
 
+/** Exactly one of module_id/campaign_id is present, matching which scope the item belongs to. */
 export interface GrQuestItemDetail {
   ok: true;
-  module_id: number;
+  module_id?: number;
+  campaign_id?: number;
   quest_item_id: number;
   quest_item: GrQuestItem;
 }
@@ -465,7 +490,7 @@ export class GeektasticRealmsClient {
     return this.request("/campaigns");
   }
 
-  getCampaign(id: number): Promise<{ ok: true; campaign: GrCampaignSummary }> {
+  getCampaign(id: number): Promise<{ ok: true; campaign: GrCampaignDetail }> {
     return this.request(`/campaigns/${id}`);
   }
 
@@ -604,14 +629,14 @@ export class GeektasticRealmsClient {
     return this.request(`/modules/${moduleId}/handouts/${handoutId}`);
   }
 
-  createCampaign(campaign: Record<string, unknown>): Promise<{ ok: true; campaign_id: number; campaign: GrCampaignSummary }> {
+  createCampaign(campaign: Record<string, unknown>): Promise<{ ok: true; campaign_id: number; campaign: GrCampaignDetail }> {
     return this.request("/campaigns", { method: "POST", body: JSON.stringify({ campaign }) });
   }
 
   updateCampaign(
     id: number,
     campaign: Record<string, unknown>
-  ): Promise<{ ok: true; campaign_id: number; campaign: GrCampaignSummary }> {
+  ): Promise<{ ok: true; campaign_id: number; campaign: GrCampaignDetail }> {
     return this.request(`/campaigns/${id}`, { method: "PATCH", body: JSON.stringify({ campaign }) });
   }
 
@@ -711,6 +736,41 @@ export class GeektasticRealmsClient {
 
   deleteQuestItem(moduleId: number, questItemId: number): Promise<GrOkResponse> {
     return this.request(`/modules/${moduleId}/quest-items/${questItemId}`, { method: "DELETE" });
+  }
+
+  /**
+   * Campaign-scoped quest/secret items (Roadmap 3.7 Phase B) — threads that
+   * span more than one adventure in a campaign. Mirrors the module-scoped
+   * methods above exactly; the only difference is the URL prefix.
+   */
+  listCampaignQuestItems(campaignId: number): Promise<{ ok: true; campaign_id: number; quest_items: GrQuestItemSummary[] }> {
+    return this.request(`/campaigns/${campaignId}/quest-items`);
+  }
+
+  getCampaignQuestItem(campaignId: number, questItemId: number): Promise<GrQuestItemDetail> {
+    return this.request(`/campaigns/${campaignId}/quest-items/${questItemId}`);
+  }
+
+  createCampaignQuestItem(campaignId: number, questItem: Record<string, unknown>): Promise<GrQuestItemDetail> {
+    return this.request(`/campaigns/${campaignId}/quest-items`, {
+      method: "POST",
+      body: JSON.stringify({ quest_item: questItem }),
+    });
+  }
+
+  updateCampaignQuestItem(
+    campaignId: number,
+    questItemId: number,
+    questItem: Record<string, unknown>
+  ): Promise<GrQuestItemDetail> {
+    return this.request(`/campaigns/${campaignId}/quest-items/${questItemId}`, {
+      method: "PATCH",
+      body: JSON.stringify({ quest_item: questItem }),
+    });
+  }
+
+  deleteCampaignQuestItem(campaignId: number, questItemId: number): Promise<GrOkResponse> {
+    return this.request(`/campaigns/${campaignId}/quest-items/${questItemId}`, { method: "DELETE" });
   }
 
   /** The world's current in-world date (Roadmap 3.6) — a pointer, not a log entry. */
