@@ -25,6 +25,11 @@ instead.
    tool does, in plain language.
 8. [Geektastic Realms Prompts Reference](08-GR-Prompts-Reference.md) — the
    reusable session-prep/recap/statblock/encounter-building prompts.
+9. [Geektastic Realms Rich-Text Formatting](09-GR-Rich-Text-Formatting.md) —
+   the HTML conventions section/handout/entry/etc. bodies support: headings,
+   lists, tables, styled callout blocks (read-aloud, DM note, boxed text,
+   DM secret, and more), and embedded encounter/handout/roll-table/quest
+   reference cards.
 
 ## What this server does, in one paragraph
 

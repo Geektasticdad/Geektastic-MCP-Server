@@ -122,6 +122,11 @@ and **handouts**.
 | `gr_create_section` | Create an Act, Chapter, Scene, or Appendix inside a module. If it has a parent (e.g. a Chapter inside an Act), pass the parent's section id. |
 | `gr_update_section` | Update an existing section's type/title/body/parent by id. |
 
+A section's `body_html` supports the full block-editor formatting
+convention — read-aloud/DM-note/boxed-text/DM-secret callout blocks, plus
+embedded encounter/handout/roll-table/quest reference cards. See
+[Rich-Text Formatting](09-GR-Rich-Text-Formatting.md) for the exact HTML.
+
 ### Related articles
 
 Pull an existing lore entry (an NPC, a location, an item — anything found via

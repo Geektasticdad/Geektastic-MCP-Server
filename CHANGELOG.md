@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.5.3] - 2026-08-02
+
+### Added
+- **Documented Geektastic Realms' rich-text formatting convention** — every
+  `body_html`/`text`-shaped field's Zod schema now `.describe()`s what HTML
+  it actually supports: standard tags, six GR-specific styled callout blocks
+  (read-aloud, DM note, encounter block, treasure, boxed text, DM secret —
+  all just `<div class="...">` wrappers the sanitizer's allow-list already
+  preserves), and, for a section's own `body_html` only, four
+  reference-embed blocks that expand into live encounter/handout/roll-table/
+  quest cards. None of this was new capability — GR's HTML sanitizer has
+  always preserved this exact markup, since it's the same HTML the web
+  app's own block editor produces — it just wasn't documented anywhere an
+  MCP client could discover it. New
+  [Docs/09-GR-Rich-Text-Formatting.md](Docs/09-GR-Rich-Text-Formatting.md)
+  is the full reference with examples; `gr_create_section`'s tool
+  description and `Docs/05-GR-Tools-Reference.md` both link to it.
+
 ## [1.5.2] - 2026-08-02
 
 ### Added

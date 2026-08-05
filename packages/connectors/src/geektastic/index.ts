@@ -271,11 +271,51 @@ const statblockSchema = z.object({
   items: z.array(itemSchema).optional().default([]),
 });
 
+/**
+ * Rich-text formatting reference shared across every body_html/text-shaped field
+ * below — GR sanitizes with an HTML allow-list (HTMLPurifier) that happens to
+ * preserve everything its own block editor's slash-command menu produces, so
+ * writing that exact markup here renders identically to a human using it. See
+ * Docs/09-GR-Rich-Text-Formatting.md for the full reference with examples.
+ */
+const RICH_TEXT_BASIC =
+  "Rich text (sanitized HTML). Standard tags render normally: <h1>-<h3>, <p>, " +
+  "<ul>/<ol>/<li>, <blockquote>, <table>/<thead>/<tbody>/<tr>/<th>/<td>, <hr>, " +
+  '<img src="..."> (must already be hosted elsewhere — this API has no upload ' +
+  "endpoint), <a>, <strong>/<em>/<u>/<s>. GR's block editor also has six styled " +
+  'callout blocks, usable as plain wrapper divs: <div class="read-aloud">...' +
+  "</div> (blue — text to read aloud to players), dm-note (purple — private DM " +
+  "reminder), encounter-block (red), treasure-block (gold — rewards/loot), " +
+  "boxed-text (neutral bordered box), and dm-secret (red — automatically hidden " +
+  "on every public-facing page, safe to always include). A checklist's checkbox " +
+  "state does not survive sanitization — use a plain bullet list instead.";
+
+/** RICH_TEXT_BASIC plus the four reference-embed blocks only a section's own body_html expands. */
+const RICH_TEXT_SECTION =
+  RICH_TEXT_BASIC +
+  " Sections additionally support four reference-embed blocks that expand into " +
+  'live cards when the section is read or run: <div class="encounter-ref ' +
+  'eid-{ID}">Name</div>, class="handout-ref hid-{ID}", class="roll-table-ref ' +
+  'rtid-{ID}", and class="quest-ref qid-{ID} qkind-quest" (or qkind-secret) — ' +
+  "{ID} must already exist in this same module (create it first with " +
+  "gr_create_encounter / gr_create_handout / gr_create_roll_table / " +
+  "gr_create_quest_item, then embed it by the id returned). These four only " +
+  "expand inside a section's own body_html — used anywhere else they render as " +
+  "inert text.";
+
+/** Shorter pointer for secondary rich-text fields — full reference lives on gr_create_section's body_html. */
+const RICH_TEXT_NOTE =
+  "Rich text (sanitized HTML) — also supports GR's six styled callout blocks " +
+  '(<div class="read-aloud">, dm-note, encounter-block, treasure-block, ' +
+  "boxed-text, dm-secret); see gr_create_section's body_html field for the full " +
+  "formatting reference. A checklist's checkbox state doesn't survive " +
+  "sanitization — use a plain bullet list instead.";
+
 /** gr-entry-v1 — custom_fields is a category-specific bag; Realms validates it server-side. */
 const entrySchema = z.object({
   title: z.string().min(1),
   summary: z.string().optional(),
-  body_html: z.string().optional(),
+  body_html: z.string().optional().describe(RICH_TEXT_BASIC),
   status: z.enum(["draft", "published", "archived"]).optional(),
   visibility: z.enum(["private", "members", "public"]).optional(),
   parent_id: z.number().int().nullable().optional(),
@@ -287,7 +327,7 @@ const entrySchema = z.object({
 const moduleSchema = z.object({
   title: z.string().min(1),
   summary: z.string().optional(),
-  overview: z.string().optional(),
+  overview: z.string().optional().describe(RICH_TEXT_BASIC),
   level_range: z.string().optional(),
   party_size: z.string().optional(),
   status: z.enum(["draft", "published", "archived"]).optional(),
@@ -298,13 +338,13 @@ const moduleSchema = z.object({
 const sectionSchema = z.object({
   type: z.enum(["act", "chapter", "scene", "appendix"]),
   title: z.string().min(1),
-  body_html: z.string().nullable().optional(),
+  body_html: z.string().nullable().optional().describe(RICH_TEXT_SECTION),
   parent_id: z.number().int().nullable().optional(),
 });
 
 const handoutSchema = z.object({
   title: z.string().min(1),
-  body_html: z.string().nullable().optional(),
+  body_html: z.string().nullable().optional().describe(RICH_TEXT_BASIC),
   section_id: z.number().int().nullable().optional(),
   media_id: z.number().int().nullable().optional(),
 });
@@ -337,10 +377,10 @@ const encounterSchema = z.object({
   name: z.string().min(1),
   encounter_type: z.enum(["combat", "social", "exploration", "puzzle", "trap", "other"]).optional(),
   difficulty: z.string().nullable().optional(),
-  setup: z.string().nullable().optional(),
-  tactics: z.string().nullable().optional(),
-  rewards: z.string().nullable().optional(),
-  notes: z.string().nullable().optional(),
+  setup: z.string().nullable().optional().describe(RICH_TEXT_NOTE),
+  tactics: z.string().nullable().optional().describe(RICH_TEXT_NOTE),
+  rewards: z.string().nullable().optional().describe(RICH_TEXT_NOTE),
+  notes: z.string().nullable().optional().describe(RICH_TEXT_NOTE),
   adversaries: z
     .array(encounterAdversaryInputSchema)
     .optional()
@@ -367,7 +407,7 @@ const rollTableRowSchema = z.object({
   range_end: z.coerce.number().int().optional().describe("Defaults to range_start if omitted."),
   title: z.string().nullable().optional(),
   type: z.array(z.enum(rollTableTypeOptions)).optional(),
-  description: z.string().nullable().optional(),
+  description: z.string().nullable().optional().describe(RICH_TEXT_NOTE),
   dm_note: z.string().nullable().optional().describe("DM-only — never shown on the public page."),
 });
 
@@ -417,10 +457,14 @@ const sessionLogSchema = z.object({
   year_in_epoch: z.coerce.number().int().nullable().optional().describe("Part of the optional in-world date stamp."),
   month_number: z.coerce.number().int().nullable().optional().describe("Part of the optional in-world date stamp."),
   day: z.coerce.number().int().nullable().optional().describe("Part of the optional in-world date stamp."),
-  summary: z.string().nullable().optional(),
-  notes: z.string().nullable().optional(),
-  next_session_prep: z.string().nullable().optional(),
-  player_recap: z.string().nullable().optional().describe('The "Last time on…" recap for the next session opening.'),
+  summary: z.string().nullable().optional().describe(RICH_TEXT_NOTE),
+  notes: z.string().nullable().optional().describe(RICH_TEXT_NOTE),
+  next_session_prep: z.string().nullable().optional().describe(RICH_TEXT_NOTE),
+  player_recap: z
+    .string()
+    .nullable()
+    .optional()
+    .describe('The "Last time on…" recap for the next session opening. ' + RICH_TEXT_NOTE),
   xp_awarded: z.coerce.number().int().min(0).nullable().optional(),
   gp_gained: z.coerce.number().min(0).nullable().optional(),
   loot_notes: z.string().nullable().optional(),
@@ -436,7 +480,11 @@ const sessionLogSchema = z.object({
 const questItemSchema = z.object({
   kind: z.enum(["quest", "secret"]).optional().describe("Defaults to quest."),
   title: z.string().min(1).describe("Short label shown wherever this item is listed."),
-  text: z.string().nullable().optional().describe("Rich text — the full description, shown when the item is opened."),
+  text: z
+    .string()
+    .nullable()
+    .optional()
+    .describe("The full description, shown when the item is opened. " + RICH_TEXT_NOTE),
   entry_id: z.number().int().nullable().optional().describe("Optional linked article — must be an entry in this world (no stat block required)."),
   section_id: z
     .number()
@@ -494,7 +542,7 @@ const historyEventSchema = z.object({
   year_in_epoch: z.coerce.number().int().nullable().optional(),
   month_number: z.coerce.number().int().nullable().optional(),
   day: z.coerce.number().int().nullable().optional(),
-  body_html: z.string().nullable().optional(),
+  body_html: z.string().nullable().optional().describe(RICH_TEXT_NOTE),
   dm_notes: z.string().nullable().optional().describe("DM-only — never shown publicly."),
   is_secret: z.boolean().optional().describe("Hides this event on all public-facing pages."),
 });
@@ -786,7 +834,10 @@ const tools: ToolDefinition[] = [
     name: "gr_create_section",
     description:
       "Create an Act, Chapter, Scene, or Appendix within a module. parent_id, if given, must be another " +
-      "section already in the same module (e.g. a Chapter's parent_id is its Act's section id).",
+      "section already in the same module (e.g. a Chapter's parent_id is its Act's section id). " +
+      "body_html supports GR's full rich-text formatting, including read-aloud/boxed-text/DM-secret " +
+      "callout blocks and embedded encounter/handout/roll-table/quest reference cards — see the " +
+      "body_html field's own description for the exact HTML convention.",
     inputSchema: z.object({ module_id: z.coerce.number().int(), section: sectionSchema }),
     async handler(input, cfg) {
       const { module_id, section } = z
