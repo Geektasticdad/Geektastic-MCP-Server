@@ -122,6 +122,15 @@ and **handouts**.
 | `gr_create_section` | Create an Act, Chapter, Scene, or Appendix inside a module. If it has a parent (e.g. a Chapter inside an Act), pass the parent's section id. |
 | `gr_update_section` | Update an existing section's type/title/body/parent by id. |
 
+**Hierarchy dependency:** a Chapter's `parent_id` must point at an Act, and a
+Scene's `parent_id` must point at a Chapter — GR rejects (`422`) a Chapter with
+no Act parent, or a Scene with no Chapter parent. Act and Appendix have no
+requirement of their own (both are normally top-level, `parent_id` omitted or
+`null`, but neither is enforced to be). `gr_update_section` checks this against
+the *final* type/parent combination, so changing just `type` against an
+already-set `parent_id` (or vice versa) is validated the same as changing both
+at once.
+
 A section's `body_html` supports the full block-editor formatting
 convention — read-aloud/DM-note/boxed-text/DM-secret callout blocks, plus
 embedded encounter/handout/roll-table/quest reference cards. See
@@ -204,6 +213,41 @@ library, not every table in the world.
 **Important:** sending `rows` on `gr_update_roll_table` **replaces the entire
 list**, the same as `adversaries` above — fetch the table first with
 `gr_get_roll_table` if you only want to add or edit one row.
+
+## Player Characters
+
+A world's roster of real player characters, imported from D&D Beyond's public
+character data — for tracking, quick stat reporting, and (once attached to a
+Campaign) feeding a real party roster into that Campaign's adventures'
+Encounter Difficulty Budget instead of a manually-typed level range/party
+size guess. World-scoped, like the roll table library above — no `module_id`
+involved at all.
+
+| Tool | What it does |
+|---|---|
+| `gr_list_player_characters` | List this world's imported roster (lightweight — name, player, class/level, Campaign attribution). |
+| `gr_get_player_character` | Fetch one character's full detail — ability scores, AC, HP, proficiency bonus, passive Perception, background, alignment, DM notes, D&D Beyond link. |
+| `gr_import_player_character` | Import a character by its D&D Beyond page URL or bare numeric ID (`source`). The character must be shared publicly on D&D Beyond. Re-importing an already-imported character updates it in place rather than creating a duplicate. |
+| `gr_update_player_character` | Update only the manual-override fields — `player_name`, `notes`, `campaign_id` — by id. |
+| `gr_refresh_player_character` | Re-fetch from D&D Beyond by id, overwriting every D&D-Beyond-sourced field (level, ability scores, AC, HP, ...) while always preserving `player_name`/`notes`/`campaign_id`. |
+| `gr_delete_player_character` | Remove a character from the roster by id (does not affect it on D&D Beyond). |
+
+**Important:** every field except `player_name`/`notes`/`campaign_id` comes
+from D&D Beyond and only ever changes via `gr_import_player_character` (first
+import) or `gr_refresh_player_character` (later) — `gr_update_player_character`
+rejects any other field. GR doesn't sync automatically; call
+`gr_refresh_player_character` after a player levels up or changes gear on
+D&D Beyond.
+
+**If GR's own server is blocked by D&D Beyond (HTTP 403):** D&D Beyond's
+Cloudflare bot protection can reject requests from GR's hosting regardless of
+headers sent — this is unrelated to the character's privacy setting. Both
+`gr_import_player_character` and `gr_refresh_player_character` accept an
+optional `raw_json` field for exactly this case: fetch
+`https://character-service.dndbeyond.com/character/v5/character/{id}`
+yourself (an MCP client's own fetch isn't blocked, only GR's server is) and
+pass the response body through as `raw_json` instead of letting GR fetch it.
+`source`/`player_character_id` are still required either way.
 
 ## Session logs
 

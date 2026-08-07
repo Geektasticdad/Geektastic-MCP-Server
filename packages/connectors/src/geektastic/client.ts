@@ -370,6 +370,57 @@ export interface GrQuestItemDetail {
   quest_item: GrQuestItem;
 }
 
+/** Lightweight — see GrPlayerCharacter for full detail. */
+export interface GrPlayerCharacterSummary {
+  id: number;
+  name: string;
+  player_name: string | null;
+  class_summary: string | null;
+  total_level: number;
+  campaign_id: number | null;
+  last_synced_at: string;
+}
+
+/**
+ * A Player Character imported from D&D Beyond (Roadmap 3.9) — world-scoped,
+ * with an optional campaign_id attribution. Everything except player_name/
+ * notes/campaign_id is D&D-Beyond-sourced and only changes via a refresh, not
+ * a direct field edit.
+ */
+export interface GrPlayerCharacter {
+  id: number;
+  ddb_character_id: number;
+  ddb_readonly_url: string | null;
+  portrait_media_id: number | null;
+  name: string;
+  player_name: string | null;
+  campaign_id: number | null;
+  race_name: string | null;
+  class_summary: string | null;
+  total_level: number;
+  score_str: number | null;
+  score_dex: number | null;
+  score_con: number | null;
+  score_int: number | null;
+  score_wis: number | null;
+  score_cha: number | null;
+  proficiency_bonus: number | null;
+  armor_class: number | null;
+  max_hit_points: number | null;
+  passive_perception: number | null;
+  alignment: string | null;
+  background_name: string | null;
+  /** Rich HTML, DM-editable — never overwritten by a refresh. */
+  notes: string;
+  last_synced_at: string;
+}
+
+export interface GrPlayerCharacterDetail {
+  ok: true;
+  player_character_id: number;
+  player_character: GrPlayerCharacter;
+}
+
 /** The world's current in-world date — a pointer, not a log entry. Null if unset or no calendar. */
 export interface GrCurrentDate {
   age_id: number | null;
@@ -771,6 +822,50 @@ export class GeektasticRealmsClient {
 
   deleteCampaignQuestItem(campaignId: number, questItemId: number): Promise<GrOkResponse> {
     return this.request(`/campaigns/${campaignId}/quest-items/${questItemId}`, { method: "DELETE" });
+  }
+
+  /**
+   * Player Characters imported from D&D Beyond (Roadmap 3.9) — world-scoped,
+   * no parent id in the URL (same shape as the roll table library above).
+   */
+  listPlayerCharacters(): Promise<{ ok: true; player_characters: GrPlayerCharacterSummary[] }> {
+    return this.request("/player-characters");
+  }
+
+  getPlayerCharacter(playerCharacterId: number): Promise<GrPlayerCharacterDetail> {
+    return this.request(`/player-characters/${playerCharacterId}`);
+  }
+
+  /** source: a D&D Beyond character URL or bare numeric ID. Re-importing an already-imported character updates it in place. */
+  importPlayerCharacter(playerCharacter: Record<string, unknown>): Promise<GrPlayerCharacterDetail> {
+    return this.request("/player-characters", {
+      method: "POST",
+      body: JSON.stringify({ player_character: playerCharacter }),
+    });
+  }
+
+  /** Only player_name/notes/campaign_id are accepted — everything else is D&D-Beyond-sourced. */
+  updatePlayerCharacter(playerCharacterId: number, playerCharacter: Record<string, unknown>): Promise<GrPlayerCharacterDetail> {
+    return this.request(`/player-characters/${playerCharacterId}`, {
+      method: "PATCH",
+      body: JSON.stringify({ player_character: playerCharacter }),
+    });
+  }
+
+  /**
+   * Re-fetches from D&D Beyond, overwriting every D&D-Beyond-sourced field while preserving
+   * player_name/notes/campaign_id. `rawJson`, if given, is used instead of GR fetching it itself —
+   * the fallback for when GR's own server is blocked by D&D Beyond's bot protection.
+   */
+  refreshPlayerCharacter(playerCharacterId: number, rawJson?: string): Promise<GrPlayerCharacterDetail> {
+    return this.request(`/player-characters/${playerCharacterId}/refresh`, {
+      method: "POST",
+      ...(rawJson ? { body: JSON.stringify({ player_character: { raw_json: rawJson } }) } : {}),
+    });
+  }
+
+  deletePlayerCharacter(playerCharacterId: number): Promise<GrOkResponse> {
+    return this.request(`/player-characters/${playerCharacterId}`, { method: "DELETE" });
   }
 
   /** The world's current in-world date (Roadmap 3.6) — a pointer, not a log entry. */

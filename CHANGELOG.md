@@ -7,6 +7,49 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.5.6] - 2026-08-07
+
+### Added
+- **`raw_json` fallback on `gr_import_player_character`/`gr_refresh_player_character`**
+  — GR's own server-side fetch from D&D Beyond can be blocked by their
+  Cloudflare bot protection (confirmed happening for cloud-hosted GR
+  instances, unrelated to a character's privacy setting). Both tools now
+  accept an optional `raw_json` field: fetch
+  `https://character-service.dndbeyond.com/character/v5/character/{id}`
+  yourself and pass the response through instead of GR fetching it — an MCP
+  client's own outbound request isn't subject to the same block. Each tool's
+  description now tells the model to do exactly this when it sees an HTTP
+  403 error. Requires GR `geektastic-realms` v2.20.2. See
+  [Docs/05-GR-Tools-Reference.md](Docs/05-GR-Tools-Reference.md).
+
+## [1.5.5] - 2026-08-07
+
+### Added
+- **Player Characters tools (Roadmap 3.9 Phase B)** — `gr_list_player_characters`,
+  `gr_get_player_character`, `gr_import_player_character` (takes a D&D Beyond
+  character URL or bare numeric ID via `source`, not raw fields — re-importing
+  an already-imported character updates it in place), `gr_update_player_character`
+  (manual-override fields only: `player_name`/`notes`/`campaign_id`), and
+  `gr_refresh_player_character` (re-fetch from D&D Beyond, always preserving
+  the manual-override fields), plus `gr_delete_player_character`. World-scoped,
+  same shape as the roll-table world library — no `module_id` involved.
+  Requires GR `geektastic-realms` v2.19.0. See
+  [Docs/05-GR-Tools-Reference.md](Docs/05-GR-Tools-Reference.md).
+
+## [1.5.4] - 2026-08-07
+
+### Added
+- **Documented GR's new Act/Chapter/Scene hierarchy dependency** — `sectionSchema`'s
+  `parent_id` field now `.describe()`s the rule (a Chapter's `parent_id` must point
+  at an Act, a Scene's at a Chapter; GR returns `422` otherwise), and
+  `gr_create_section`/`gr_update_section`'s tool descriptions reference it —
+  `gr_update_section` in particular notes that GR validates the *final*
+  type/parent combination, not just whichever field a given call changes. Also
+  added to `Docs/05-GR-Tools-Reference.md`. No schema shape change and no new
+  capability — GR (v2.17.6) added the actual enforcement; this keeps the tool
+  descriptions accurate so a model doesn't have to discover the rule via a
+  rejected call.
+
 ## [1.5.3] - 2026-08-02
 
 ### Added

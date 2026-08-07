@@ -1,6 +1,6 @@
 {
   "name": "@geektastic/connectors",
-  "version": "1.5.3",
+  "version": "1.5.6",
   "private": true,
   "type": "module",
   "main": "./dist/index.js",

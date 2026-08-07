@@ -339,7 +339,17 @@ const sectionSchema = z.object({
   type: z.enum(["act", "chapter", "scene", "appendix"]),
   title: z.string().min(1),
   body_html: z.string().nullable().optional().describe(RICH_TEXT_SECTION),
-  parent_id: z.number().int().nullable().optional(),
+  parent_id: z
+    .number()
+    .int()
+    .nullable()
+    .optional()
+    .describe(
+      "Hierarchy dependency: a chapter's parent_id must point at an act, and a scene's parent_id must " +
+        "point at a chapter — GR rejects (422) a chapter with no act parent or a scene with no chapter " +
+        "parent. act and appendix have no requirement (both are normally top-level, parent_id omitted or " +
+        "null, but neither is enforced to be)."
+    ),
 });
 
 const handoutSchema = z.object({
@@ -505,6 +515,51 @@ const questItemSchema = z.object({
       "Optional — which session log revealed this item. For a module-scoped item, must belong to that " +
         "module; for a campaign-scoped item, must belong to a session in any of that campaign's adventures."
     ),
+});
+
+const playerCharacterImportSchema = z.object({
+  source: z
+    .string()
+    .min(1)
+    .describe(
+      "A D&D Beyond character page URL (e.g. https://www.dndbeyond.com/characters/12345678) or a bare " +
+        "numeric character ID. The character must be shared publicly on D&D Beyond — a private character " +
+        "can't be fetched. Importing a D&D Beyond character already imported into this world updates it " +
+        "in place instead of creating a duplicate."
+    ),
+  campaign_id: z
+    .number()
+    .int()
+    .nullable()
+    .optional()
+    .describe(
+      "Optional — attaches this character to a Campaign. That attachment is what lets the campaign's " +
+        "adventures use its real linked roster (levels + party size) in their Encounter Difficulty Budget " +
+        "instead of a manually-typed level range/party size guess."
+    ),
+  player_name: z.string().nullable().optional().describe("Optional free-text label for who plays this character — D&D Beyond has no such field."),
+  raw_json: z
+    .string()
+    .nullable()
+    .optional()
+    .describe(
+      "Fallback for when GR's own server (not this MCP client) can't reach D&D Beyond — GR's hosting is " +
+        "sometimes blocked by D&D Beyond's Cloudflare bot protection regardless of request headers, and " +
+        "gr_import_player_character will fail with an HTTP 403 error when that happens. If it does: fetch " +
+        "https://character-service.dndbeyond.com/character/v5/character/{id} yourself (using {id} from " +
+        "source, or the id in the failed source URL) and pass its raw response body here verbatim — GR " +
+        "will use this instead of fetching it. `source` is still required either way."
+    ),
+});
+
+const playerCharacterUpdateSchema = z.object({
+  player_name: z.string().nullable().optional(),
+  notes: z
+    .string()
+    .nullable()
+    .optional()
+    .describe("DM notes. " + RICH_TEXT_NOTE + " Preserved across gr_refresh_player_character — never overwritten by a D&D Beyond re-fetch."),
+  campaign_id: z.number().int().nullable().optional(),
 });
 
 const eraSchema = z.object({
@@ -834,10 +889,11 @@ const tools: ToolDefinition[] = [
     name: "gr_create_section",
     description:
       "Create an Act, Chapter, Scene, or Appendix within a module. parent_id, if given, must be another " +
-      "section already in the same module (e.g. a Chapter's parent_id is its Act's section id). " +
-      "body_html supports GR's full rich-text formatting, including read-aloud/boxed-text/DM-secret " +
-      "callout blocks and embedded encounter/handout/roll-table/quest reference cards — see the " +
-      "body_html field's own description for the exact HTML convention.",
+      "section already in the same module (e.g. a Chapter's parent_id is its Act's section id) — and must " +
+      "satisfy the hierarchy dependency: a Chapter needs an Act parent, a Scene needs a Chapter parent " +
+      "(see parent_id's own description). body_html supports GR's full rich-text formatting, including " +
+      "read-aloud/boxed-text/DM-secret callout blocks and embedded encounter/handout/roll-table/quest " +
+      "reference cards — see the body_html field's own description for the exact HTML convention.",
     inputSchema: z.object({ module_id: z.coerce.number().int(), section: sectionSchema }),
     async handler(input, cfg) {
       const { module_id, section } = z
@@ -852,7 +908,11 @@ const tools: ToolDefinition[] = [
   },
   {
     name: "gr_update_section",
-    description: "Update an existing Act/Chapter/Scene/Appendix section by id.",
+    description:
+      "Update an existing Act/Chapter/Scene/Appendix section by id. The hierarchy dependency (a Chapter " +
+      "needs an Act parent, a Scene needs a Chapter parent — see parent_id's own description) is checked " +
+      "against the final type/parent_id combination, so changing just type against an unrelated existing " +
+      "parent, or just parent_id against an existing type, is rejected the same as changing both together.",
     inputSchema: z.object({
       module_id: z.coerce.number().int(),
       section_id: z.coerce.number().int(),
@@ -1433,6 +1493,121 @@ const tools: ToolDefinition[] = [
           return toResult(await client(cfg).deleteCampaignQuestItem(campaign_id, quest_item_id));
         }
         throw new Error("Provide either module_id or campaign_id.");
+      } catch (err) {
+        return toErrorResult(err);
+      }
+    },
+  },
+  {
+    name: "gr_list_player_characters",
+    description:
+      "List every Player Character imported into this world from D&D Beyond (Roadmap 3.9) — name, player, " +
+      "class/level, and optional Campaign attribution. Lightweight. Use gr_get_player_character for full detail.",
+    inputSchema: z.object({}),
+    async handler(_input, cfg) {
+      try {
+        return toResult(await client(cfg).listPlayerCharacters());
+      } catch (err) {
+        return toErrorResult(err);
+      }
+    },
+  },
+  {
+    name: "gr_get_player_character",
+    description:
+      "Fetch one Player Character's full detail — ability scores, Armor Class, HP, proficiency bonus, " +
+      "passive Perception, background, alignment, DM notes, and its D&D Beyond read-only link.",
+    inputSchema: z.object({ player_character_id: z.coerce.number().int() }),
+    async handler(input, cfg) {
+      const { player_character_id } = z.object({ player_character_id: z.coerce.number().int() }).parse(input);
+      try {
+        return toResult(await client(cfg).getPlayerCharacter(player_character_id));
+      } catch (err) {
+        return toErrorResult(err);
+      }
+    },
+  },
+  {
+    name: "gr_import_player_character",
+    description:
+      "Import a character sheet from D&D Beyond's public character data into this world's Player Characters " +
+      "roster — tracking, quick stat reporting, and (once attached to a Campaign) feeding a real party " +
+      "roster into that Campaign's adventures' Encounter Difficulty Budget. The character must be shared " +
+      "publicly on D&D Beyond. Re-importing an already-imported character updates it in place. If this fails " +
+      "with an HTTP 403 error, GR's own server is being blocked by D&D Beyond's bot protection — fetch " +
+      "https://character-service.dndbeyond.com/character/v5/character/{id} yourself and retry with the " +
+      "raw_json field set instead (see its own description).",
+    inputSchema: z.object({ player_character: playerCharacterImportSchema }),
+    async handler(input, cfg) {
+      const { player_character } = z.object({ player_character: playerCharacterImportSchema }).parse(input);
+      try {
+        return toResult(await client(cfg).importPlayerCharacter(player_character));
+      } catch (err) {
+        return toErrorResult(err);
+      }
+    },
+  },
+  {
+    name: "gr_update_player_character",
+    description:
+      "Update a Player Character's manual-override fields (player_name/notes/campaign_id) by id — every " +
+      "field optional, only what's sent changes. Every other field (name, class, ability scores, AC, HP, " +
+      "...) is sourced from D&D Beyond and only changes via gr_refresh_player_character, not this tool.",
+    inputSchema: z.object({ player_character_id: z.coerce.number().int(), player_character: playerCharacterUpdateSchema }),
+    async handler(input, cfg) {
+      const { player_character_id, player_character } = z
+        .object({ player_character_id: z.coerce.number().int(), player_character: playerCharacterUpdateSchema })
+        .parse(input);
+      try {
+        return toResult(await client(cfg).updatePlayerCharacter(player_character_id, player_character));
+      } catch (err) {
+        return toErrorResult(err);
+      }
+    },
+  },
+  {
+    name: "gr_refresh_player_character",
+    description:
+      "Re-fetch a Player Character from D&D Beyond by id, overwriting every D&D-Beyond-sourced field " +
+      "(level, ability scores, AC, HP, ...) while always preserving player_name/notes/campaign_id untouched. " +
+      "Use after the player levels up, changes gear, or edits their sheet on D&D Beyond — GR never syncs " +
+      "automatically. If this fails with an HTTP 403 error, GR's own server is being blocked by D&D Beyond's " +
+      "bot protection — fetch https://character-service.dndbeyond.com/character/v5/character/{id} yourself " +
+      "(the same id this Player Character was originally imported from) and retry with raw_json set instead.",
+    inputSchema: z.object({
+      player_character_id: z.coerce.number().int(),
+      raw_json: z
+        .string()
+        .nullable()
+        .optional()
+        .describe(
+          "Fallback for when GR's own server can't reach D&D Beyond — see gr_import_player_character's " +
+            "raw_json field for the full explanation. Pass the character-service response here instead of " +
+            "letting GR re-fetch it."
+        ),
+    }),
+    async handler(input, cfg) {
+      const { player_character_id, raw_json } = z
+        .object({
+          player_character_id: z.coerce.number().int(),
+          raw_json: z.string().nullable().optional(),
+        })
+        .parse(input);
+      try {
+        return toResult(await client(cfg).refreshPlayerCharacter(player_character_id, raw_json ?? undefined));
+      } catch (err) {
+        return toErrorResult(err);
+      }
+    },
+  },
+  {
+    name: "gr_delete_player_character",
+    description: "Remove a Player Character from this world's roster by id (does not affect the character on D&D Beyond). There is no undo.",
+    inputSchema: z.object({ player_character_id: z.coerce.number().int() }),
+    async handler(input, cfg) {
+      const { player_character_id } = z.object({ player_character_id: z.coerce.number().int() }).parse(input);
+      try {
+        return toResult(await client(cfg).deletePlayerCharacter(player_character_id));
       } catch (err) {
         return toErrorResult(err);
       }
