@@ -421,6 +421,19 @@ export interface GrPlayerCharacterDetail {
   player_character: GrPlayerCharacter;
 }
 
+/**
+ * What POST /player-characters (import) and its /refresh endpoint return — same
+ * shape as GrPlayerCharacterDetail plus a portrait-fetch warning. The portrait
+ * download is always best-effort: import/refresh never fails just because it
+ * couldn't be fetched (a common cause is D&D Beyond's own bot protection
+ * blocking the avatar CDN, distinct from — and possible even when — the
+ * character JSON fetch itself succeeded). `warning` is null when the portrait
+ * came through fine, or there simply wasn't one to fetch.
+ */
+export interface GrPlayerCharacterImportResult extends GrPlayerCharacterDetail {
+  warning: string | null;
+}
+
 /** The world's current in-world date — a pointer, not a log entry. Null if unset or no calendar. */
 export interface GrCurrentDate {
   age_id: number | null;
@@ -837,7 +850,7 @@ export class GeektasticRealmsClient {
   }
 
   /** source: a D&D Beyond character URL or bare numeric ID. Re-importing an already-imported character updates it in place. */
-  importPlayerCharacter(playerCharacter: Record<string, unknown>): Promise<GrPlayerCharacterDetail> {
+  importPlayerCharacter(playerCharacter: Record<string, unknown>): Promise<GrPlayerCharacterImportResult> {
     return this.request("/player-characters", {
       method: "POST",
       body: JSON.stringify({ player_character: playerCharacter }),
@@ -857,7 +870,7 @@ export class GeektasticRealmsClient {
    * player_name/notes/campaign_id. `rawJson`, if given, is used instead of GR fetching it itself —
    * the fallback for when GR's own server is blocked by D&D Beyond's bot protection.
    */
-  refreshPlayerCharacter(playerCharacterId: number, rawJson?: string): Promise<GrPlayerCharacterDetail> {
+  refreshPlayerCharacter(playerCharacterId: number, rawJson?: string): Promise<GrPlayerCharacterImportResult> {
     return this.request(`/player-characters/${playerCharacterId}/refresh`, {
       method: "POST",
       ...(rawJson ? { body: JSON.stringify({ player_character: { raw_json: rawJson } }) } : {}),

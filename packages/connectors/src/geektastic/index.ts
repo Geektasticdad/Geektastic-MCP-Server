@@ -1536,7 +1536,10 @@ const tools: ToolDefinition[] = [
       "publicly on D&D Beyond. Re-importing an already-imported character updates it in place. If this fails " +
       "with an HTTP 403 error, GR's own server is being blocked by D&D Beyond's bot protection — fetch " +
       "https://character-service.dndbeyond.com/character/v5/character/{id} yourself and retry with the " +
-      "raw_json field set instead (see its own description).",
+      "raw_json field set instead (see its own description). The character import itself never fails just " +
+      "because the portrait couldn't be fetched (a separate, also-possible bot-protection block on D&D " +
+      "Beyond's avatar CDN) — check the response's `warning` field (null when the portrait came through " +
+      "fine) rather than assuming a successful result means the portrait imported too.",
     inputSchema: z.object({ player_character: playerCharacterImportSchema }),
     async handler(input, cfg) {
       const { player_character } = z.object({ player_character: playerCharacterImportSchema }).parse(input);
@@ -1573,7 +1576,9 @@ const tools: ToolDefinition[] = [
       "Use after the player levels up, changes gear, or edits their sheet on D&D Beyond — GR never syncs " +
       "automatically. If this fails with an HTTP 403 error, GR's own server is being blocked by D&D Beyond's " +
       "bot protection — fetch https://character-service.dndbeyond.com/character/v5/character/{id} yourself " +
-      "(the same id this Player Character was originally imported from) and retry with raw_json set instead.",
+      "(the same id this Player Character was originally imported from) and retry with raw_json set instead. " +
+      "The refresh itself never fails just because the portrait couldn't be re-fetched — check the response's " +
+      "`warning` field (null when the portrait came through fine) rather than assuming success means it did.",
     inputSchema: z.object({
       player_character_id: z.coerce.number().int(),
       raw_json: z

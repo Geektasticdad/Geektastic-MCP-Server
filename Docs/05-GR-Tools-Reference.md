@@ -249,6 +249,14 @@ yourself (an MCP client's own fetch isn't blocked, only GR's server is) and
 pass the response body through as `raw_json` instead of letting GR fetch it.
 `source`/`player_character_id` are still required either way.
 
+**Portrait download is separate and always best-effort.** `gr_import_player_character`
+and `gr_refresh_player_character` never fail just because the character's
+portrait couldn't be downloaded (a different endpoint than the character JSON
+— D&D Beyond's avatar CDN can independently block GR's server too). Check the
+response's `warning` field — `null` when the portrait came through fine (or
+there wasn't one to fetch), a human-readable reason otherwise — rather than
+assuming a successful result means the portrait imported too.
+
 ## Session logs
 
 A DM-only record of past game sessions — what happened, follow-ups, and the

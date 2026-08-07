@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.5.7] - 2026-08-07
+
+### Added
+- **`gr_import_player_character`/`gr_refresh_player_character` responses now
+  carry a `warning` field** (new `GrPlayerCharacterImportResult` type in
+  `client.ts`) — the portrait download is always best-effort and never fails
+  the character import/refresh itself, but a failure was previously
+  swallowed with no way to tell why. `warning` is `null` when the portrait
+  came through fine or there wasn't one to fetch, otherwise a human-readable
+  reason (a common cause: D&D Beyond's avatar CDN independently blocking
+  GR's server, distinct from the character JSON fetch itself succeeding).
+  Both tools' descriptions now tell the model to check it. Requires GR
+  `geektastic-realms` v2.20.6. See
+  [Docs/05-GR-Tools-Reference.md](Docs/05-GR-Tools-Reference.md).
+
 ## [1.5.6] - 2026-08-07
 
 ### Added
