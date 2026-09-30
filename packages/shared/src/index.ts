@@ -44,6 +44,11 @@ export interface JsonSchemaProperty {
   enum?: unknown[];
   items?: JsonSchemaProperty;
   default?: unknown;
+  /** Nested object fields. */
+  properties?: Record<string, JsonSchemaProperty>;
+  required?: string[];
+  /** zod-to-json-schema writes nullable non-primitive fields as `anyOf: [<type>, { type: "null" }]`. */
+  anyOf?: JsonSchemaProperty[];
 }
 
 export interface JsonSchemaObject {

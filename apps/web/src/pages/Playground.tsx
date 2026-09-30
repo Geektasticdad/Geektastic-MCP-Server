@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import type { JsonSchemaObject } from "@geektastic/shared";
 import { api, ApiError } from "../api/client";
@@ -74,30 +75,58 @@ function ToolPlayground() {
     queryFn: () => api.get<{ tools: PlaygroundTool[] }>("/api/playground/tools"),
   });
 
-  const [selectedKey, setSelectedKey] = useState<string>("");
+  // The chosen tool, as "<connectionId>:<toolName>", kept in the URL so the search box can link here.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const selectedKey = searchParams.get("tool") ?? "";
+  const setSelectedKey = (key: string) => setSearchParams(key ? { tool: key } : {}, { replace: true });
 
   const selected = useMemo(
     () => data?.tools.find((t) => `${t.connectionId}:${t.name}` === selectedKey),
     [data, selectedKey],
   );
+  const byConnection = useMemo(() => {
+    const groups = new Map<string, PlaygroundTool[]>();
+    for (const tool of data?.tools ?? []) {
+      const list = groups.get(tool.connectionName) ?? [];
+      list.push(tool);
+      groups.set(tool.connectionName, list);
+    }
+    return [...groups.entries()];
+  }, [data]);
 
   return (
     <div className="space-y-6">
       <div className="max-w-md">
-        <label className="mb-1 block text-sm text-slate-300">Tool</label>
+        <label htmlFor="playground-tool" className="mb-1 block text-sm text-slate-300">
+          Tool
+        </label>
         <select
+          id="playground-tool"
           value={selectedKey}
           onChange={(e) => setSelectedKey(e.target.value)}
           className="w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white"
         >
           <option value="">Select a tool...</option>
-          {data?.tools.map((t) => (
-            <option key={`${t.connectionId}:${t.name}`} value={`${t.connectionId}:${t.name}`}>
-              {t.connectionName} / {t.name}
-            </option>
+          {byConnection.map(([connectionName, tools]) => (
+            <optgroup key={connectionName} label={connectionName}>
+              {tools.map((t) => (
+                <option key={`${t.connectionId}:${t.name}`} value={`${t.connectionId}:${t.name}`}>
+                  {t.name}
+                </option>
+              ))}
+            </optgroup>
           ))}
         </select>
+        <p className="mt-1 text-xs text-slate-500">
+          Tip: press <kbd className="rounded bg-slate-800 px-1">Ctrl</kbd>+
+          <kbd className="rounded bg-slate-800 px-1">K</kbd> to search every tool by name.
+        </p>
       </div>
+      {selectedKey && data && !selected && (
+        <p className="text-sm text-amber-300">
+          That tool isn't available here — it may be turned off, or its connection is disabled.
+        </p>
+      )}
 
       {selected && (
         <div className="max-w-2xl rounded-md border border-slate-800 bg-slate-900 p-5">

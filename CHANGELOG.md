@@ -7,6 +7,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.6.4] - 2026-09-30
+
+Adds quick search and smarter tool forms. See
+[Docs/03-User-Guide.md](Docs/03-User-Guide.md#search-ctrlk).
+
+### Added
+- **Search (Ctrl+K / ⌘K).** Jump to any page, connection, tool or prompt by
+  typing part of its name, what it acts on or what it does. Also opened from
+  **Search** in the sidebar (or the phone header). Admins land on the tool's
+  side panel; members land on the tool in the Testing Playground.
+- **Show MCP request** under every tool form: the `tools/call` JSON an MCP
+  client would send with your inputs, with **Copy request**. Results get
+  **Copy result**, and JSON results are pretty-printed.
+
+### Changed
+- **Tool forms use the right control for each input.** Number boxes for
+  numbers, dropdowns for fixed choices, a checkbox (or a **(not set)** dropdown
+  when optional) for true/false, and JSON boxes whose grey text lists every
+  field you can include. **Insert required fields** fills in the minimum.
+  Applies to both the Testing Playground and the tool side panel.
+- **Fields are checked before running.** Missing required fields, invalid
+  numbers and bad JSON are highlighted instead of sending the call.
+- **Testing Playground** groups tools by connection in its dropdown and keeps
+  the chosen tool in the page address.
+
+### Fixed
+- **Blank optional fields were sent as empty strings** (and blank optional
+  true/false fields as `false`). They're now left out of the call, as an MCP
+  client would.
+
 ## [1.6.3] - 2026-09-30
 
 Reorganizes the Web UI around connections. Each connection gets its own page

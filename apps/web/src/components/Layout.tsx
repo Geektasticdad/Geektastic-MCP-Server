@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import type { AppConnectionSummary } from "@geektastic/shared";
 import { api } from "../api/client";
 import { useAuth } from "../auth/AuthContext";
+import { CommandPalette } from "./CommandPalette";
 
 const navItem =
   "block rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-slate-800 hover:text-white";
@@ -13,6 +14,9 @@ const subNavItem = "block truncate rounded-md py-1.5 pl-6 pr-3 text-sm transitio
 const groupHeading = "pt-4 pb-1 text-xs font-semibold uppercase tracking-wide text-slate-500";
 
 const linkClass = ({ isActive }: { isActive: boolean }) => `${navItem} ${isActive ? navItemActive : navItemInactive}`;
+const isMac = typeof navigator !== "undefined" && /Mac|iPhone|iPad/.test(navigator.platform);
+const shortcutLabel = isMac ? "⌘K" : "Ctrl K";
+
 const subLinkClass = ({ isActive }: { isActive: boolean }) =>
   `${subNavItem} ${isActive ? "text-white" : "text-slate-400"}`;
 
@@ -21,6 +25,18 @@ export function Layout() {
   const isAdmin = user?.role === "admin";
   const location = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setSearchOpen((o) => !o);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
 
   // Close the phone menu after navigating.
   useEffect(() => setMenuOpen(false), [location.pathname]);
@@ -38,6 +54,13 @@ export function Layout() {
         <span className="font-semibold text-white">Geektastic MCP</span>
         <button
           type="button"
+          onClick={() => setSearchOpen(true)}
+          className="ml-auto mr-2 rounded-md px-3 py-1.5 text-sm text-slate-200 hover:bg-slate-800"
+        >
+          Search
+        </button>
+        <button
+          type="button"
           onClick={() => setMenuOpen((open) => !open)}
           aria-expanded={menuOpen}
           aria-controls="sidebar"
@@ -51,7 +74,15 @@ export function Layout() {
         id="sidebar"
         className={`${menuOpen ? "block" : "hidden"} shrink-0 border-r border-slate-800 bg-slate-900 p-4 md:block md:w-60`}
       >
-        <div className="mb-6 hidden text-lg font-semibold text-white md:block">Geektastic MCP</div>
+        <div className="mb-4 hidden text-lg font-semibold text-white md:block">Geektastic MCP</div>
+        <button
+          type="button"
+          onClick={() => setSearchOpen(true)}
+          className="mb-4 hidden w-full items-center justify-between rounded-md border border-slate-700 bg-slate-950 px-3 py-1.5 text-sm text-slate-400 hover:border-slate-500 hover:text-slate-200 md:flex"
+        >
+          <span>Search...</span>
+          <kbd className="text-xs text-slate-500">{shortcutLabel}</kbd>
+        </button>
         <nav className="space-y-1">
           <NavLink to="/" end className={linkClass}>
             Overview
@@ -114,6 +145,7 @@ export function Layout() {
       <main className="min-w-0 flex-1 overflow-y-auto p-4 sm:p-8">
         <Outlet />
       </main>
+      <CommandPalette open={searchOpen} onClose={() => setSearchOpen(false)} isAdmin={isAdmin} />
     </div>
   );
 }
