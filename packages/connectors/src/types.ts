@@ -39,6 +39,10 @@ export interface PromptArgumentDefinition {
   name: string;
   description?: string;
   required?: boolean;
+  /** Web UI hint: show a multi-line box (pasted documents, notes). Not sent over MCP. */
+  multiline?: boolean;
+  /** Web UI hint: values to suggest; any other text is still allowed. Not sent over MCP. */
+  suggestions?: string[];
 }
 
 export interface PromptMessage {
@@ -55,6 +59,10 @@ export interface PromptResult {
 export interface PromptDefinition {
   /** Globally unique, namespaced prompt name, e.g. "gr_session_prep". */
   name: string;
+  /** Human-readable name, e.g. "Session prep". Sent to MCP clients as the prompt's title. */
+  title?: string;
+  /** Group on the Web UI's Prompts tab, e.g. "Builders". */
+  category?: string;
   description: string;
   arguments?: PromptArgumentDefinition[];
   /**

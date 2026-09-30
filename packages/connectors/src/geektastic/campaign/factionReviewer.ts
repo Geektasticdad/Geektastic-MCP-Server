@@ -92,17 +92,28 @@ Format the review as Markdown with headers and subheaders suitable for use in Ob
 
 export const factionReviewerPrompt: PromptDefinition = {
   name: "campaign_faction_reviewer",
+  title: "Faction reviewer",
+  category: "Reviewers",
   description:
     "Evaluate an existing D&D faction document against the quality standards used by Faction Builder, producing " +
     "an actionable critique with specific fixes (not a rewrite). Converted from the dm-campaign-builder skill's Faction Reviewer mode.",
   arguments: [
     {
       name: "faction_document",
+      multiline: true,
       description: "The full faction document or a section-by-section summary — more detail produces more specific critique.",
       required: true,
     },
-    { name: "other_factions", description: "Existing campaign factions to assess the relationship table against." },
-    { name: "world_details", description: "Setting context that may explain unusual structural choices." },
+    {
+      name: "other_factions",
+      multiline: true,
+      description: "Existing campaign factions to assess the relationship table against.",
+    },
+    {
+      name: "world_details",
+      multiline: true,
+      description: "Setting context that may explain unusual structural choices.",
+    },
   ],
   async handler(args) {
     const factionDocument = requireArg(args, "faction_document");

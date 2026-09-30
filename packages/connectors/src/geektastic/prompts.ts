@@ -39,6 +39,8 @@ function mostRecent(sessions: GrSessionSummary[]): GrSessionSummary | undefined 
 
 const sessionPrep: PromptDefinition = {
   name: "gr_session_prep",
+  title: "Session prep",
+  category: "Game prep",
   description:
     "Prep for the next session of a module: reads the module outline and the most recent session log, " +
     "then asks the model to pull the next unplayed section(s) and draft a prep sheet.",
@@ -95,10 +97,17 @@ const sessionPrep: PromptDefinition = {
 
 const recapWriter: PromptDefinition = {
   name: "gr_recap_writer",
+  title: "Session recap writer",
+  category: "Game prep",
   description:
     "Turn messy raw session notes into a polished, read-aloud recap for players plus a DM-facing continuity list.",
   arguments: [
-    { name: "session_notes", description: "Raw, messy notes about what happened this session.", required: true },
+    {
+      name: "session_notes",
+      multiline: true,
+      description: "Raw, messy notes about what happened this session.",
+      required: true,
+    },
     {
       name: "module_id",
       description: "Module id, to pull the previous session's recap for continuity (optional).",
@@ -141,11 +150,13 @@ const recapWriter: PromptDefinition = {
 
 const statblockFromDescription: PromptDefinition = {
   name: "gr_statblock_from_description",
+  title: "Stat block from a description",
+  category: "Game prep",
   description:
     "Design a D&D 5e-compatible stat block from a natural-language creature concept, with CR-appropriate " +
     "design guidance, ready to file via gr_create_statblock.",
   arguments: [
-    { name: "description", description: "Natural-language creature concept.", required: true },
+    { name: "description", multiline: true, description: "Natural-language creature concept.", required: true },
     { name: "challenge_rating", description: "Target challenge rating, if you have one in mind." },
   ],
   async handler(args) {
@@ -187,6 +198,8 @@ function formatCandidates(statblocks: GrStatblockSummary[]): string {
 
 const populateEncounter: PromptDefinition = {
   name: "gr_populate_encounter",
+  title: "Populate an encounter",
+  category: "Game prep",
   description:
     "Pick a CR-budget-balanced roster of adversaries from this world's existing stat blocks for a new encounter.",
   arguments: [

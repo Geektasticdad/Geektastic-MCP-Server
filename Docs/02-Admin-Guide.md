@@ -145,9 +145,30 @@ each tool actually does.
 ## Prompts
 
 A connection's **Prompts** tab is the same idea as **Tools**, but for MCP
-**prompts** — reusable, user-invocable conversation templates rather than
-something the model calls on its own. It lists the connection's prompts with a
-checkbox to enable or disable each one.
+**prompts** — ready-made conversation starters your MCP client offers you to
+pick, rather than something the model calls on its own.
+
+Prompts are shown as cards grouped by kind (for Geektastic Realms: **Game
+prep**, **Builders** and **Reviewers**), each with a readable title, its
+technical name, a short description, how many arguments it takes, and a
+switch to turn it on or off. **Enable all** / **Disable all** switch every
+prompt on the connection at once.
+
+Click a card to open the prompt's **side panel**:
+
+- **Enabled** switch — turn this one prompt on or off.
+- **Description** — what the prompt does.
+- **Try it** — fill in its arguments and click **Preview prompt** to see the
+  exact messages an MCP client would receive (see
+  [Testing Playground](03-User-Guide.md#testing-playground) for how the form
+  works). Previewing may read from the connected app, but never changes
+  anything or sends anything to an AI model. When the prompt (or its
+  connection) is off, the panel lists its arguments instead.
+- **Recent calls** — its last 20 calls, from MCP clients and previews.
+
+The open prompt is part of the page address
+(`/connections/<id>/prompts?prompt=…`), so you can link straight to it, and
+**Ctrl+K** search finds prompts by title or name.
 
 - A prompt is enabled by default the moment its connection is added.
 - Disabling a prompt here removes it from what MCP clients see (`prompts/list`

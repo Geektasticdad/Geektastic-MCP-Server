@@ -135,25 +135,38 @@ Add this as its own \`#### Campaign World Integration\` section after Seeds for 
 
 export const arcBuilderPrompt: PromptDefinition = {
   name: "campaign_arc_builder",
+  title: "Story arc builder",
+  category: "Builders",
   description:
     "Design a complete, playable multi-session D&D story arc — beats, tension, escalation, and payoffs — " +
     "structured for actual use at the table. Converted from the dm-campaign-builder skill's Arc Builder mode.",
   arguments: [
-    { name: "campaign_setting", description: "A named world or a freeform setting description.", required: true },
+    {
+      name: "campaign_setting",
+      multiline: true,
+      description: "A named world or a freeform setting description.",
+      required: true,
+    },
     {
       name: "world_details",
+      multiline: true,
       description:
         "Setting-specific factions, powers, locations, lore, or flavor to weave in (e.g. a dominant religion, a ruling faction, cultural details).",
     },
     { name: "party_level_range", description: 'e.g. "5-10".', required: true },
     { name: "session_count", description: 'Estimated session count, e.g. "8-12".', required: true },
-    { name: "central_conflict", description: "If omitted, one is generated to fit the setting and tone." },
+    {
+      name: "central_conflict",
+      multiline: true,
+      description: "If omitted, one is generated to fit the setting and tone.",
+    },
     {
       name: "tone",
+      suggestions: ["Dark", "Heroic", "Political", "Horror", "Mystery", "Epic"],
       description: "Dark / Heroic / Political / Horror / Mystery / Epic — combinations allowed.",
       required: true,
     },
-    { name: "pc_hooks", description: "Backstory elements to weave into the arc." },
+    { name: "pc_hooks", multiline: true, description: "Backstory elements to weave into the arc." },
   ],
   async handler(args) {
     const campaignSetting = requireArg(args, "campaign_setting");

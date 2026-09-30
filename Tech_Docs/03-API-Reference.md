@@ -68,6 +68,10 @@ Verbatim structural mirror of `/api/tools`, for MCP prompts.
 |---|---|---|
 | `GET /api/prompts` | — | `{ prompts: PromptSummary[] }` — every prompt from every connection whose connector implements `getPrompts` (regardless of the connection's own enabled state, same rationale as `GET /api/tools`). Optional `?connectionId=` limits it to one connection. |
 | `POST /api/prompts/toggle` | `{ connectionId, promptName, enabled }` | Upserts a `PromptSetting` row on `(connectionId, promptName)`. `204`. |
+| `POST /api/prompts/bulk` | `{ connectionId, changes: [{ promptName, enabled }] }` | Same upsert for up to 500 prompts of one connection, in one transaction. Used by the Prompts tab's Enable all / Disable all. `204`. |
+| `GET /api/prompts/:connectionId/:promptName` | — | `{ prompt: PromptDetail }` — the `PromptSummary` plus `connectionEnabled` and `recentCalls` (its last 20 `PromptCallLogEntry` rows on that connection, exact name match). Includes disabled prompts and prompts on disabled connections. `404` for an unknown connection or prompt. Used by the prompt side panel. |
+
+Each `PromptSummary` (here and from `GET /api/playground/prompts`) carries `title` and `category` from `describePrompt()` in `packages/connectors/src/toolMeta.ts`, and its `arguments` keep any `multiline` / `suggestions` UI hints.
 
 ## Tokens — `/api/tokens` (admin only; `tokens.routes.ts`)
 

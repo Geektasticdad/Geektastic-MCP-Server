@@ -66,11 +66,23 @@ The **Tools** / **Prompts** toggle at the top switches between the two.
    send with your inputs, with a **Copy request** button — handy for bug
    reports or for testing another client.
 
-**Prompts:** same idea, but every argument is a plain text field (MCP prompt
-arguments are always strings), and running one shows the messages the prompt
-would hand to an MCP client — see
+**Prompts:** switch to **Prompts** at the top (or pick a prompt with
+**Ctrl+K**), then choose one — they're listed by title, grouped by connection
+and kind. MCP prompt arguments are always text:
+
+- arguments that take pasted documents or notes get a large box;
+- arguments with common values (like a tone or faction type) show them as
+  buttons under the box — click one to fill it in, or type anything else;
+- required arguments are marked **\*** and checked before previewing; blank
+  optional ones aren't sent, so the prompt uses its own defaults.
+
+Click **Preview prompt** to see the messages the prompt would hand to an MCP
+client, each with its length and a **Copy** button (**Copy all** when there
+are several). **Show MCP request** shows the matching `prompts/get` request.
+Previewing may read from the connected app but never changes anything or
+sends anything to an AI model. See
 [Geektastic Realms Prompts Reference](08-GR-Prompts-Reference.md) for what
-each one does.
+each prompt does.
 
 Important: **this actually calls the real Geektastic Realms API** — running
 `gr_create_statblock`, or a prompt that reads real module/session data, really

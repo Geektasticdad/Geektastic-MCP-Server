@@ -3,7 +3,7 @@ import { z } from "zod";
 import { zodToJsonSchema } from "zod-to-json-schema";
 import { requireAuth, requireCsrf } from "../auth/middleware.js";
 import { loadActiveConnections } from "../connections/service.js";
-import { aggregatePrompts, aggregateTools } from "@geektastic/connectors";
+import { aggregatePrompts, aggregateTools, describePrompt } from "@geektastic/connectors";
 import { logToolCall } from "../logging/toolCallLog.js";
 import { logPromptCall } from "../logging/promptCallLog.js";
 
@@ -82,6 +82,7 @@ playgroundRouter.get("/prompts", async (_req, res) => {
     connectionId: p.connectionId,
     connectionName: p.connectionName,
     name: p.definition.name,
+    ...describePrompt(p.definition),
     description: p.definition.description,
     arguments: p.definition.arguments,
   }));

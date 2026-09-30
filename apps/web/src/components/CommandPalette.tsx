@@ -64,6 +64,11 @@ export function CommandPalette({ open, onClose, isAdmin }: { open: boolean; onCl
     queryFn: () => api.get<{ prompts: PromptSummary[] }>("/api/prompts"),
     enabled: open && isAdmin,
   });
+  const { data: memberPrompts } = useQuery({
+    queryKey: ["playground-prompts"],
+    queryFn: () => api.get<{ prompts: Omit<PromptSummary, "enabled">[] }>("/api/playground/prompts"),
+    enabled: open && !isAdmin,
+  });
   const { data: memberTools } = useQuery({
     queryKey: ["playground-tools"],
     queryFn: () => api.get<{ tools: PlaygroundTool[] }>("/api/playground/tools"),
@@ -112,14 +117,25 @@ export function CommandPalette({ open, onClose, isAdmin }: { open: boolean; onCl
       list.push({
         id: `prompt:${p.connectionId}:${p.name}`,
         group: "Prompts",
-        label: p.name,
-        detail: p.connectionName,
+        label: p.title,
+        detail: `${p.connectionName} · ${p.category}`,
         tag: p.enabled ? undefined : "off",
-        href: `/connections/${p.connectionId}/prompts`,
+        href: `/connections/${p.connectionId}/prompts?prompt=${encodeURIComponent(p.name)}`,
+        keywords: p.name,
+      });
+    }
+    for (const p of memberPrompts?.prompts ?? []) {
+      list.push({
+        id: `prompt:${p.connectionId}:${p.name}`,
+        group: "Prompts",
+        label: p.title,
+        detail: `${p.connectionName} · ${p.category}`,
+        href: `/playground?mode=prompts&prompt=${encodeURIComponent(`${p.connectionId}:${p.name}`)}`,
+        keywords: p.name,
       });
     }
     return list;
-  }, [isAdmin, connections, adminTools, memberTools, prompts]);
+  }, [isAdmin, connections, adminTools, memberTools, prompts, memberPrompts]);
 
   const results = useMemo(() => {
     const terms = query.toLowerCase().replace(/_/g, " ").split(/\s+/).filter(Boolean);
@@ -229,7 +245,7 @@ export function CommandPalette({ open, onClose, isAdmin }: { open: boolean; onCl
                     index === active ? "bg-indigo-600 text-white" : "text-slate-200"
                   }`}
                 >
-                  <span className={item.group === "Tools" || item.group === "Prompts" ? "font-mono text-xs" : ""}>
+                  <span className={item.group === "Tools" ? "font-mono text-xs" : ""}>
                     {item.label}
                   </span>
                   {item.tag && (

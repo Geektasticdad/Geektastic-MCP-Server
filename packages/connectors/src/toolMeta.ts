@@ -1,4 +1,4 @@
-import type { ToolAccess, ToolDefinition } from "./types.js";
+import type { PromptDefinition, ToolAccess, ToolDefinition } from "./types.js";
 
 export interface ToolMeta {
   /** What the tool acts on, e.g. "Encounter" or "Research task" — one row in the Tools grid. */
@@ -66,4 +66,20 @@ export function describeTool(def: Pick<ToolDefinition, "name" | "category" | "ac
   const action = category === thing ? verb : [verb, ...rest].join(" ");
 
   return { category, action, access: def.access ?? derivedAccess };
+}
+
+/**
+ * Display name and group for a prompt. Explicit `title` / `category` win;
+ * otherwise the title is the name without its `<prefix>_` (e.g.
+ * "gr_session_prep" → "Session prep") and the category is "Prompts".
+ */
+export function describePrompt(def: Pick<PromptDefinition, "name" | "title" | "category">): {
+  title: string;
+  category: string;
+} {
+  const [, ...rest] = def.name.split("_");
+  return {
+    title: def.title ?? humanize(rest.length > 0 ? rest : [def.name]),
+    category: def.category ?? "Prompts",
+  };
 }

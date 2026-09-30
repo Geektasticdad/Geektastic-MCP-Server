@@ -4,7 +4,7 @@ import { Link, Navigate, NavLink, useNavigate, useParams } from "react-router-do
 import { api, ApiError } from "../api/client";
 import type { AppConnectionSummary, PromptSummary, ToolCallLogEntry, ToolSummary } from "@geektastic/shared";
 import { ToolsGrid } from "../components/ToolsGrid";
-import { PromptsTable } from "../components/PromptsTable";
+import { PromptsList } from "../components/PromptsList";
 import { ActivityLog } from "../components/ActivityLog";
 import { StatusBadge } from "./Connections";
 import { BASE_URL_APIKEY_CONNECTORS, inputClass, primaryButton, secondaryButton } from "../connectorFields";
@@ -87,7 +87,7 @@ function TabContent({ tab, connection }: { tab: TabId; connection: AppConnection
     case "tools":
       return <ToolsGrid connectionId={connection.id} />;
     case "prompts":
-      return <PromptsTable connectionId={connection.id} />;
+      return <PromptsList connectionId={connection.id} />;
     case "activity":
       return <ActivityLog connectionId={connection.id} />;
     case "settings":

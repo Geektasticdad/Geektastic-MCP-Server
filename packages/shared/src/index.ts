@@ -70,15 +70,31 @@ export interface PromptArgumentSummary {
   name: string;
   description?: string;
   required?: boolean;
+  /** Show a multi-line box — pasted documents, notes. */
+  multiline?: boolean;
+  /** Values to suggest; any other text is still allowed. */
+  suggestions?: string[];
 }
 
 export interface PromptSummary {
   connectionId: string;
   connectionName: string;
   name: string;
+  /** Human-readable name, e.g. "Session prep"; falls back to `name`. */
+  title: string;
+  /** Group on the Prompts tab, e.g. "Builders". */
+  category: string;
   description: string;
   enabled: boolean;
   arguments?: PromptArgumentSummary[];
+}
+
+/** One prompt with its recent calls — `GET /api/prompts/:connectionId/:promptName`. */
+export interface PromptDetail extends PromptSummary {
+  /** False when the whole connection is disabled; the prompt can't be tried then even if it's enabled. */
+  connectionEnabled: boolean;
+  /** This prompt's most recent calls on this connection, newest first (at most 20). */
+  recentCalls: PromptCallLogEntry[];
 }
 
 export interface McpTokenSummary {

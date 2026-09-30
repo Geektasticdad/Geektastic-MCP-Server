@@ -5,6 +5,7 @@ import { loadActiveConnections } from "../connections/service.js";
 import {
   aggregatePrompts,
   aggregateTools,
+  describePrompt,
   describeTool,
   type PromptArgumentDefinition,
 } from "@geektastic/connectors";
@@ -121,6 +122,7 @@ export async function buildMcpServer(auth: McpAuthContext): Promise<McpServer> {
     server.registerPrompt(
       definition.name,
       {
+        title: describePrompt(definition).title,
         description: definition.description,
         argsSchema: toPromptArgsShape(definition.arguments),
       },

@@ -32,6 +32,8 @@ export interface PromptArgumentDefinition {
   name: string;
   description?: string;
   required?: boolean;
+  multiline?: boolean;          // Web UI hint: a multi-line box — not sent over MCP
+  suggestions?: string[];       // Web UI hint: one-click values, free text still allowed — not sent over MCP
 }
 
 export interface PromptMessage {
@@ -46,6 +48,8 @@ export interface PromptResult {
 
 export interface PromptDefinition {
   name: string;                 // globally unique, namespaced, e.g. "gr_session_prep"
+  title?: string;               // e.g. "Session prep" — sent to MCP clients as the prompt title
+  category?: string;            // Prompts tab group, e.g. "Builders" (default "Prompts")
   description: string;
   arguments?: PromptArgumentDefinition[];
   // Prompt arguments are always plain strings on the wire (unlike a tool's

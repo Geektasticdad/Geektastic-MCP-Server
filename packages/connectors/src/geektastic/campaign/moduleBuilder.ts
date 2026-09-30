@@ -391,28 +391,41 @@ Add this as its own \`#### Campaign World Integration\` section after Adventure 
 
 export const moduleBuilderPrompt: PromptDefinition = {
   name: "campaign_module_builder",
+  title: "Adventure module builder",
+  category: "Builders",
   description:
     "Design a complete D&D adventure module — Acts/Chapters/Scenes, fully scripted narrative beats, encounter " +
     "integration, and a full villain-depth antagonist. Converted from the dm-campaign-builder skill's Module Builder mode.",
   arguments: [
     { name: "module_title", description: "If omitted, one is generated." },
-    { name: "campaign_setting", description: "The world or region where the adventure takes place.", required: true },
-    { name: "world_details", description: "Factions, lore, cultural details, or constraints to weave into the output." },
+    {
+      name: "campaign_setting",
+      multiline: true,
+      description: "The world or region where the adventure takes place.",
+      required: true,
+    },
+    {
+      name: "world_details",
+      multiline: true,
+      description: "Factions, lore, cultural details, or constraints to weave into the output.",
+    },
     { name: "party_level", description: "Drives CR, encounter difficulty, and reward scaling.", required: true },
     { name: "party_size", description: "Affects encounter balance; standard is 4-5 players.", required: true },
     {
       name: "module_length",
+      suggestions: ["Short", "Standard", "Extended"],
       description: "Short (1 session) / Standard (2-3 sessions) / Extended (4+ sessions).",
       required: true,
     },
     { name: "primary_villain", description: "If omitted, one is generated." },
     {
       name: "tone",
+      suggestions: ["Dark", "Heroic", "Political", "Horror", "Mystery", "Epic"],
       description: "Dark / Heroic / Political / Horror / Mystery / Epic — combinations allowed.",
       required: true,
     },
     { name: "hook_preference", description: "If omitted, all three standard hooks are generated." },
-    { name: "pc_connections", description: "Backstory elements to weave into the villain or hook." },
+    { name: "pc_connections", multiline: true, description: "Backstory elements to weave into the villain or hook." },
   ],
   async handler(args) {
     const campaignSetting = requireArg(args, "campaign_setting");

@@ -127,6 +127,8 @@ Add this as its own \`#### Campaign World Integration\` section after Adventure 
 
 export const factionBuilderPrompt: PromptDefinition = {
   name: "campaign_faction_builder",
+  title: "Faction builder",
+  category: "Builders",
   description:
     "Create a fully developed D&D organization — leadership, goals, methods, relationships, and player hooks — " +
     "that can function as ally, antagonist, or something in between. Converted from the dm-campaign-builder skill's Faction Builder mode.",
@@ -134,6 +136,18 @@ export const factionBuilderPrompt: PromptDefinition = {
     { name: "faction_name", description: "If omitted, one is generated." },
     {
       name: "faction_type",
+      suggestions: [
+        "Criminal Syndicate",
+        "Religious Order",
+        "Military Force",
+        "Trade Guild",
+        "Rebel Cell",
+        "Noble House",
+        "Cult",
+        "Secret Society",
+        "Mercenary Company",
+        "Indigenous Community",
+      ],
       description:
         "Criminal Syndicate / Religious Order / Military Force / Trade Guild / Rebel Cell / Noble House / Cult / " +
         "Secret Society / Mercenary Company / Indigenous Community — combinations allowed.",
@@ -141,6 +155,7 @@ export const factionBuilderPrompt: PromptDefinition = {
     },
     {
       name: "power_level",
+      suggestions: ["Local", "Regional", "National", "Shadow"],
       description:
         "Local (one city or town) / Regional (controls a territory) / National (major political player) / " +
         "Shadow (operates everywhere unseen).",
@@ -149,12 +164,18 @@ export const factionBuilderPrompt: PromptDefinition = {
     { name: "location", description: "Where the faction is based or most active.", required: true },
     {
       name: "relationship_to_players",
+      suggestions: ["Ally", "Antagonist", "Neutral", "Unknown"],
       description: "Ally / Antagonist / Neutral / Unknown — or a freeform description of something more complex.",
       required: true,
     },
-    { name: "existing_factions", description: "Other campaign factions this one should have defined relationships with." },
+    {
+      name: "existing_factions",
+      multiline: true,
+      description: "Other campaign factions this one should have defined relationships with.",
+    },
     {
       name: "world_details",
+      multiline: true,
       description:
         "Setting-specific lore, culture, religion, or constraints to weave in. Not listed in the source skill's own " +
         "input table for this mode, but its Campaign World Integration section clearly expects one — added here so that " +

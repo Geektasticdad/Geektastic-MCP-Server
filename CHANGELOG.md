@@ -7,6 +7,45 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.6.5] - 2026-09-30
+
+Cleans up everything about prompts to match the tools experience. See
+[Docs/02-Admin-Guide.md](Docs/02-Admin-Guide.md#prompts).
+
+### Added
+- **Prompt titles and groups.** Every Geektastic Realms prompt has a readable
+  title (e.g. **Session prep**, **Faction builder**) and a group (**Game
+  prep**, **Builders**, **Reviewers**). Titles are also sent to MCP clients,
+  so clients that show them list prompts by name instead of `gr_session_prep`.
+- **Prompt side panel.** Clicking a prompt on a connection's Prompts tab opens
+  a panel with its on/off switch, description, a **Try it** form and its last
+  20 calls. The open prompt is in the page address (`?prompt=…`).
+- **Better prompt form**, in the panel and the Testing Playground: large boxes
+  for arguments that take pasted documents or notes, one-click suggestions for
+  arguments with common values (tone, faction type, power level, module
+  length, relationship to players — free text still allowed), required
+  arguments checked before previewing, and **Show MCP request** (the
+  `prompts/get` JSON).
+- **Readable results.** Each rendered message shows its role, length and a
+  **Copy** button (**Copy all** for several), in a scrollable box.
+- **Ctrl+K finds prompts by title** and opens them — admins on the prompt's
+  panel, members in the Testing Playground (members get prompt results too
+  now).
+- **`GET /api/prompts/:connectionId/:promptName`** and
+  **`POST /api/prompts/bulk`**; optional `title` / `category` on
+  `PromptDefinition` and `multiline` / `suggestions` hints on
+  `PromptArgumentDefinition` (see
+  [Tech_Docs/07-Connector-SDK.md](Tech_Docs/07-Connector-SDK.md)).
+
+### Changed
+- **Prompts tab** shows prompts as grouped cards (title, name, short
+  description, argument counts, on/off switch) instead of a wide table, with
+  **Enable all** / **Disable all**.
+- **Testing Playground's Prompts mode** lists prompts by title, grouped by
+  connection and kind, and keeps the mode and chosen prompt in the page
+  address. **Run prompt** is now **Preview prompt**, with a note that
+  previewing never changes anything or sends anything to an AI model.
+
 ## [1.6.4] - 2026-09-30
 
 Adds quick search and smarter tool forms. See

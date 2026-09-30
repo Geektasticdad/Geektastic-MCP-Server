@@ -128,6 +128,8 @@ Format the review as Markdown with headers and subheaders suitable for use in Ob
 
 export const moduleReviewerPrompt: PromptDefinition = {
   name: "campaign_module_reviewer",
+  title: "Adventure module reviewer",
+  category: "Reviewers",
   description:
     "Audit an existing D&D adventure module against design best practices — hooks, pacing, encounter balance, " +
     "railroading risk — with a villain-offer workflow if no antagonist is identifiable. Converted from the " +
@@ -135,12 +137,17 @@ export const moduleReviewerPrompt: PromptDefinition = {
   arguments: [
     {
       name: "module_document",
+      multiline: true,
       description: "The full module document or a scene-by-scene summary — more detail produces more specific critique.",
       required: true,
     },
     { name: "party_level", description: "Helps calibrate CR and balance observations." },
     { name: "party_size", description: "Used to assess encounter balance." },
-    { name: "world_details", description: "Setting context that may explain unusual structural choices." },
+    {
+      name: "world_details",
+      multiline: true,
+      description: "Setting context that may explain unusual structural choices.",
+    },
   ],
   async handler(args) {
     const moduleDocument = requireArg(args, "module_document");

@@ -94,18 +94,25 @@ Format the review as Markdown with headers and subheaders suitable for use in Ob
 
 export const arcReviewerPrompt: PromptDefinition = {
   name: "campaign_arc_reviewer",
+  title: "Story arc reviewer",
+  category: "Reviewers",
   description:
     "Evaluate an existing D&D story arc against the six Design Principles used by Arc Builder, producing an " +
     "actionable critique with specific fixes (not a rewrite). Converted from the dm-campaign-builder skill's Arc Reviewer mode.",
   arguments: [
     {
       name: "arc_document",
+      multiline: true,
       description: "The full arc document or a beat-by-beat summary — more detail produces more specific critique.",
       required: true,
     },
     { name: "party_level_range", description: "Helps calibrate CR and power-scale observations." },
     { name: "session_count", description: "Used to assess pacing density." },
-    { name: "world_details", description: "Setting context that may explain unusual structural choices." },
+    {
+      name: "world_details",
+      multiline: true,
+      description: "Setting context that may explain unusual structural choices.",
+    },
   ],
   async handler(args) {
     const arcDocument = requireArg(args, "arc_document");
