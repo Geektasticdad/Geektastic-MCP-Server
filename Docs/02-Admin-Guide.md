@@ -89,8 +89,22 @@ The **Tools** page shows every tool contributed by every connection as a grid,
 one per connection. Each row is one kind of thing the tools act on (Campaign,
 Encounter, Person, Research task…), and its tools sit in three columns:
 **Read** (list, get, search), **Create & edit**, and **Delete**. Each tool is a
-pill — click it to turn that tool on or off. A struck-through, dashed pill is
-off. Hover a pill for its full tool name and description.
+pill; a struck-through, dashed pill is off. Hover a pill for its full tool name.
+
+Click a pill to open that tool's **side panel**:
+
+- **Enabled** switch — turn this one tool on or off.
+- **Description** and **Inputs** — what the tool does and each input's type,
+  whether it's required, and its allowed values.
+- **Try it** — run the tool right there, exactly like the Testing Playground.
+  Tools that create, change or delete data show a warning first, because
+  they act on your real data. The tool (and its connection) must be on.
+- **Recent calls** — its last 20 calls, from MCP clients and the playground,
+  with status, duration and any error.
+
+Clicking another pill switches the panel to that tool; **Esc** or **×** closes
+it. The open tool is part of the page address (`/tools?tool=…`), so you can
+bookmark or share a link straight to it.
 
 - **Row switch** — the checkbox at the start of a row turns every tool in that
   row on or off. It shows a dash when only some of them are on. While you're

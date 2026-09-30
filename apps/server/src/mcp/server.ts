@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z, type ZodRawShape } from "zod";
 import { loadActiveConnections } from "../connections/service.js";
@@ -9,6 +10,15 @@ import {
 } from "@geektastic/connectors";
 import { logToolCall } from "../logging/toolCallLog.js";
 import { logPromptCall } from "../logging/promptCallLog.js";
+
+/**
+ * The release version from the repo-root package.json, reported to MCP clients.
+ * Same relative path from src/mcp (tsx dev) and dist/mcp (build); the Docker
+ * runtime image copies the root package.json to the same place.
+ */
+const SERVER_VERSION = (
+  JSON.parse(readFileSync(new URL("../../../../package.json", import.meta.url), "utf8")) as { version: string }
+).version;
 
 function toRawShape(schema: z.ZodType): ZodRawShape {
   if (schema instanceof z.ZodObject) {
@@ -59,7 +69,7 @@ export interface McpAuthContext {
  * so that toggling a tool or connection in the Web UI takes effect immediately.
  */
 export async function buildMcpServer(auth: McpAuthContext): Promise<McpServer> {
-  const server = new McpServer({ name: "geektastic-mcp-server", version: "1.5.1" });
+  const server = new McpServer({ name: "geektastic-mcp-server", version: SERVER_VERSION });
 
   const connections = await loadActiveConnections();
   for (const tool of aggregateTools(connections)) {

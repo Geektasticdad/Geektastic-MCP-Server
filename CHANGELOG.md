@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.6.2] - 2026-09-30
+
+Adds a side panel to the **Tools** page, so everything about one tool is in
+one place. See [Docs/02-Admin-Guide.md](Docs/02-Admin-Guide.md#tools).
+
+### Added
+- **Tool side panel.** Clicking a tool on the Tools page opens a panel with
+  its on/off switch, description, inputs (type, required, allowed values), a
+  **Try it** form that runs it like the Testing Playground, and its last 20
+  calls. Tools that create, change or delete data warn before you run them.
+  The open tool is in the page address (`/tools?tool=…`) so you can link to
+  it; **Esc** closes the panel.
+- **`GET /api/tools/:connectionId/:toolName`** — one tool's input schema,
+  connection state and recent calls, for the panel.
+
+### Changed
+- **Clicking a tool pill opens its panel** instead of turning it on or off.
+  Use the panel's switch, the row switches or the presets to turn tools on
+  and off.
+- The Testing Playground and the panel share one **Try it** form, and its
+  labels are now linked to their fields for screen readers.
+
+### Fixed
+- **MCP clients saw version `1.5.1`** for every release since then. The
+  server now reports the version from the root `package.json`.
+- **Type errors in the Logs page** that made `pnpm typecheck` fail.
+
 ## [1.6.1] - 2026-09-30
 
 Redesigns the **Tools** page for the 140-odd tools the two connectors now

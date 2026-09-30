@@ -1,7 +1,9 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useSearchParams } from "react-router-dom";
 import { api } from "../api/client";
 import type { ToolSummary } from "@geektastic/shared";
+import { ToolPanel } from "../components/ToolPanel";
 
 type Access = ToolSummary["access"];
 type StatusFilter = "all" | "enabled" | "disabled";
@@ -42,6 +44,15 @@ export function Tools() {
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState<StatusFilter>("all");
+  // The open side panel's tool, as "<connectionId>:<toolName>", kept in the URL so it can be linked to.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const openKey = searchParams.get("tool");
+
+  const openTool = useCallback(
+    (tool: ToolSummary) => setSearchParams({ tool: toolKey(tool) }, { replace: true }),
+    [setSearchParams],
+  );
+  const closePanel = useCallback(() => setSearchParams({}, { replace: true }), [setSearchParams]);
 
   const { data, isLoading } = useQuery({
     queryKey: ["tools"],
@@ -106,14 +117,15 @@ export function Tools() {
   const allTools = data?.tools ?? [];
   const enabledCount = allTools.filter((t) => t.enabled).length;
   const filtering = search.trim() !== "" || status !== "all";
+  const openedTool = openKey ? allTools.find((t) => toolKey(t) === openKey) : undefined;
 
   return (
-    <div className="space-y-6">
+    <div className={`space-y-6 ${openedTool ? "lg:mr-[28rem]" : ""}`}>
       <div>
         <h1 className="text-2xl font-semibold text-white">Tools</h1>
         <p className="mt-1 text-sm text-slate-400">
-          {enabledCount} of {allTools.length} tools enabled. Click a tool to turn it on or off; hover for its full
-          name and description.
+          {enabledCount} of {allTools.length} tools enabled. Click a tool to see its inputs and recent calls, try
+          it, or turn it on or off.
         </p>
       </div>
 
@@ -148,6 +160,8 @@ export function Tools() {
             group={group}
             filtering={filtering}
             busy={bulkMutation.isPending}
+            openKey={openKey}
+            onOpen={openTool}
             onApply={(tools, enabled) => apply(group.connectionId, tools, enabled)}
           />
         ))}
@@ -156,19 +170,36 @@ export function Tools() {
       {groups.length > 0 && filtering && groups.every((g) => g.rows.length === 0) && (
         <p className="text-slate-400">No tools match the current filters.</p>
       )}
+
+      {openedTool && (
+        <ToolPanel
+          tool={openedTool}
+          busy={bulkMutation.isPending}
+          onToggle={(enabled) => apply(openedTool.connectionId, [openedTool], () => enabled)}
+          onClose={closePanel}
+        />
+      )}
     </div>
   );
+}
+
+function toolKey(tool: ToolSummary): string {
+  return `${tool.connectionId}:${tool.name}`;
 }
 
 function ConnectionSection({
   group,
   filtering,
   busy,
+  openKey,
+  onOpen,
   onApply,
 }: {
   group: ConnectionGroup;
   filtering: boolean;
   busy: boolean;
+  openKey: string | null;
+  onOpen: (tool: ToolSummary) => void;
   onApply: (tools: ToolSummary[], enabled: (t: ToolSummary) => boolean) => void;
 }) {
   const enabledCount = group.tools.filter((t) => t.enabled).length;
@@ -250,12 +281,13 @@ function ConnectionSection({
                             <button
                               key={tool.name}
                               type="button"
-                              aria-pressed={tool.enabled}
-                              title={`${tool.name} — ${tool.enabled ? "enabled" : "disabled"}\n\n${tool.description}`}
-                              onClick={() => onApply([tool], () => !tool.enabled)}
+                              aria-label={`${tool.name} (${tool.enabled ? "enabled" : "disabled"})`}
+                              aria-current={openKey === toolKey(tool) ? "true" : undefined}
+                              title={`${tool.name} — ${tool.enabled ? "enabled" : "disabled"}`}
+                              onClick={() => onOpen(tool)}
                               className={`rounded-full border px-2.5 py-0.5 text-xs transition-colors ${
                                 tool.enabled ? pillEnabled[tool.access] : pillDisabled
-                              }`}
+                              } ${openKey === toolKey(tool) ? "ring-2 ring-white/70 ring-offset-1 ring-offset-slate-950" : ""}`}
                             >
                               {tool.action}
                             </button>

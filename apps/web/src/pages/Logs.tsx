@@ -16,6 +16,17 @@ interface NormalizedLogRow {
   createdAt: string;
 }
 
+function normalizeLog(log: ToolCallLogEntry | PromptCallLogEntry, name: string): NormalizedLogRow {
+  return {
+    id: log.id,
+    name,
+    status: log.status,
+    durationMs: log.durationMs,
+    errorSummary: log.errorSummary,
+    createdAt: log.createdAt,
+  };
+}
+
 export function Logs() {
   const [kind, setKind] = useState<"tool" | "prompt">("tool");
   const [status, setStatus] = useState<"" | "success" | "error">("");
@@ -23,27 +34,22 @@ export function Logs() {
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["logs", kind, status, nameFilter],
-    queryFn: () => {
+    queryFn: async (): Promise<NormalizedLogRow[]> => {
       const params = new URLSearchParams();
       if (status) params.set("status", status);
       if (kind === "tool") {
         if (nameFilter) params.set("toolName", nameFilter);
-        return api.get<{ logs: ToolCallLogEntry[] }>(`/api/logs?${params.toString()}`).then((res) => res.logs);
+        const res = await api.get<{ logs: ToolCallLogEntry[] }>(`/api/logs?${params.toString()}`);
+        return res.logs.map((log) => normalizeLog(log, log.toolName));
       }
       if (nameFilter) params.set("promptName", nameFilter);
-      return api.get<{ logs: PromptCallLogEntry[] }>(`/api/prompt-logs?${params.toString()}`).then((res) => res.logs);
+      const res = await api.get<{ logs: PromptCallLogEntry[] }>(`/api/prompt-logs?${params.toString()}`);
+      return res.logs.map((log) => normalizeLog(log, log.promptName));
     },
     refetchInterval: 10000,
   });
 
-  const rows: NormalizedLogRow[] = (data ?? []).map((log) => ({
-    id: log.id,
-    name: "toolName" in log ? log.toolName : log.promptName,
-    status: log.status,
-    durationMs: log.durationMs,
-    errorSummary: log.errorSummary,
-    createdAt: log.createdAt,
-  }));
+  const rows = data ?? [];
 
   return (
     <div className="space-y-6">

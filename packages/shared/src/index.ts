@@ -35,6 +35,30 @@ export interface ToolSummary {
   enabled: boolean;
 }
 
+/** The subset of JSON Schema the Web UI reads to build a tool's input form. */
+export interface JsonSchemaProperty {
+  type?: string | string[];
+  description?: string;
+  enum?: unknown[];
+  items?: JsonSchemaProperty;
+  default?: unknown;
+}
+
+export interface JsonSchemaObject {
+  type?: string;
+  properties?: Record<string, JsonSchemaProperty>;
+  required?: string[];
+}
+
+/** One tool with everything the Tools page's side panel shows — `GET /api/tools/:connectionId/:toolName`. */
+export interface ToolDetail extends ToolSummary {
+  inputSchema: JsonSchemaObject;
+  /** False when the whole connection is disabled; the tool can't be run then even if it's enabled. */
+  connectionEnabled: boolean;
+  /** This tool's most recent calls on this connection, newest first (at most 20). */
+  recentCalls: ToolCallLogEntry[];
+}
+
 export interface PromptArgumentSummary {
   name: string;
   description?: string;
