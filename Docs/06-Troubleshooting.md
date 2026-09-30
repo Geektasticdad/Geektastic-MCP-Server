@@ -57,7 +57,7 @@ Check, in order:
 
 ## A tool call fails
 
-Check **Logs** for the exact error — it includes what Geektastic Realms itself
+Check **Activity** for the exact error — it includes what Geektastic Realms itself
 returned (e.g. "entry not found", validation errors on a `custom_fields` value,
 etc.), not just a generic failure. If the same call succeeds from the
 **Testing Playground** with the same inputs, the problem is specific to how the
@@ -84,7 +84,7 @@ registration/consent again.
 
 ## Still stuck
 
-Check **Logs** for the relevant tool/timeframe first — most issues leave a
+Check **Activity** for the relevant tool/timeframe first — most issues leave a
 clear error there. If you're the operator, server-side details beyond what's
 in Logs are in the container's stdout/stderr (see
 [Tech_Docs/08-Deployment.md](../Tech_Docs/08-Deployment.md)).

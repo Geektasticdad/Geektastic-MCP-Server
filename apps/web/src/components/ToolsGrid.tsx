@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSearchParams } from "react-router-dom";
 import { api } from "../api/client";
 import type { ToolSummary } from "@geektastic/shared";
-import { ToolPanel } from "../components/ToolPanel";
+import { ToolPanel } from "./ToolPanel";
 
 type Access = ToolSummary["access"];
 type StatusFilter = "all" | "enabled" | "disabled";
@@ -32,102 +32,84 @@ interface ToolChange {
   enabled: boolean;
 }
 
-interface ConnectionGroup {
-  connectionId: string;
-  connectionName: string;
-  tools: ToolSummary[];
-  /** Category name → the tools in that row that pass the current filters. */
-  rows: Array<[string, ToolSummary[]]>;
-}
-
-export function Tools() {
+/**
+ * One connection's tools as a category × access grid, with search, filters,
+ * presets and the side panel. The open tool's name is kept in `?tool=` so it
+ * can be linked to.
+ */
+export function ToolsGrid({ connectionId }: { connectionId: string }) {
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState<StatusFilter>("all");
-  // The open side panel's tool, as "<connectionId>:<toolName>", kept in the URL so it can be linked to.
   const [searchParams, setSearchParams] = useSearchParams();
-  const openKey = searchParams.get("tool");
+  const openName = searchParams.get("tool");
 
   const openTool = useCallback(
-    (tool: ToolSummary) => setSearchParams({ tool: toolKey(tool) }, { replace: true }),
+    (tool: ToolSummary) => setSearchParams({ tool: tool.name }, { replace: true }),
     [setSearchParams],
   );
   const closePanel = useCallback(() => setSearchParams({}, { replace: true }), [setSearchParams]);
 
+  const queryKey = ["tools", connectionId];
   const { data, isLoading } = useQuery({
-    queryKey: ["tools"],
-    queryFn: () => api.get<{ tools: ToolSummary[] }>("/api/tools"),
+    queryKey,
+    queryFn: () => api.get<{ tools: ToolSummary[] }>(`/api/tools?connectionId=${encodeURIComponent(connectionId)}`),
   });
 
   const bulkMutation = useMutation({
-    mutationFn: (input: { connectionId: string; changes: ToolChange[] }) => api.post("/api/tools/bulk", input),
+    mutationFn: (changes: ToolChange[]) => api.post("/api/tools/bulk", { connectionId, changes }),
     // Optimistic, so pills flip immediately; the refetch in onSettled corrects any failure.
-    onMutate: async ({ connectionId, changes }) => {
-      await queryClient.cancelQueries({ queryKey: ["tools"] });
+    onMutate: async (changes) => {
+      await queryClient.cancelQueries({ queryKey });
       const next = new Map(changes.map((c) => [c.toolName, c.enabled]));
-      queryClient.setQueryData<{ tools: ToolSummary[] }>(["tools"], (old) =>
-        old
-          ? {
-              tools: old.tools.map((t) =>
-                t.connectionId === connectionId && next.has(t.name) ? { ...t, enabled: next.get(t.name)! } : t,
-              ),
-            }
-          : old,
+      queryClient.setQueryData<{ tools: ToolSummary[] }>(queryKey, (old) =>
+        old ? { tools: old.tools.map((t) => (next.has(t.name) ? { ...t, enabled: next.get(t.name)! } : t)) } : old,
       );
     },
     onSettled: () => void queryClient.invalidateQueries({ queryKey: ["tools"] }),
   });
 
-  function apply(connectionId: string, tools: ToolSummary[], enabled: (t: ToolSummary) => boolean) {
+  function apply(tools: ToolSummary[], enabled: (t: ToolSummary) => boolean) {
     const changes = tools.filter((t) => t.enabled !== enabled(t)).map((t) => ({ toolName: t.name, enabled: enabled(t) }));
-    if (changes.length > 0) bulkMutation.mutate({ connectionId, changes });
+    if (changes.length > 0) bulkMutation.mutate(changes);
   }
 
-  const groups = useMemo<ConnectionGroup[]>(() => {
-    const needle = search.trim().toLowerCase();
-    const matches = (t: ToolSummary) =>
-      (status === "all" || (status === "enabled") === t.enabled) &&
-      (!needle ||
-        t.name.replace(/_/g, " ").toLowerCase().includes(needle) ||
-        t.category.toLowerCase().includes(needle));
+  const allTools = data?.tools ?? [];
 
-    const byConnection = new Map<string, ConnectionGroup>();
-    for (const tool of data?.tools ?? []) {
-      let group = byConnection.get(tool.connectionId);
-      if (!group) {
-        group = { connectionId: tool.connectionId, connectionName: tool.connectionName, tools: [], rows: [] };
-        byConnection.set(tool.connectionId, group);
+  /** Category name → the tools in that row that pass the current filters. */
+  const rows = useMemo<Array<[string, ToolSummary[]]>>(() => {
+    const needle = search.trim().toLowerCase();
+    const byCategory = new Map<string, ToolSummary[]>();
+    for (const tool of allTools) {
+      if (status !== "all" && (status === "enabled") !== tool.enabled) continue;
+      if (
+        needle &&
+        !tool.name.replace(/_/g, " ").toLowerCase().includes(needle) &&
+        !tool.category.toLowerCase().includes(needle)
+      ) {
+        continue;
       }
-      group.tools.push(tool);
+      const row = byCategory.get(tool.category) ?? [];
+      row.push(tool);
+      byCategory.set(tool.category, row);
     }
-    for (const group of byConnection.values()) {
-      const rows = new Map<string, ToolSummary[]>();
-      for (const tool of group.tools.filter(matches)) {
-        const row = rows.get(tool.category) ?? [];
-        row.push(tool);
-        rows.set(tool.category, row);
-      }
-      group.rows = [...rows.entries()].sort(([a], [b]) => a.localeCompare(b));
-    }
-    return [...byConnection.values()];
-  }, [data, search, status]);
+    return [...byCategory.entries()].sort(([a], [b]) => a.localeCompare(b));
+  }, [allTools, search, status]);
 
   if (isLoading) return <p className="text-slate-400">Loading...</p>;
+  if (allTools.length === 0) return <p className="text-slate-400">This connection has no tools.</p>;
 
-  const allTools = data?.tools ?? [];
   const enabledCount = allTools.filter((t) => t.enabled).length;
   const filtering = search.trim() !== "" || status !== "all";
-  const openedTool = openKey ? allTools.find((t) => toolKey(t) === openKey) : undefined;
+  const busy = bulkMutation.isPending;
+  const openedTool = openName ? allTools.find((t) => t.name === openName) : undefined;
 
   return (
-    <div className={`space-y-6 ${openedTool ? "lg:mr-[28rem]" : ""}`}>
-      <div>
-        <h1 className="text-2xl font-semibold text-white">Tools</h1>
-        <p className="mt-1 text-sm text-slate-400">
-          {enabledCount} of {allTools.length} tools enabled. Click a tool to see its inputs and recent calls, try
-          it, or turn it on or off.
-        </p>
-      </div>
+    <div className={`space-y-4 ${openedTool ? "xl:mr-[28rem]" : ""}`}>
+      <p className="text-sm text-slate-400">
+        {enabledCount} of {allTools.length} tools enabled. Click a tool to see its inputs and recent calls, try it, or
+        turn it on or off.
+      </p>
 
       <div className="flex flex-wrap items-center gap-3">
         <input
@@ -135,6 +117,7 @@ export function Tools() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search tools, e.g. encounter or delete"
+          aria-label="Search tools"
           className="w-full max-w-sm rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white"
         />
         <div className="flex overflow-hidden rounded-md">
@@ -149,75 +132,13 @@ export function Tools() {
             </button>
           ))}
         </div>
-        <Legend />
-      </div>
-
-      {groups
-        .filter((group) => !filtering || group.rows.length > 0)
-        .map((group) => (
-          <ConnectionSection
-            key={group.connectionId}
-            group={group}
-            filtering={filtering}
-            busy={bulkMutation.isPending}
-            openKey={openKey}
-            onOpen={openTool}
-            onApply={(tools, enabled) => apply(group.connectionId, tools, enabled)}
-          />
-        ))}
-
-      {groups.length === 0 && <p className="text-slate-400">No tools available yet — add a connection first.</p>}
-      {groups.length > 0 && filtering && groups.every((g) => g.rows.length === 0) && (
-        <p className="text-slate-400">No tools match the current filters.</p>
-      )}
-
-      {openedTool && (
-        <ToolPanel
-          tool={openedTool}
-          busy={bulkMutation.isPending}
-          onToggle={(enabled) => apply(openedTool.connectionId, [openedTool], () => enabled)}
-          onClose={closePanel}
-        />
-      )}
-    </div>
-  );
-}
-
-function toolKey(tool: ToolSummary): string {
-  return `${tool.connectionId}:${tool.name}`;
-}
-
-function ConnectionSection({
-  group,
-  filtering,
-  busy,
-  openKey,
-  onOpen,
-  onApply,
-}: {
-  group: ConnectionGroup;
-  filtering: boolean;
-  busy: boolean;
-  openKey: string | null;
-  onOpen: (tool: ToolSummary) => void;
-  onApply: (tools: ToolSummary[], enabled: (t: ToolSummary) => boolean) => void;
-}) {
-  const enabledCount = group.tools.filter((t) => t.enabled).length;
-
-  return (
-    <section>
-      <div className="mb-3 flex flex-wrap items-center gap-x-4 gap-y-2">
-        <h2 className="text-lg font-medium text-white">{group.connectionName}</h2>
-        <span className="text-sm text-slate-400">
-          {enabledCount} / {group.tools.length} enabled
-        </span>
         <div className="flex gap-2 sm:ml-auto">
           <button
             type="button"
             disabled={busy}
             className={presetButton}
             title="Turn on every tool in this connection"
-            onClick={() => onApply(group.tools, () => true)}
+            onClick={() => apply(allTools, () => true)}
           >
             Enable all
           </button>
@@ -226,7 +147,7 @@ function ConnectionSection({
             disabled={busy}
             className={presetButton}
             title="Turn on only the tools that read data; turn off everything that creates, edits or deletes"
-            onClick={() => onApply(group.tools, (t) => t.access === "read")}
+            onClick={() => apply(allTools, (t) => t.access === "read")}
           >
             Read-only
           </button>
@@ -235,14 +156,16 @@ function ConnectionSection({
             disabled={busy}
             className={presetButton}
             title="Turn off every tool in this connection"
-            onClick={() => onApply(group.tools, () => false)}
+            onClick={() => apply(allTools, () => false)}
           >
             Disable all
           </button>
         </div>
       </div>
 
-      {group.rows.length === 0 ? (
+      <Legend />
+
+      {rows.length === 0 ? (
         <p className="rounded-md border border-slate-800 px-4 py-3 text-sm text-slate-500">
           No tools match the current filters.
         </p>
@@ -261,14 +184,14 @@ function ConnectionSection({
               </tr>
             </thead>
             <tbody>
-              {group.rows.map(([category, tools]) => (
+              {rows.map(([category, tools]) => (
                 <tr key={category} className="border-t border-slate-800 align-top">
                   <td className="px-4 py-2.5">
                     <RowSwitch
                       tools={tools}
                       disabled={busy}
                       label={filtering ? `${category} (shown tools only)` : category}
-                      onChange={(enabled) => onApply(tools, () => enabled)}
+                      onChange={(enabled) => apply(tools, () => enabled)}
                     />
                   </td>
                   <td className="px-4 py-2.5 font-medium text-slate-200">{category}</td>
@@ -282,12 +205,12 @@ function ConnectionSection({
                               key={tool.name}
                               type="button"
                               aria-label={`${tool.name} (${tool.enabled ? "enabled" : "disabled"})`}
-                              aria-current={openKey === toolKey(tool) ? "true" : undefined}
+                              aria-current={openName === tool.name ? "true" : undefined}
                               title={`${tool.name} — ${tool.enabled ? "enabled" : "disabled"}`}
-                              onClick={() => onOpen(tool)}
+                              onClick={() => openTool(tool)}
                               className={`rounded-full border px-2.5 py-0.5 text-xs transition-colors ${
                                 tool.enabled ? pillEnabled[tool.access] : pillDisabled
-                              } ${openKey === toolKey(tool) ? "ring-2 ring-white/70 ring-offset-1 ring-offset-slate-950" : ""}`}
+                              } ${openName === tool.name ? "ring-2 ring-white/70 ring-offset-1 ring-offset-slate-950" : ""}`}
                             >
                               {tool.action}
                             </button>
@@ -301,7 +224,16 @@ function ConnectionSection({
           </table>
         </div>
       )}
-    </section>
+
+      {openedTool && (
+        <ToolPanel
+          tool={openedTool}
+          busy={busy}
+          onToggle={(enabled) => apply([openedTool], () => enabled)}
+          onClose={closePanel}
+        />
+      )}
+    </div>
   );
 }
 
@@ -341,7 +273,7 @@ function RowSwitch({
 
 function Legend() {
   return (
-    <div className="flex flex-wrap items-center gap-2 text-xs text-slate-400 sm:ml-auto">
+    <div className="flex flex-wrap items-center gap-2 text-xs text-slate-400">
       <span className={`rounded-full border px-2 py-0.5 ${pillEnabled.read}`}>reads</span>
       <span className={`rounded-full border px-2 py-0.5 ${pillEnabled.write}`}>changes</span>
       <span className={`rounded-full border px-2 py-0.5 ${pillEnabled.delete}`}>deletes</span>

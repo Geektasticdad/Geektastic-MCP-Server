@@ -9,8 +9,12 @@ import type { PromptSummary } from "@geektastic/shared";
 export const promptsRouter = Router();
 promptsRouter.use(requireAdmin);
 
-promptsRouter.get("/", async (_req, res) => {
-  const connections = await prisma.appConnection.findMany({ include: { promptSettings: true } });
+promptsRouter.get("/", async (req, res) => {
+  const connectionId = typeof req.query.connectionId === "string" ? req.query.connectionId : undefined;
+  const connections = await prisma.appConnection.findMany({
+    where: connectionId ? { id: connectionId } : undefined,
+    include: { promptSettings: true },
+  });
   const summaries: PromptSummary[] = [];
 
   for (const row of connections) {

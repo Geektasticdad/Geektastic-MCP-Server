@@ -1,11 +1,10 @@
-import { Navigate, Route, Routes, useLocation } from "react-router-dom";
+import { Navigate, Route, Routes, useLocation, useSearchParams } from "react-router-dom";
 import { useAuth } from "./auth/AuthContext";
 import { Layout } from "./components/Layout";
 import { Login } from "./pages/Login";
 import { Dashboard } from "./pages/Dashboard";
 import { Connections } from "./pages/Connections";
-import { Tools } from "./pages/Tools";
-import { Prompts } from "./pages/Prompts";
+import { ConnectionDetail } from "./pages/ConnectionDetail";
 import { Tokens } from "./pages/Tokens";
 import { OAuthClients } from "./pages/OAuthClients";
 import { OAuthConsent } from "./pages/OAuthConsent";
@@ -23,6 +22,23 @@ function RequireAuth({ children }: { children: React.ReactNode }) {
     return <Navigate to={`/login?returnTo=${returnTo}`} replace />;
   }
   return <>{children}</>;
+}
+
+/**
+ * The old global Tools/Prompts pages (before 1.6.3) now live under each
+ * connection. `/tools?tool=<connectionId>:<toolName>` links from 1.6.2 go
+ * straight to that tool's panel.
+ */
+function LegacyToolsRedirect() {
+  const [params] = useSearchParams();
+  const key = params.get("tool");
+  const split = key?.indexOf(":") ?? -1;
+  if (key && split > 0) {
+    const connectionId = key.slice(0, split);
+    const toolName = key.slice(split + 1);
+    return <Navigate to={`/connections/${connectionId}/tools?tool=${encodeURIComponent(toolName)}`} replace />;
+  }
+  return <Navigate to="/connections" replace />;
 }
 
 function RequireAdmin({ children }: { children: React.ReactNode }) {
@@ -63,21 +79,15 @@ export function App() {
           }
         />
         <Route
-          path="tools"
+          path="connections/:id/:tab?"
           element={
             <RequireAdmin>
-              <Tools />
+              <ConnectionDetail />
             </RequireAdmin>
           }
         />
-        <Route
-          path="prompts"
-          element={
-            <RequireAdmin>
-              <Prompts />
-            </RequireAdmin>
-          }
-        />
+        <Route path="tools" element={<LegacyToolsRedirect />} />
+        <Route path="prompts" element={<Navigate to="/connections" replace />} />
         <Route
           path="tokens"
           element={

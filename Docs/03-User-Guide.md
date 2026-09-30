@@ -2,9 +2,9 @@
 
 These pages are available to every logged-in account, admin or member.
 
-## Dashboard
+## Overview
 
-The landing page after login. It refreshes automatically every 15 seconds and
+The landing page after login (**Overview** in the sidebar). It refreshes automatically every 15 seconds and
 shows:
 
 - **Connections** — how many are configured.
@@ -13,7 +13,8 @@ shows:
 - **Recent error rate** — the error percentage among the last 10 tool calls
   server-wide.
 - **Connection health** — a per-connection Healthy/Unavailable indicator (the
-  same check as the admin "Test" button).
+  same check as the admin "Test now" button). Admins can click a connection to
+  open its page.
 - **Recent tool calls** — the last 10 calls across the whole server: tool name,
   success/error, duration, and timestamp.
 
@@ -45,12 +46,12 @@ each one does.
 
 Important: **this actually calls the real Geektastic Realms API** — running
 `gr_create_statblock`, or a prompt that reads real module/session data, really
-touches your world. It's not a sandbox. Every call here is logged in **Logs**
+touches your world. It's not a sandbox. Every call here is logged in **Activity**
 just like a call from Claude would be, so you can cross-check.
 
-## Logs
+## Activity
 
-**Logs** shows the history of every tool and prompt call made through this
+**Activity** shows the history of every tool and prompt call made through this
 server — whether from a real MCP client (Claude) or from the Testing
 Playground. Use the **Tool Calls** / **Prompt Calls** tabs to switch between
 them.

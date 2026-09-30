@@ -16,8 +16,8 @@ function typeLabel(spec: JsonSchemaProperty): string {
 }
 
 /**
- * Docked panel on the Tools page for one tool: on/off switch, description,
- * inputs, a Try it form and recent calls. `tool` comes from the Tools grid
+ * Docked panel on a connection's Tools tab for one tool: on/off switch, description,
+ * inputs, a Try it form and recent calls. `tool` comes from ToolsGrid
  * (so its enabled state updates optimistically); the schema and calls are
  * fetched per tool.
  */

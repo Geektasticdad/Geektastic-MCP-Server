@@ -10,7 +10,7 @@ interface InvokeResponse {
 /**
  * Input form + Run button + result for one tool, via POST /api/playground/invoke —
  * the same handler path MCP clients hit, so the call is logged like theirs.
- * Shared by the Testing Playground and the Tools page's side panel. Give it a
+ * Shared by the Testing Playground and the tool side panel. Give it a
  * `key` per tool so the form resets when the tool changes.
  */
 export function ToolRunner({

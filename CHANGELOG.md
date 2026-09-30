@@ -7,6 +7,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.6.3] - 2026-09-30
+
+Reorganizes the Web UI around connections. Each connection gets its own page
+with its tools, prompts, activity and settings, and the sidebar is regrouped.
+See [Docs/02-Admin-Guide.md](Docs/02-Admin-Guide.md#a-connections-page).
+
+### Added
+- **Connection pages** (`/connections/<id>`) with five tabs: **Overview**
+  (health, **Test now**, tools and prompts on, recent calls), **Tools** (the
+  grid and side panel, for this connection), **Prompts**, **Activity** (this
+  connection's calls only) and **Settings** (name, base URL, API key,
+  enable/disable, delete).
+- **Phone layout.** Below tablet width the sidebar folds behind a **Menu**
+  button, and wide tables scroll sideways instead of stretching the page.
+- **`GET /api/connections/:id`**, and an optional `?connectionId=` filter on
+  `GET /api/tools` and `GET /api/prompts`.
+
+### Changed
+- **Sidebar regrouped.** Overview, Activity and Testing Playground at the top;
+  **Configure** with Connections and a link (with a health dot) for each
+  connection; **Access** with Tokens, OAuth Clients and Users; then Account.
+- **The global Tools and Prompts pages are gone** — they're tabs on each
+  connection page now. Old `/tools` and `/prompts` links redirect, and 1.6.2
+  links to a tool (`/tools?tool=…`) open that tool on its connection page.
+- **Dashboard is now Overview, and Logs is now Activity.** Their addresses
+  (`/` and `/logs`) are unchanged. Admins can click a connection on Overview
+  to open its page.
+- **Connections page** shows each connection as a card linking to its page;
+  **Add connection** opens the form, and a new connection's page opens once
+  it's added.
+- **Changing a connection's base URL no longer needs the API key again.**
+  `PATCH /api/connections/:id` now merges `config` over the stored settings
+  instead of replacing them, so a blank API key keeps the current one.
+
 ## [1.6.2] - 2026-09-30
 
 Adds a side panel to the **Tools** page, so everything about one tool is in

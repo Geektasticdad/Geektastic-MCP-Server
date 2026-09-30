@@ -15,6 +15,8 @@ export interface PublicUser {
 export interface AppConnectionSummary {
   id: string;
   appType: string;
+  /** The connector's display name, e.g. "Geektastic Realms". */
+  appName: string;
   name: string;
   baseUrl: string;
   enabled: boolean;

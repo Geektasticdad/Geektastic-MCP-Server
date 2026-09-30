@@ -43,9 +43,9 @@ Every account is either an **admin** or a **member**:
 
 | Capability | Member | Admin |
 |---|---|---|
-| View the Dashboard | ✅ | ✅ |
+| View the Overview | ✅ | ✅ |
 | Use the Testing Playground | ✅ (enabled tools only) | ✅ |
-| View tool-call Logs | ✅ | ✅ |
+| View Activity (call logs) | ✅ | ✅ |
 | Manage own Profile / password | ✅ | ✅ |
 | Manage Connections (add/edit/delete/test) | ❌ | ✅ |
 | Enable/disable individual Tools | ❌ | ✅ |

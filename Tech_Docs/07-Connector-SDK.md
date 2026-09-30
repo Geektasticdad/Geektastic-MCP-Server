@@ -119,7 +119,7 @@ collision case.
    too if the app has DM/user-facing workflows worth templating — it's
    optional, so a tools-only connector like `family-tree` can skip it.
 2. Register it in `CONNECTORS` in `src/registry.ts`.
-3. Nothing else changes — the Web UI's Connections/Tools/Prompts pages, token
+3. Nothing else changes — the Web UI's connection pages (with their Tools and Prompts tabs), token
    auth, tool/prompt-call logging, and the `/mcp` endpoint all work
    automatically once a connector is registered, because they only ever go
    through `getConnector()`/`listConnectors()`/`aggregateTools()`/

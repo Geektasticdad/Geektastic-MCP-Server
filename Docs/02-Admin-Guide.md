@@ -1,8 +1,11 @@
 # Administrator Guide
 
-Everything on this page requires an **admin** account. All admin pages live
-under the sidebar's "Admin" section: **Connections**, **Tools**, **Tokens**,
-**OAuth Clients**, **Users**.
+Everything on this page requires an **admin** account. Admins see two extra
+sidebar sections: **Configure** (**Connections**, with a link under it for each
+connection) and **Access** (**Tokens**, **OAuth Clients**, **Users**). Each
+connection's tools and prompts are managed on that connection's own page.
+
+On a phone, the sidebar folds away behind the **Menu** button at the top.
 
 ## Connections
 
@@ -65,28 +68,44 @@ can also be given an optional **expiry date** in Family Tree, after which
 this connection's health check will start failing with "This API token has
 expired." until you generate a new one.
 
-### Managing an existing connection
+After you add a connection, its page opens.
 
-Each connection card shows a live health indicator (rechecked automatically):
+### A connection's page
 
-- **Healthy** — the server successfully reached the application (for Realms,
-  shows the world name and version; for Family Tree, the count of trees the
-  token's user can access).
-- Anything else — the error message returned by the application (bad API key,
-  unreachable host, etc.).
+The **Connections** page lists every connection as a card with its health —
+**Healthy**, **Unhealthy** (with the error the application returned, such as a
+bad API key or unreachable host), or **Disabled** — and how many of its tools
+are on. The same status shows as a coloured dot next to each connection in the
+sidebar. Click a card (or a sidebar link) to open that connection's page,
+which has five tabs:
 
-Buttons per connection:
-- **Test** — re-runs the health check on demand and shows the result inline.
-- **Disable / Enable** — a disabled connection's tools stop being offered to MCP
-  clients and the Testing Playground immediately, without deleting anything.
-  Use this instead of deleting when you just want to pause access temporarily.
-- **Delete** — permanently removes the connection (and its per-tool enable/
-  disable settings). This cannot be undone from the UI.
+- **Overview** — health (with **Test now** to re-run the check), how many tools
+  and prompts are on, and its last few tool calls. Click a call to open that
+  tool.
+- **Tools** — turn tools on and off, and try them. See [Tools](#tools) below.
+- **Prompts** — turn this connection's prompts on and off. See
+  [Prompts](#prompts) below.
+- **Activity** — every tool and prompt call made through this connection, with
+  the same filters as the main **Activity** page.
+- **Settings** — see below.
+
+### Settings
+
+- **Details** — change the connection's name, base URL or API key. Leave the
+  API key blank to keep the current one; you only need to enter it to replace
+  it.
+- **Disable / Enable connection** — a disabled connection's tools and prompts
+  stop being offered to MCP clients and the Testing Playground immediately,
+  without deleting anything. Use this instead of deleting when you just want to
+  pause access temporarily.
+- **Delete connection** — permanently removes the connection and its per-tool
+  and per-prompt settings. Its call logs stay in **Activity**. This cannot be
+  undone.
 
 ## Tools
 
-The **Tools** page shows every tool contributed by every connection as a grid,
-one per connection. Each row is one kind of thing the tools act on (Campaign,
+A connection's **Tools** tab shows its tools as a grid. Each row is one kind of
+thing the tools act on (Campaign,
 Encounter, Person, Research task…), and its tools sit in three columns:
 **Read** (list, get, search), **Create & edit**, and **Delete**. Each tool is a
 pill; a struck-through, dashed pill is off. Hover a pill for its full tool name.
@@ -103,8 +122,9 @@ Click a pill to open that tool's **side panel**:
   with status, duration and any error.
 
 Clicking another pill switches the panel to that tool; **Esc** or **×** closes
-it. The open tool is part of the page address (`/tools?tool=…`), so you can
-bookmark or share a link straight to it.
+it. The open tool is part of the page address
+(`/connections/<id>/tools?tool=…`), so you can bookmark or share a link
+straight to it. Links from before 1.6.3 (`/tools?tool=…`) still work.
 
 - **Row switch** — the checkbox at the start of a row turns every tool in that
   row on or off. It shows a dash when only some of them are on. While you're
@@ -124,11 +144,10 @@ each tool actually does.
 
 ## Prompts
 
-The **Prompts** page is the same idea as **Tools**, but for MCP **prompts** —
-reusable, user-invocable conversation templates rather than something the
-model calls on its own. It lists every prompt contributed by every
-connection, grouped by connection name, with a checkbox to enable or disable
-each one individually.
+A connection's **Prompts** tab is the same idea as **Tools**, but for MCP
+**prompts** — reusable, user-invocable conversation templates rather than
+something the model calls on its own. It lists the connection's prompts with a
+checkbox to enable or disable each one.
 
 - A prompt is enabled by default the moment its connection is added.
 - Disabling a prompt here removes it from what MCP clients see (`prompts/list`
@@ -154,8 +173,8 @@ Code CLI) uses to authenticate to `/mcp` as `Authorization: Bearer <token>`.
   spot stale tokens worth revoking.
 
 Anyone who has a valid token can call every *enabled* tool on every *enabled*
-connection — tokens aren't currently scoped per-connection. Use the Tools page
-to control what's actually exposed.
+connection — tokens aren't currently scoped per-connection. Use each
+connection's **Tools** tab to control what's actually exposed.
 
 ## OAuth Clients
 
@@ -211,19 +230,20 @@ There's no "delete user" — disable the account instead. This preserves the
 audit trail (who created which connections/tokens/OAuth clients) since those
 records reference the user.
 
-## Logs (admin view)
+## Activity (admin view)
 
-Logs are covered in the [User Guide](03-User-Guide.md#logs) since every
-logged-in user can see them — admins see exactly the same page, with separate
-**Tool Calls** and **Prompt Calls** tabs. Use the **status** and **name**
-filters to narrow down errors from a specific integration.
+**Activity** is covered in the [User Guide](03-User-Guide.md#activity) since
+every logged-in user can see it — admins see exactly the same page, with
+separate **Tool Calls** and **Prompt Calls** tabs. Use the **status** and
+**name** filters to narrow down errors from a specific integration, or open a
+connection's **Activity** tab to see only its calls.
 
 ## Recommended setup order for a fresh deployment
 
 1. Log in as the bootstrap admin, change the password immediately (**Profile**).
 2. Add your Geektastic Realms **Connection** and confirm it shows **Healthy**.
-3. Review **Tools** and **Prompts** and disable anything you don't want exposed
-   yet.
+3. On the connection's **Tools** and **Prompts** tabs, disable anything you
+   don't want exposed yet (**Read-only** is a good starting point).
 4. Create a **Token** for each static MCP client (e.g. Claude Code CLI), or
    leave OAuth clients to self-register when Claude Desktop/Claude.ai connect.
 5. Create accounts for any other team members under **Users**, choosing roles

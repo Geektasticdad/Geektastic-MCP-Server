@@ -56,7 +56,7 @@ asks for a Client ID up front, an admin needs to create one manually under
 Once connected, the MCP client can list and call whatever tools are currently
 **enabled** (see [Administrator Guide → Tools](02-Admin-Guide.md#tools)) — see
 [Geektastic Realms Tools Reference](05-GR-Tools-Reference.md) for the full
-catalog. Every call is recorded in **Logs**, visible to any logged-in user.
+catalog. Every call is recorded in **Activity**, visible to any logged-in user.
 
 Toggling a tool or a connection in the Web UI takes effect on the **next** MCP
 request — no server restart, and no need to reconnect the client.

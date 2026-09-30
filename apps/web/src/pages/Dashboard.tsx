@@ -1,5 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
+import { Link } from "react-router-dom";
 import { api } from "../api/client";
+import { useAuth } from "../auth/AuthContext";
 
 interface ConnectionHealth {
   id: string;
@@ -26,6 +28,7 @@ interface DashboardSummary {
 }
 
 export function Dashboard() {
+  const { user } = useAuth();
   const { data, isLoading, error } = useQuery({
     queryKey: ["dashboard-summary"],
     queryFn: () => api.get<DashboardSummary>("/api/dashboard/summary"),
@@ -38,9 +41,9 @@ export function Dashboard() {
 
   return (
     <div className="space-y-8">
-      <h1 className="text-2xl font-semibold text-white">Dashboard</h1>
+      <h1 className="text-2xl font-semibold text-white">Overview</h1>
 
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <StatCard label="Connections" value={data.connections.length} />
         <StatCard label="Active MCP tokens" value={data.activeTokenCount} />
         <StatCard label="Prompt calls" value={data.promptCallCount} />
@@ -51,23 +54,33 @@ export function Dashboard() {
         <h2 className="mb-3 text-lg font-medium text-white">Connection health</h2>
         <div className="space-y-2">
           {data.connections.length === 0 && <p className="text-slate-400">No connections configured yet.</p>}
-          {data.connections.map((c) => (
-            <div
-              key={c.id}
-              className="flex items-center justify-between rounded-md border border-slate-800 bg-slate-900 px-4 py-3"
-            >
-              <span className="text-slate-200">{c.name}</span>
-              <span className={c.ok ? "text-emerald-400" : "text-red-400"}>
-                {c.ok ? "Healthy" : c.detail ?? "Unavailable"}
-              </span>
-            </div>
-          ))}
+          {data.connections.map((c) => {
+            const row = (
+              <>
+                <span className="text-slate-200">{c.name}</span>
+                <span className={`truncate ${c.ok ? "text-emerald-400" : "text-red-400"}`}>
+                  {c.ok ? "Healthy" : c.detail ?? "Unavailable"}
+                </span>
+              </>
+            );
+            const rowClass =
+              "flex items-center justify-between gap-4 rounded-md border border-slate-800 bg-slate-900 px-4 py-3";
+            return user?.role === "admin" ? (
+              <Link key={c.id} to={`/connections/${c.id}`} className={`${rowClass} hover:border-slate-600`}>
+                {row}
+              </Link>
+            ) : (
+              <div key={c.id} className={rowClass}>
+                {row}
+              </div>
+            );
+          })}
         </div>
       </section>
 
       <section>
         <h2 className="mb-3 text-lg font-medium text-white">Recent tool calls</h2>
-        <div className="overflow-hidden rounded-md border border-slate-800">
+        <div className="overflow-x-auto rounded-md border border-slate-800">
           <table className="w-full text-left text-sm">
             <thead className="bg-slate-900 text-slate-400">
               <tr>

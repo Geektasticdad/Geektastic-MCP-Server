@@ -96,7 +96,7 @@ apps/
     prisma/schema.prisma
   web/          React + Vite admin UI (built into apps/server/public)
     src/
-      pages/             one file per UI page (Dashboard, Connections, Tools, ...)
+      pages/             one file per UI page (Dashboard, Connections, ConnectionDetail, ...)
       api/client.ts       fetch wrapper: base URL, CSRF header, error handling
       auth/AuthContext.tsx session state (current user, login/logout/refresh)
 packages/

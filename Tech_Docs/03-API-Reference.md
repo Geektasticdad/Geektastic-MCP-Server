@@ -42,9 +42,10 @@ There is no delete-user endpoint by design — disable via `PATCH status`.
 | Method & path | Body | Notes |
 |---|---|---|
 | `GET /api/connections/connectors` | — | `{ connectors: [{ id, displayName }] }` — every registered connector, regardless of whether it has any configured connections. |
-| `GET /api/connections` | — | `{ connections: AppConnectionSummary[] }`, each with a live `health` check (`connector.healthCheck()`) run at request time — this endpoint is not cheap; called on a 15s poll by the Web UI. |
+| `GET /api/connections` | — | `{ connections: AppConnectionSummary[] }`, each with a live `health` check (`connector.healthCheck()`) run at request time and the connector's `appName` — this endpoint is not cheap; called on a 15s poll by the Connections page and a 60s poll by the sidebar. |
+| `GET /api/connections/:id` | — | `{ connection: AppConnectionSummary }` for one connection, with the same live health check. `404` if it doesn't exist. Used by the connection page. |
 | `POST /api/connections` | `{ appType, name, config }` | `config` is validated against that connector's `configSchema`. `config.baseUrl` is stored in plaintext on the row; the rest of `config` is AES-256-GCM encrypted as one blob (`encryptCredentials`). `400` for an unknown `appType` or a `config` that fails the connector's schema. Returns `201 { id }`. |
-| `PATCH /api/connections/:id` | `{ name?, enabled?, config? }` | If `config` is present, it's re-validated against the connector's schema and **replaces** the encrypted credentials wholesale (not merged). `404` if the connection doesn't exist. `204`. |
+| `PATCH /api/connections/:id` | `{ name?, enabled?, config? }` | If `config` is present, it's **merged over the stored config** (base URL plus decrypted credentials) and the result is re-validated against the connector's schema — so a field left out, like `apiKey` when only `baseUrl` changes, keeps its current value. `404` if the connection doesn't exist. `204`. |
 | `DELETE /api/connections/:id` | — | Cascades to `ToolSetting` rows (DB-level cascade); `204`. |
 | `POST /api/connections/:id/test` | — | Decrypts credentials and runs `connector.healthCheck()` on demand, returns the raw `{ ok, detail? }` result. |
 
@@ -52,10 +53,10 @@ There is no delete-user endpoint by design — disable via `PATCH status`.
 
 | Method & path | Body | Notes |
 |---|---|---|
-| `GET /api/tools` | — | `{ tools: ToolSummary[] }` — every tool from every connection (regardless of that connection's own enabled state — this differs from `aggregateTools()`, which only includes enabled connections; the Tools page shows everything so an admin can toggle tools even on a currently-disabled connection). |
+| `GET /api/tools` | — | `{ tools: ToolSummary[] }` — every tool from every connection (regardless of that connection's own enabled state — this differs from `aggregateTools()`, which only includes enabled connections; a connection's Tools tab shows everything so an admin can toggle tools even on a currently-disabled connection). Optional `?connectionId=` limits it to one connection. |
 | `POST /api/tools/toggle` | `{ connectionId, toolName, enabled }` | Upserts a `ToolSetting` row on `(connectionId, toolName)`. `204`. |
-| `GET /api/tools/:connectionId/:toolName` | — | `{ tool: ToolDetail }` — the `ToolSummary` plus `inputSchema` (JSON Schema via `zod-to-json-schema`), `connectionEnabled`, and `recentCalls` (its last 20 `ToolCallLogEntry` rows on that connection, exact tool-name match). Includes disabled tools and tools on disabled connections. `404` for an unknown connection or tool. Used by the Tools page's side panel. |
-| `POST /api/tools/bulk` | `{ connectionId, changes: [{ toolName, enabled }] }` | Same upsert for up to 500 tools of one connection, in one transaction. Used by the Tools page's row switches and presets. `204`. |
+| `GET /api/tools/:connectionId/:toolName` | — | `{ tool: ToolDetail }` — the `ToolSummary` plus `inputSchema` (JSON Schema via `zod-to-json-schema`), `connectionEnabled`, and `recentCalls` (its last 20 `ToolCallLogEntry` rows on that connection, exact tool-name match). Includes disabled tools and tools on disabled connections. `404` for an unknown connection or tool. Used by the tool side panel. |
+| `POST /api/tools/bulk` | `{ connectionId, changes: [{ toolName, enabled }] }` | Same upsert for up to 500 tools of one connection, in one transaction. Used by the Tools tab's row switches and presets. `204`. |
 
 Each `ToolSummary` also carries `category`, `action` and `access` (`"read" | "write" | "delete"`) from `describeTool()` in `packages/connectors/src/toolMeta.ts` — the Tools grid's row, pill label and column.
 
@@ -65,7 +66,7 @@ Verbatim structural mirror of `/api/tools`, for MCP prompts.
 
 | Method & path | Body | Notes |
 |---|---|---|
-| `GET /api/prompts` | — | `{ prompts: PromptSummary[] }` — every prompt from every connection whose connector implements `getPrompts` (regardless of the connection's own enabled state, same rationale as `GET /api/tools`). |
+| `GET /api/prompts` | — | `{ prompts: PromptSummary[] }` — every prompt from every connection whose connector implements `getPrompts` (regardless of the connection's own enabled state, same rationale as `GET /api/tools`). Optional `?connectionId=` limits it to one connection. |
 | `POST /api/prompts/toggle` | `{ connectionId, promptName, enabled }` | Upserts a `PromptSetting` row on `(connectionId, promptName)`. `204`. |
 
 ## Tokens — `/api/tokens` (admin only; `tokens.routes.ts`)

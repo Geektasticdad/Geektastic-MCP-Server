@@ -10,8 +10,12 @@ import type { JsonSchemaObject, ToolDetail, ToolSummary } from "@geektastic/shar
 export const toolsRouter = Router();
 toolsRouter.use(requireAdmin);
 
-toolsRouter.get("/", async (_req, res) => {
-  const connections = await prisma.appConnection.findMany({ include: { toolSettings: true } });
+toolsRouter.get("/", async (req, res) => {
+  const connectionId = typeof req.query.connectionId === "string" ? req.query.connectionId : undefined;
+  const connections = await prisma.appConnection.findMany({
+    where: connectionId ? { id: connectionId } : undefined,
+    include: { toolSettings: true },
+  });
   const summaries: ToolSummary[] = [];
 
   for (const row of connections) {

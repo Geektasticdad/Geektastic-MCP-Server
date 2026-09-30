@@ -16,32 +16,44 @@ connectionsRouter.get("/connectors", (_req, res) => {
   });
 });
 
+type ConnectionRow = NonNullable<Awaited<ReturnType<typeof prisma.appConnection.findUnique>>>;
+
+/** Summary plus a live health check — not cheap, it calls the connected app. */
+async function toSummary(row: ConnectionRow): Promise<AppConnectionSummary> {
+  const connector = getConnector(row.appType);
+  let health: AppConnectionSummary["health"];
+  if (connector) {
+    try {
+      const credentials = decryptSecret<Record<string, unknown>>(row.encryptedCredentials);
+      health = await connector.healthCheck({ baseUrl: row.baseUrl, ...credentials });
+    } catch (err) {
+      health = { ok: false, detail: err instanceof Error ? err.message : String(err) };
+    }
+  }
+  return {
+    id: row.id,
+    appType: row.appType,
+    appName: connector?.displayName ?? row.appType,
+    name: row.name,
+    baseUrl: row.baseUrl,
+    enabled: row.enabled,
+    createdAt: row.createdAt.toISOString(),
+    health,
+  };
+}
+
 connectionsRouter.get("/", async (_req, res) => {
   const rows = await prisma.appConnection.findMany({ orderBy: { createdAt: "asc" } });
-  const summaries: AppConnectionSummary[] = await Promise.all(
-    rows.map(async (row) => {
-      const connector = getConnector(row.appType);
-      let health: AppConnectionSummary["health"];
-      if (connector) {
-        try {
-          const credentials = decryptSecret<Record<string, unknown>>(row.encryptedCredentials);
-          health = await connector.healthCheck({ baseUrl: row.baseUrl, ...credentials });
-        } catch (err) {
-          health = { ok: false, detail: err instanceof Error ? err.message : String(err) };
-        }
-      }
-      return {
-        id: row.id,
-        appType: row.appType,
-        name: row.name,
-        baseUrl: row.baseUrl,
-        enabled: row.enabled,
-        createdAt: row.createdAt.toISOString(),
-        health,
-      };
-    }),
-  );
-  res.json({ connections: summaries });
+  res.json({ connections: await Promise.all(rows.map(toSummary)) });
+});
+
+connectionsRouter.get("/:id", async (req, res) => {
+  const row = await prisma.appConnection.findUnique({ where: { id: req.params.id } });
+  if (!row) {
+    res.status(404).json({ error: "Connection not found" });
+    return;
+  }
+  res.json({ connection: await toSummary(row) });
 });
 
 const createConnectionSchema = z.object({
@@ -107,12 +119,19 @@ connectionsRouter.patch("/:id", requireCsrf, async (req, res) => {
       res.status(400).json({ error: `Unknown connector "${existing.appType}"` });
       return;
     }
-    const configCheck = connector.configSchema.safeParse(parsed.data.config);
+    // Merge over the stored config so a field left out (e.g. the API key when
+    // only the base URL changes) keeps its current value.
+    const current = {
+      baseUrl: existing.baseUrl,
+      ...decryptSecret<Record<string, unknown>>(existing.encryptedCredentials),
+    };
+    const merged = { ...current, ...parsed.data.config };
+    const configCheck = connector.configSchema.safeParse(merged);
     if (!configCheck.success) {
       res.status(400).json({ error: configCheck.error.message });
       return;
     }
-    const { baseUrl, ...credentials } = parsed.data.config as { baseUrl: string; [key: string]: unknown };
+    const { baseUrl, ...credentials } = merged as { baseUrl: string; [key: string]: unknown };
     data.baseUrl = String(baseUrl ?? "");
     data.encryptedCredentials = encryptCredentials(credentials);
   }
