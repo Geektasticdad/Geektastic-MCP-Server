@@ -13,10 +13,24 @@ export interface HealthCheckResult {
   detail?: string;
 }
 
+/** Whether a tool only reads, changes, or deletes data in the connected app. */
+export type ToolAccess = "read" | "write" | "delete";
+
 export interface ToolDefinition {
   /** Globally unique, namespaced tool name, e.g. "gr_search_statblocks". */
   name: string;
   description: string;
+  /**
+   * Row in the Web UI's Tools grid, e.g. "Encounter". Optional — derived from
+   * the name by `describeTool()` when omitted.
+   */
+  category?: string;
+  /**
+   * Optional — derived from the name's verb when omitted (list/get/search =
+   * read, delete = delete, anything else = write). Also sent to MCP clients as
+   * `readOnlyHint` / `destructiveHint`.
+   */
+  access?: ToolAccess;
   inputSchema: ZodType;
   handler(input: unknown, cfg: ConnectorConfig): Promise<ToolResult>;
 }

@@ -3,7 +3,7 @@ import { z } from "zod";
 import { prisma } from "../db.js";
 import { requireAdmin, requireCsrf } from "../auth/middleware.js";
 import { decryptSecret } from "../crypto/secrets.js";
-import { getConnector } from "@geektastic/connectors";
+import { describeTool, getConnector } from "@geektastic/connectors";
 import type { ToolSummary } from "@geektastic/shared";
 
 export const toolsRouter = Router();
@@ -24,6 +24,7 @@ toolsRouter.get("/", async (_req, res) => {
         connectionName: row.name,
         name: tool.name,
         description: tool.description,
+        ...describeTool(tool),
         enabled: !disabled.has(tool.name),
       });
     }
@@ -49,5 +50,33 @@ toolsRouter.post("/toggle", requireCsrf, async (req, res) => {
     update: { enabled },
     create: { connectionId, toolName, enabled },
   });
+  res.status(204).end();
+});
+
+const bulkSchema = z.object({
+  connectionId: z.string().min(1),
+  changes: z
+    .array(z.object({ toolName: z.string().min(1), enabled: z.boolean() }))
+    .min(1)
+    .max(500),
+});
+
+/** Several toggles in one transaction — the Tools page's row switches and presets. */
+toolsRouter.post("/bulk", requireCsrf, async (req, res) => {
+  const parsed = bulkSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.message });
+    return;
+  }
+  const { connectionId, changes } = parsed.data;
+  await prisma.$transaction(
+    changes.map(({ toolName, enabled }) =>
+      prisma.toolSetting.upsert({
+        where: { connectionId_toolName: { connectionId, toolName } },
+        update: { enabled },
+        create: { connectionId, toolName, enabled },
+      }),
+    ),
+  );
   res.status(204).end();
 });

@@ -54,6 +54,9 @@ There is no delete-user endpoint by design — disable via `PATCH status`.
 |---|---|---|
 | `GET /api/tools` | — | `{ tools: ToolSummary[] }` — every tool from every connection (regardless of that connection's own enabled state — this differs from `aggregateTools()`, which only includes enabled connections; the Tools page shows everything so an admin can toggle tools even on a currently-disabled connection). |
 | `POST /api/tools/toggle` | `{ connectionId, toolName, enabled }` | Upserts a `ToolSetting` row on `(connectionId, toolName)`. `204`. |
+| `POST /api/tools/bulk` | `{ connectionId, changes: [{ toolName, enabled }] }` | Same upsert for up to 500 tools of one connection, in one transaction. Used by the Tools page's row switches and presets. `204`. |
+
+Each `ToolSummary` also carries `category`, `action` and `access` (`"read" | "write" | "delete"`) from `describeTool()` in `packages/connectors/src/toolMeta.ts` — the Tools grid's row, pill label and column.
 
 ## Prompts — `/api/prompts` (admin only; `prompts.routes.ts`)
 

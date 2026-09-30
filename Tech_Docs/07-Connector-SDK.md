@@ -17,9 +17,13 @@ export interface HealthCheckResult {
   detail?: string;
 }
 
+export type ToolAccess = "read" | "write" | "delete";
+
 export interface ToolDefinition {
   name: string;                 // globally unique, namespaced, e.g. "gr_search_statblocks"
   description: string;
+  category?: string;            // Tools grid row, e.g. "Statblock" — derived from the name if omitted
+  access?: ToolAccess;          // derived from the name's verb if omitted
   inputSchema: ZodType;
   handler(input: unknown, cfg: ConnectorConfig): Promise<ToolResult>;
 }
@@ -64,6 +68,28 @@ baseUrl, ...credentials }` (see `connections/service.ts`'s
 `loadActiveConnections()`). `getTools(cfg)`/`getPrompts(cfg)` receive this so
 a connector could in principle vary its tool/prompt set per-connection
 (neither connector does today — both always return the same static list).
+
+### Tool grouping and access (`src/toolMeta.ts`)
+
+`describeTool(def)` returns `{ category, action, access }` for the Web UI's
+Tools grid and for MCP tool annotations. Name tools `<prefix>_<verb>_<thing>`
+(e.g. `gr_create_encounter`) and you rarely need to set anything:
+
+- **access** comes from the verb — `list`/`get`/`search` are `read`, `delete`
+  is `delete`, anything else is `write`.
+- **category** is the thing, singularized and capitalized (`roll_tables` →
+  "Roll table").
+- **action** is the verb, or the whole verb phrase when the tool is filed
+  under a different category (`ft_get_pedigree` under "Tree" shows as
+  "get pedigree").
+
+Set `category` or `access` on the `ToolDefinition` when a name doesn't fit.
+`CATEGORY_OVERRIDES` in `toolMeta.ts` covers the existing Family Tree tools
+that don't.
+
+The MCP server sends `readOnlyHint: true` for read tools and
+`destructiveHint: true` for delete tools. Write tools send neither, which the
+MCP spec treats as possibly destructive — an update can still overwrite data.
 
 ## The registry (`src/registry.ts`)
 

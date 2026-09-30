@@ -27,6 +27,11 @@ export interface ToolSummary {
   connectionName: string;
   name: string;
   description: string;
+  /** Row in the Tools grid, e.g. "Encounter". */
+  category: string;
+  /** Short label within the row, e.g. "create". */
+  action: string;
+  access: "read" | "write" | "delete";
   enabled: boolean;
 }
 

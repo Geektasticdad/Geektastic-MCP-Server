@@ -7,6 +7,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.6.1] - 2026-09-30
+
+Redesigns the **Tools** page for the 140-odd tools the two connectors now
+offer. See [Docs/02-Admin-Guide.md](Docs/02-Admin-Guide.md#tools).
+
+### Changed
+- **Tools page is a grid.** Each connection's tools are grouped into rows by
+  what they act on (Campaign, Encounter, Person, Research task…) and columns
+  by what they do: **Read**, **Create & edit**, **Delete**. Each tool is a
+  pill you click to turn on or off; hover for its full name and description.
+  About 65 table rows per connection become about 15.
+- **Row switches and presets.** A checkbox turns a whole row on or off, and
+  each connection has **Enable all**, **Read-only** and **Disable all**.
+  Read-only leaves only the Read column on.
+- **Search and filter.** Search by tool or row name, and filter to enabled or
+  disabled tools.
+
+### Added
+- **MCP tool annotations.** Read tools are sent with `readOnlyHint: true` and
+  delete tools with `destructiveHint: true`, so MCP clients can tell which
+  tools only look things up.
+- **`category` and `access` on `ToolDefinition`** (both optional) and
+  `describeTool()`, which derives them from the tool name when they're not
+  set. See [Tech_Docs/07-Connector-SDK.md](Tech_Docs/07-Connector-SDK.md).
+- **`POST /api/tools/bulk`** — turn many tools of one connection on or off in
+  one transaction.
+
+### Fixed
+- Wide page content no longer pushes the whole admin UI sideways; it scrolls
+  inside the main area instead.
+
 ## [1.6.0] - 2026-09-30
 
 Catches the Family Tree connector up with Geektastic Family Tree v2.1.0's

@@ -85,14 +85,24 @@ Buttons per connection:
 
 ## Tools
 
-The **Tools** page lists every tool contributed by every connection, grouped by
-connection name, with a checkbox to enable or disable each one individually.
+The **Tools** page shows every tool contributed by every connection as a grid,
+one per connection. Each row is one kind of thing the tools act on (Campaign,
+Encounter, Person, Research task…), and its tools sit in three columns:
+**Read** (list, get, search), **Create & edit**, and **Delete**. Each tool is a
+pill — click it to turn that tool on or off. A struck-through, dashed pill is
+off. Hover a pill for its full tool name and description.
 
+- **Row switch** — the checkbox at the start of a row turns every tool in that
+  row on or off. It shows a dash when only some of them are on. While you're
+  searching or filtering, it only affects the tools you can see.
+- **Enable all / Read-only / Disable all** — one-click presets for a whole
+  connection. **Read-only** leaves only the Read column on, so an AI client can
+  look things up but can't create, change or delete anything.
+- **Search** matches tool names and row names, e.g. `encounter` or `delete`.
+  The **All / Enabled / Disabled** filter narrows it further.
 - A tool is enabled by default the moment its connection is added.
 - Disabling a tool here removes it from what MCP clients see over `/mcp` **and**
   from the Testing Playground, immediately — no restart needed.
-- This is the lever to use if you want to, say, allow read/search tools but
-  block create/update tools for now, or hide a tool you're not ready to expose.
 
 See [Geektastic Realms Tools Reference](05-GR-Tools-Reference.md) and
 [Geektastic Family Tree Tools Reference](07-FT-Tools-Reference.md) for what

@@ -1,7 +1,12 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z, type ZodRawShape } from "zod";
 import { loadActiveConnections } from "../connections/service.js";
-import { aggregatePrompts, aggregateTools, type PromptArgumentDefinition } from "@geektastic/connectors";
+import {
+  aggregatePrompts,
+  aggregateTools,
+  describeTool,
+  type PromptArgumentDefinition,
+} from "@geektastic/connectors";
 import { logToolCall } from "../logging/toolCallLog.js";
 import { logPromptCall } from "../logging/promptCallLog.js";
 
@@ -59,11 +64,15 @@ export async function buildMcpServer(auth: McpAuthContext): Promise<McpServer> {
   const connections = await loadActiveConnections();
   for (const tool of aggregateTools(connections)) {
     const { connectionId, definition } = tool;
+    const { access } = describeTool(definition);
     server.registerTool(
       definition.name,
       {
         description: definition.description,
         inputSchema: toRawShape(definition.inputSchema),
+        // Write tools leave destructiveHint unset, which the MCP spec treats as
+        // "may be destructive" — an update can still overwrite data.
+        annotations: access === "read" ? { readOnlyHint: true } : access === "delete" ? { destructiveHint: true } : {},
       },
       async (args: unknown) => {
         const started = Date.now();
