@@ -175,8 +175,11 @@ under `/trees/{treeId}/...`:
 - `ft_list_notes` / `ft_create_note` / `ft_get_note` / `ft_update_note` / `ft_delete_note`
 - `ft_list_media` / `ft_get_media` / `ft_delete_media` — metadata only; upload/replace is
   multipart/form-data and stays a web-app-only action
+- `ft_list_face_tags` / `ft_tag_person_in_media` / `ft_delete_face_tag` (Family Tree v2.1.0+)
 - `ft_list_research_tasks` / `ft_create_research_task` / `ft_get_research_task` /
-  `ft_update_research_task` / `ft_delete_research_task`
+  `ft_update_research_task` / `ft_delete_research_task` — plus `ft_link_research_task` /
+  `ft_unlink_research_task` and `ft_log_search_attempt` / `ft_delete_search_attempt`
+  (Family Tree v2.1.0+)
 - `ft_list_dna_matches` / `ft_create_dna_match` / `ft_get_dna_match` /
   `ft_update_dna_match` / `ft_delete_dna_match`
 - `ft_search` (typeahead), `ft_get_relationship`, `ft_get_gaps_report`,

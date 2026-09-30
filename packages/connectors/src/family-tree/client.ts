@@ -335,10 +335,24 @@ export class FamilyTreeClient {
     return this.delete(`/trees/${treeId}/media/${id}`);
   }
 
+  // --- Face tags (Family Tree v2.1.0+) ---------------------------------------
+
+  listFaceTags(treeId: number, mediaId: number): Promise<{ data: unknown[] }> {
+    return this.get(`/trees/${treeId}/media/${mediaId}/tags`);
+  }
+
+  tagPersonInMedia(treeId: number, mediaId: number, tag: Record<string, unknown>): Promise<Record<string, unknown>> {
+    return this.post(`/trees/${treeId}/media/${mediaId}/tags`, tag);
+  }
+
+  deleteFaceTag(treeId: number, mediaId: number, tagId: number): Promise<Record<string, unknown>> {
+    return this.delete(`/trees/${treeId}/media/${mediaId}/tags/${tagId}`);
+  }
+
   // --- Research log ------------------------------------------------------
 
-  listResearchTasks(treeId: number, status?: string): Promise<{ data: unknown[] }> {
-    const qs = buildQuery({ status });
+  listResearchTasks(treeId: number, filters: Record<string, unknown>): Promise<{ data: unknown[] }> {
+    const qs = buildQuery(filters);
     return this.get(`/trees/${treeId}/research-tasks${qs}`);
   }
 
@@ -350,12 +364,43 @@ export class FamilyTreeClient {
     return this.get(`/trees/${treeId}/research-tasks/${id}`);
   }
 
-  updateResearchTask(treeId: number, id: number, task: Record<string, unknown>): Promise<Record<string, unknown>> {
-    return this.put(`/trees/${treeId}/research-tasks/${id}`, task);
+  /**
+   * Changes only the fields in `changes`. Family Tree v2.1.0+ treats PUT as
+   * a partial update, but earlier versions replaced title/description/status
+   * together (blanking whatever was left out) — so read the task first and
+   * send those three merged, which is correct against either version.
+   */
+  async updateResearchTask(treeId: number, id: number, changes: Record<string, unknown>): Promise<Record<string, unknown>> {
+    const current = await this.getResearchTask(treeId, id);
+    const merged: Record<string, unknown> = {
+      title: current.title,
+      description: current.description ?? "",
+      status: current.status,
+    };
+    for (const [key, value] of Object.entries(changes)) {
+      if (value !== undefined) merged[key] = value;
+    }
+    return this.put(`/trees/${treeId}/research-tasks/${id}`, merged);
   }
 
   deleteResearchTask(treeId: number, id: number): Promise<Record<string, unknown>> {
     return this.delete(`/trees/${treeId}/research-tasks/${id}`);
+  }
+
+  linkResearchTask(treeId: number, id: number, link: Record<string, unknown>): Promise<Record<string, unknown>> {
+    return this.post(`/trees/${treeId}/research-tasks/${id}/links`, link);
+  }
+
+  unlinkResearchTask(treeId: number, id: number, linkId: number): Promise<Record<string, unknown>> {
+    return this.delete(`/trees/${treeId}/research-tasks/${id}/links/${linkId}`);
+  }
+
+  logSearchAttempt(treeId: number, id: number, attempt: Record<string, unknown>): Promise<Record<string, unknown>> {
+    return this.post(`/trees/${treeId}/research-tasks/${id}/attempts`, attempt);
+  }
+
+  deleteSearchAttempt(treeId: number, id: number, attemptId: number): Promise<Record<string, unknown>> {
+    return this.delete(`/trees/${treeId}/research-tasks/${id}/attempts/${attemptId}`);
   }
 
   // --- DNA matches -----------------------------------------------------------

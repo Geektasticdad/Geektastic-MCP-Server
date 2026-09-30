@@ -7,6 +7,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.6.0] - 2026-09-30
+
+Catches the Family Tree connector up with Geektastic Family Tree v2.1.0's
+API. Every new tool and field notes that it needs v2.1.0; the existing
+tools keep working against older Family Tree versions. See
+[Docs/07-FT-Tools-Reference.md](Docs/07-FT-Tools-Reference.md).
+
+### Added
+- **Face tag tools** — `ft_list_face_tags`, `ft_tag_person_in_media` (a
+  person plus the box around their face, as 0–1 fractions of the image;
+  tagging someone again moves their box, and tagging attaches the photo to
+  them) and `ft_delete_face_tag`. `ft_get_media` now returns the photo's
+  `tags`, and `ft_get_person`'s media items carry `face_tag` and
+  `tagged_people`.
+- **Research task links and search log** — `ft_link_research_task` /
+  `ft_unlink_research_task` (more people and sources on one task), and
+  `ft_log_search_attempt` / `ft_delete_search_attempt` (what was searched
+  and the result, including not found). `ft_create_research_task` accepts
+  `individual_ids`/`source_ids`; `ft_get_research_task` returns
+  `linked_people`, `linked_sources`, `search_attempts` and `notes`.
+- **Research task priority and due date** — `priority` and `due_date` on
+  create and update, and `ft_list_research_tasks` filters by `priority`,
+  `overdue` and `individual_id`.
+
+### Fixed
+- **`ft_update_research_task` could wipe fields.** Its fields were all
+  optional, but Family Tree's `PUT` replaced title, description and status
+  together: leaving out `title` failed with a `422`, and leaving out
+  `description` or `status` blanked the description or reset the status
+  to `open`. The client now reads the task and merges your changes before
+  sending, so only the fields you pass change — against any Family Tree
+  version (v2.1.0 also made `PUT` a partial update on its side).
+
 ## [1.5.7] - 2026-08-07
 
 ### Added

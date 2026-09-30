@@ -42,7 +42,7 @@ The richest set — start here for research.
 |---|---|
 | `ft_search_people` | Paginated browse/search of everyone in a tree (`q` for name search, or `surname`/`sort`/`dir`/`page`/`per_page` to browse). |
 | `ft_create_person` | Add a new person. The response includes `possible_duplicates` from a conservative name+birth-year check — worth checking before assuming the person is new. |
-| `ft_get_person` | Full profile: names, life events (with citations), parent/spouse families, media, notes, citations, open research tasks, DNA matches, and relationship to the tree's home person. |
+| `ft_get_person` | Full profile: names, life events (with citations), parent/spouse families, media (with face tags on v2.1.0+), notes, citations, open research tasks (owned by or linked to them), DNA matches, and relationship to the tree's home person. |
 | `ft_update_person` | Update sex/is_living. |
 | `ft_delete_person` | Delete a person. |
 | `ft_add_name` / `ft_update_name` / `ft_delete_name` | Manage a person's names — birth, married, or aka. A person always needs at least one. |
@@ -140,17 +140,46 @@ app. Once a file exists, these tools can read its metadata (including
 | Tool | What it does |
 |---|---|
 | `ft_list_media` | List media for one owner, or the whole tree if no owner is given. |
-| `ft_get_media` | Fetch one media item's metadata + `file_url`. |
+| `ft_get_media` | Fetch one media item's metadata + `file_url`, and its face `tags` (Family Tree v2.1.0+). |
 | `ft_delete_media` | Delete a media item and its file. |
+
+### Face tags
+
+*Requires Family Tree v2.1.0+.* Who is in a photo, and where. A tag's box is
+`x`, `y`, `w`, `h` — fractions of the image's width and height (0–1, from the
+top-left corner), so the same numbers hold at any display size. There's one
+tag per person per photo, and only JPEG/PNG/GIF/WebP images can be tagged.
+
+| Tool | What it does |
+|---|---|
+| `ft_list_face_tags` | Everyone tagged in a photo, with their box. |
+| `ft_tag_person_in_media` | Tag a person by the box around their face. Tagging someone already tagged moves their box (`moved: true`). Also attaches the photo to them, and their tagged face becomes their profile picture when they have no primary photo. |
+| `ft_delete_face_tag` | Remove a tag; the photo stays attached to the person. |
+
+`ft_get_person` also shows tags: each of the person's `media` items has
+`face_tag` (where *they* are in it, or `null`) and `tagged_people`
+(everyone tagged in it) — handy for "who else is in photos with her?".
 
 ## Research log
 
 An open question or to-do, optionally attached to a person/family/source/place.
+A task can also be **linked** to more people and sources (it then shows on
+each of their pages), has a **priority** and optional **due date**, and keeps
+a log of **search attempts** — what was searched and what came of it,
+including "not found", so the same records aren't searched twice.
 
 | Tool | What it does |
 |---|---|
-| `ft_list_research_tasks` | List tasks, filtered by status (defaults to open + in_progress). |
-| `ft_create_research_task` / `ft_get_research_task` / `ft_update_research_task` / `ft_delete_research_task` | Manage a task. |
+| `ft_list_research_tasks` | List tasks, filtered by status (defaults to open + in_progress). On v2.1.0+ also by `priority`, `overdue`, and `individual_id` (tasks owned by or linked to that person), with an `attempt_count` per task. |
+| `ft_create_research_task` | Create a task: title, description, status, `priority`, `due_date`, one optional owner, and `individual_ids`/`source_ids` to link more people and sources. |
+| `ft_get_research_task` | Fetch a task. On v2.1.0+ it includes `linked_people`, `linked_sources`, `search_attempts` and `notes`. |
+| `ft_update_research_task` | Change only the fields you pass — e.g. just `status: "done"`. `due_date: null` clears the date. |
+| `ft_delete_research_task` | Delete a task, with its links and search attempts. |
+| `ft_link_research_task` / `ft_unlink_research_task` | Link a further person or source to a task, or remove a link by its `link_id`. *v2.1.0+* |
+| `ft_log_search_attempt` / `ft_delete_search_attempt` | Log a search (`source_id` and/or `description`, `result`: found/not_found/partial/inconclusive, `searched_at` defaulting to today, `notes`), or delete one. *v2.1.0+* |
+
+`priority`, `due_date` and the link fields are ignored by Family Tree
+versions before 2.1.0, and the *v2.1.0+* tools return a `404` there.
 
 ## DNA matches
 

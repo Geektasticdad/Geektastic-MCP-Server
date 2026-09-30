@@ -198,20 +198,73 @@ const noteUpdateSchema = z.object({
   note_type: z.enum(["analysis", "citation", "general", "report", "research", "transcript"]).optional(),
 });
 
+const researchPrioritySchema = z
+  .enum(["low", "medium", "high"])
+  .describe("Defaults to medium. Requires Family Tree v2.1.0+ (ignored by older versions).");
+
+const researchDueDateSchema = z
+  .string()
+  .regex(/^\d{4}-\d{2}-\d{2}$/, "YYYY-MM-DD")
+  .nullable()
+  .describe("YYYY-MM-DD; null clears it. Requires Family Tree v2.1.0+ (ignored by older versions).");
+
 const researchTaskCreateSchema = z.object({
   title: z.string().min(1),
   description: z.string().optional(),
   status: z.enum(["open", "in_progress", "done"]).optional(),
+  priority: researchPrioritySchema.optional(),
+  due_date: researchDueDateSchema.optional(),
   individual_id: z.coerce.number().int().optional(),
   family_id: z.coerce.number().int().optional(),
   source_id: z.coerce.number().int().optional(),
   place_id: z.coerce.number().int().optional(),
+  individual_ids: z
+    .array(z.coerce.number().int())
+    .optional()
+    .describe(
+      "Further people this task covers besides its one owner (e.g. every family member in a census " +
+        "search) — the task then shows on each of their profiles. Requires Family Tree v2.1.0+.",
+    ),
+  source_ids: z
+    .array(z.coerce.number().int())
+    .optional()
+    .describe("Further sources this task involves. Requires Family Tree v2.1.0+."),
 });
 
 const researchTaskUpdateSchema = z.object({
-  title: z.string().optional(),
+  title: z.string().min(1).optional(),
   description: z.string().optional(),
   status: z.enum(["open", "in_progress", "done"]).optional(),
+  priority: researchPrioritySchema.optional(),
+  due_date: researchDueDateSchema.optional(),
+});
+
+const searchAttemptSchema = z.object({
+  source_id: z.coerce
+    .number()
+    .int()
+    .optional()
+    .describe("The source searched, if it's in the tree. Send this and/or description."),
+  description: z
+    .string()
+    .max(255)
+    .optional()
+    .describe('What was searched, e.g. "1900 US Census, Cook County, Illinois". Send this and/or source_id.'),
+  result: z.enum(["found", "not_found", "partial", "inconclusive"]),
+  searched_at: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "YYYY-MM-DD")
+    .optional()
+    .describe("Defaults to today."),
+  notes: z.string().optional().describe("HTML; sanitized by Family Tree."),
+});
+
+const faceTagSchema = z.object({
+  individual_id: z.coerce.number().int().describe("Who is in the box — a person in this tree."),
+  x: z.coerce.number().min(0).max(1).describe("Left edge, as a fraction of the image width (0 = left)."),
+  y: z.coerce.number().min(0).max(1).describe("Top edge, as a fraction of the image height (0 = top)."),
+  w: z.coerce.number().min(0.02).max(1).describe("Box width as a fraction of the image width (at least 0.02)."),
+  h: z.coerce.number().min(0.02).max(1).describe("Box height as a fraction of the image height (at least 0.02)."),
 });
 
 const dnaMatchCreateSchema = z.object({
@@ -311,6 +364,9 @@ const tools: ToolDefinition[] = [
     "ft_get_person",
     "Full profile for one person: names, events (with citations), parent/spouse families (resolved), " +
       "media, notes, citations, research_tasks, dna_matches, and relationship to the tree's home person. " +
+      "research_tasks includes tasks linked to them as well as owned (is_owner 1/0), with attempt_count " +
+      "and last_result of their logged searches. On Family Tree v2.1.0+ each media item also has face_tag " +
+      "(where this person is in it, or null) and tagged_people (everyone tagged in it). " +
       "If this person is_living and the connection's token role is only viewer/contributor, the profile " +
       "comes back redacted (no events/media/notes, null birth/death dates) — same privacy rule as the web app.",
     z.object({ tree_id: treeIdSchema, id: z.coerce.number().int() }),
@@ -638,8 +694,9 @@ const tools: ToolDefinition[] = [
   ),
   tool(
     "ft_get_media",
-    "Fetch media metadata (title, dimensions, file_size, etc.) plus links, notes, and file_url " +
-      "(fetch that URL with the same bearer token to get the raw image/PDF bytes).",
+    "Fetch media metadata (title, dimensions, file_size, etc.) plus links, notes, tags (face tags — who " +
+      "is in the photo and where; Family Tree v2.1.0+), and file_url (fetch that URL with the same bearer " +
+      "token to get the raw image/PDF bytes).",
     z.object({ tree_id: treeIdSchema, id: z.coerce.number().int() }),
     (i, cfg) => client(cfg).getMedia(i.tree_id, i.id),
   ),
@@ -650,37 +707,119 @@ const tools: ToolDefinition[] = [
     (i, cfg) => client(cfg).deleteMedia(i.tree_id, i.id),
   ),
 
+  // --- Face tags (Family Tree v2.1.0+) ---------------------------------------
+  tool(
+    "ft_list_face_tags",
+    "Who is tagged in a photo, and where: each tag has individual_id, name, and a box (x, y, w, h as " +
+      "0–1 fractions of the image from its top-left corner). Requires Family Tree v2.1.0+.",
+    z.object({ tree_id: treeIdSchema, media_id: z.coerce.number().int() }),
+    (i, cfg) => client(cfg).listFaceTags(i.tree_id, i.media_id),
+  ),
+  tool(
+    "ft_tag_person_in_media",
+    "Tag a person in a photo by the box around their face (x, y, w, h as 0–1 fractions of the image " +
+      "from its top-left corner). One tag per person per photo — tagging someone already tagged moves " +
+      "their box (moved: true). Also attaches the photo to that person, and a tagged face becomes their " +
+      "profile picture if they have no primary photo. Only JPEG/PNG/GIF/WebP images can be tagged. Only " +
+      "tag when you know where the person is in the image (e.g. from viewing it or the user describing " +
+      "it) — don't guess coordinates. Requires Family Tree v2.1.0+.",
+    z.object({ tree_id: treeIdSchema, media_id: z.coerce.number().int(), tag: faceTagSchema }),
+    (i, cfg) => client(cfg).tagPersonInMedia(i.tree_id, i.media_id, i.tag),
+  ),
+  tool(
+    "ft_delete_face_tag",
+    "Remove a face tag (tag id from ft_list_face_tags). The photo stays attached to the person. " +
+      "Requires Family Tree v2.1.0+.",
+    z.object({ tree_id: treeIdSchema, media_id: z.coerce.number().int(), tag_id: z.coerce.number().int() }),
+    (i, cfg) => client(cfg).deleteFaceTag(i.tree_id, i.media_id, i.tag_id),
+  ),
+
   // --- Research log ------------------------------------------------------
   tool(
     "ft_list_research_tasks",
-    "List research tasks. status defaults to active (open+in_progress); or open|in_progress|done|all.",
-    z.object({ tree_id: treeIdSchema, status: z.enum(["active", "open", "in_progress", "done", "all"]).optional() }),
-    (i, cfg) => client(cfg).listResearchTasks(i.tree_id, i.status),
+    "List research tasks. status defaults to active (open+in_progress); or open|in_progress|done|all. " +
+      "Family Tree v2.1.0+ also filters by priority, overdue (due date passed, not done) and individual_id " +
+      "(tasks owned by or linked to that person), returns attempt_count per task, and sorts by priority " +
+      "then due date within each status.",
+    z.object({
+      tree_id: treeIdSchema,
+      status: z.enum(["active", "open", "in_progress", "done", "all"]).optional(),
+      priority: z.enum(["low", "medium", "high"]).optional(),
+      overdue: z.boolean().optional(),
+      individual_id: z.coerce.number().int().optional(),
+    }),
+    (i, cfg) =>
+      client(cfg).listResearchTasks(i.tree_id, {
+        status: i.status,
+        priority: i.priority,
+        overdue: i.overdue ? 1 : undefined,
+        individual_id: i.individual_id,
+      }),
   ),
   tool(
     "ft_create_research_task",
     "Create a research task, optionally attached to one owner (individual_id/family_id/source_id/" +
-      "place_id) — omit all for a general tree-wide task.",
+      "place_id) — omit all for a general tree-wide task. individual_ids/source_ids link further people " +
+      "and sources the task covers (Family Tree v2.1.0+).",
     z.object({ tree_id: treeIdSchema, task: researchTaskCreateSchema }),
     (i, cfg) => client(cfg).createResearchTask(i.tree_id, i.task),
   ),
   tool(
     "ft_get_research_task",
-    "Fetch a research task.",
+    "Fetch a research task. Family Tree v2.1.0+ also returns linked_people, linked_sources (each with a " +
+      "link_id for ft_unlink_research_task), search_attempts (the research log — check it before searching " +
+      "a record again) and notes.",
     z.object({ tree_id: treeIdSchema, id: z.coerce.number().int() }),
     (i, cfg) => client(cfg).getResearchTask(i.tree_id, i.id),
   ),
   tool(
     "ft_update_research_task",
-    "Update a research task's title/description/status. Owner cannot be changed.",
+    "Update a research task — only the fields you pass change (e.g. just status: done). Owner cannot be " +
+      "changed; use ft_link_research_task to add people/sources.",
     z.object({ tree_id: treeIdSchema, id: z.coerce.number().int(), task: researchTaskUpdateSchema }),
     (i, cfg) => client(cfg).updateResearchTask(i.tree_id, i.id, i.task),
   ),
   tool(
     "ft_delete_research_task",
-    "Delete a research task.",
+    "Delete a research task (and its links and search attempts).",
     z.object({ tree_id: treeIdSchema, id: z.coerce.number().int() }),
     (i, cfg) => client(cfg).deleteResearchTask(i.tree_id, i.id),
+  ),
+  tool(
+    "ft_link_research_task",
+    "Link a further person (individual_id) or source (source_id) to a research task — pass exactly one. " +
+      "The task then shows on their profile/page too. Linking the owner or an already-linked record is a " +
+      "no-op. Returns the full task. Requires Family Tree v2.1.0+.",
+    z.object({
+      tree_id: treeIdSchema,
+      id: z.coerce.number().int().describe("Research task id."),
+      individual_id: z.coerce.number().int().optional(),
+      source_id: z.coerce.number().int().optional(),
+    }),
+    (i, cfg) =>
+      client(cfg).linkResearchTask(i.tree_id, i.id, { individual_id: i.individual_id, source_id: i.source_id }),
+  ),
+  tool(
+    "ft_unlink_research_task",
+    "Remove a linked person or source from a research task, by the link_id from ft_get_research_task's " +
+      "linked_people/linked_sources. Requires Family Tree v2.1.0+.",
+    z.object({ tree_id: treeIdSchema, id: z.coerce.number().int(), link_id: z.coerce.number().int() }),
+    (i, cfg) => client(cfg).unlinkResearchTask(i.tree_id, i.id, i.link_id),
+  ),
+  tool(
+    "ft_log_search_attempt",
+    "Record a search done for a research task — what was searched (source_id and/or description), when, " +
+      "and the result, including not_found: a negative result is worth logging so the same records aren't " +
+      "searched twice. Returns the full task. Requires Family Tree v2.1.0+.",
+    z.object({ tree_id: treeIdSchema, id: z.coerce.number().int().describe("Research task id."), attempt: searchAttemptSchema }),
+    (i, cfg) => client(cfg).logSearchAttempt(i.tree_id, i.id, i.attempt),
+  ),
+  tool(
+    "ft_delete_search_attempt",
+    "Delete a logged search attempt (id from ft_get_research_task's search_attempts). Requires Family " +
+      "Tree v2.1.0+.",
+    z.object({ tree_id: treeIdSchema, id: z.coerce.number().int(), attempt_id: z.coerce.number().int() }),
+    (i, cfg) => client(cfg).deleteSearchAttempt(i.tree_id, i.id, i.attempt_id),
   ),
 
   // --- DNA matches -----------------------------------------------------------
