@@ -50,6 +50,16 @@ const nameWriteSchema = z.object({
 const familyWriteSchema = z.object({
   husband_id: z.coerce.number().int().nullable().optional(),
   wife_id: z.coerce.number().int().nullable().optional(),
+  relationship_type: z
+    .enum(["married", "unmarried", "civil_union", "unknown"])
+    .optional()
+    .describe(
+      "What kind of couple they were — a family's parents weren't necessarily married. married shows them " +
+        "as spouses; unmarried (unmarried partners), civil_union (civil union / domestic partnership) and " +
+        "unknown show them as partners. Only set married when there's evidence of a marriage. Defaults to " +
+        "unknown on create; adding a MARR event to an unknown family makes it married. Requires Family Tree " +
+        "v2.1.2+ (ignored by older versions).",
+    ),
 });
 
 const childRelationTypeSchema = z
@@ -424,19 +434,21 @@ const tools: ToolDefinition[] = [
   ),
   tool(
     "ft_create_family",
-    "Create a family (couple). husband_id/wife_id are both optional.",
+    "Create a family (couple), optionally with relationship_type (married/unmarried/civil_union/unknown). " +
+      "husband_id/wife_id are both optional.",
     z.object({ tree_id: treeIdSchema, family: familyWriteSchema }),
     (i, cfg) => client(cfg).createFamily(i.tree_id, i.family),
   ),
   tool(
     "ft_get_family",
-    "Full family detail: husband, wife, children, events (with citations), citations, media, notes, research_tasks.",
+    "Full family detail: husband, wife, relationship_type (v2.1.2+), children, events (with citations), citations, " +
+      "media, notes, research_tasks.",
     z.object({ tree_id: treeIdSchema, id: z.coerce.number().int() }),
     (i, cfg) => client(cfg).getFamily(i.tree_id, i.id),
   ),
   tool(
     "ft_update_family",
-    "Update a family's husband_id/wife_id.",
+    "Update a family — only the fields you pass change: husband_id, wife_id, relationship_type.",
     z.object({ tree_id: treeIdSchema, id: z.coerce.number().int(), family: familyWriteSchema }),
     (i, cfg) => client(cfg).updateFamily(i.tree_id, i.id, i.family),
   ),

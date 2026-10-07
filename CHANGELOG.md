@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.6.6] - 2026-10-04
+
+### Added
+- **Family relationship type** — `ft_create_family` and `ft_update_family`
+  take `relationship_type` (`married`, `unmarried`, `civil_union`,
+  `unknown`), and `ft_get_family` describes it: a family's parents weren't
+  necessarily married. Requires Geektastic Family Tree v2.1.2 (older
+  versions ignore it). See
+  [Docs/07-FT-Tools-Reference.md](Docs/07-FT-Tools-Reference.md).
+
+### Fixed
+- **`ft_update_family` could clear a partner.** Family Tree's `PUT` sets
+  `husband_id` and `wife_id` together, so passing only one of them (or
+  only `relationship_type`) blanked the other. The client now reads the
+  family and merges your changes before sending, so only the fields you
+  pass change.
+
 ## [1.6.5] - 2026-09-30
 
 Cleans up everything about prompts to match the tools experience. See

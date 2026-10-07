@@ -52,13 +52,18 @@ The richest set — start here for research.
 ## Families
 
 A family is a couple (husband/wife, either optional) plus their children.
+The couple weren't necessarily married: `relationship_type` records whether
+they were `married`, `unmarried` partners, in a `civil_union` (or domestic
+partnership), or `unknown` (Family Tree v2.1.2+). Only married couples are
+shown as each other's spouse in Family Tree; everyone else is a partner.
+Adding a `MARR` event to an `unknown` family makes it `married`.
 
 | Tool | What it does |
 |---|---|
 | `ft_list_families` | List every family in a tree. |
-| `ft_create_family` | Create a family. |
-| `ft_get_family` | Full detail: husband, wife, children, events, citations, media, notes, research tasks. |
-| `ft_update_family` | Change who the husband/wife are. |
+| `ft_create_family` | Create a family, optionally with its `relationship_type` (default `unknown`). |
+| `ft_get_family` | Full detail: husband, wife, relationship type, children, events, citations, media, notes, research tasks. |
+| `ft_update_family` | Change the husband, wife or `relationship_type` — only the fields you pass change. |
 | `ft_delete_family` | Delete a family. |
 | `ft_add_child` | Link a child into a family — either an existing person or a brand-new one created on the spot. |
 | `ft_update_child_relation` | Set a child's relation to each parent (birth/adopted/foster/step/no_relation/unknown) — independently per parent. |

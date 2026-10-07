@@ -157,8 +157,22 @@ export class FamilyTreeClient {
     return this.get(`/trees/${treeId}/families/${id}`);
   }
 
-  updateFamily(treeId: number, id: number, family: Record<string, unknown>): Promise<Record<string, unknown>> {
-    return this.put(`/trees/${treeId}/families/${id}`, family);
+  /**
+   * Changes only the fields in `changes`. Family Tree's PUT sets
+   * husband_id and wife_id together (leaving one out clears it), so read the
+   * family first and send both. relationship_type is only sent if given
+   * (Family Tree v2.1.2+ leaves it unchanged otherwise).
+   */
+  async updateFamily(treeId: number, id: number, changes: Record<string, unknown>): Promise<Record<string, unknown>> {
+    const current = await this.getFamily(treeId, id);
+    const merged: Record<string, unknown> = {
+      husband_id: current.husband_id ?? null,
+      wife_id: current.wife_id ?? null,
+    };
+    for (const [key, value] of Object.entries(changes)) {
+      if (value !== undefined) merged[key] = value;
+    }
+    return this.put(`/trees/${treeId}/families/${id}`, merged);
   }
 
   deleteFamily(treeId: number, id: number): Promise<Record<string, unknown>> {
