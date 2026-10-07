@@ -315,6 +315,13 @@ const RICH_TEXT_NOTE =
 const entrySchema = z.object({
   title: z.string().min(1),
   summary: z.string().optional(),
+  player_summary: z
+    .string()
+    .optional()
+    .describe(
+      "Spoiler-free teaser (max 500 chars) shown to players on the public portal instead of summary. " +
+        "Leave empty to fall back to summary; set it when summary gives away DM-only secrets.",
+    ),
   body_html: z.string().optional().describe(RICH_TEXT_BASIC),
   status: z.enum(["draft", "published", "archived"]).optional(),
   visibility: z.enum(["private", "members", "public"]).optional(),
@@ -444,6 +451,10 @@ const campaignSchema = z.object({
   summary: z.string().nullable().optional(),
   description: z.string().nullable().optional(),
   status: z.enum(["active", "paused", "complete", "planned"]).optional().describe("Defaults to active."),
+  visibility: z
+    .enum(["private", "members", "public"])
+    .optional()
+    .describe("Defaults to private. Only public campaigns appear on the world's public portal."),
 });
 
 const sessionLogSchema = z.object({
@@ -1761,8 +1772,9 @@ const tools: ToolDefinition[] = [
   {
     name: "gr_delete_entry",
     description:
-      "Permanently delete a lore entry — its stat block, custom field values, tags, and relations are " +
-      "cascade-deleted too. There is no undo.",
+      "Delete a lore entry — its stat block, custom field values, tags, and relations go with it. " +
+      "A snapshot goes to the world's Trash for 30 days, restorable by a DM in the web UI (there is no " +
+      "restore tool).",
     inputSchema: z.object({ entry_id: z.coerce.number().int() }),
     async handler(input, cfg) {
       const { entry_id } = z.object({ entry_id: z.coerce.number().int() }).parse(input);
@@ -1776,9 +1788,9 @@ const tools: ToolDefinition[] = [
   {
     name: "gr_delete_section",
     description:
-      "Permanently delete an Act/Chapter/Scene/Appendix. Child sections and encounters attached to it are " +
+      "Delete an Act/Chapter/Scene/Appendix. Child sections and encounters attached to it are " +
       "cascade-deleted; handouts and roll tables attributed to it are detached (become adventure-level) " +
-      "rather than deleted. There is no undo.",
+      "rather than deleted. A snapshot goes to the world's Trash for 30 days, restorable by a DM in the web UI.",
     inputSchema: z.object({ module_id: z.coerce.number().int(), section_id: z.coerce.number().int() }),
     async handler(input, cfg) {
       const { module_id, section_id } = z
@@ -1793,7 +1805,7 @@ const tools: ToolDefinition[] = [
   },
   {
     name: "gr_delete_encounter",
-    description: "Permanently delete an encounter (its adversary links go with it). There is no undo.",
+    description: "Delete an encounter (its adversary links go with it). It goes to the world's Trash for 30 days, restorable by a DM in the web UI.",
     inputSchema: z.object({ module_id: z.coerce.number().int(), encounter_id: z.coerce.number().int() }),
     async handler(input, cfg) {
       const { module_id, encounter_id } = z
@@ -1808,7 +1820,7 @@ const tools: ToolDefinition[] = [
   },
   {
     name: "gr_delete_handout",
-    description: "Permanently delete a handout. There is no undo.",
+    description: "Delete a handout. It goes to the world's Trash for 30 days, restorable by a DM in the web UI.",
     inputSchema: z.object({ module_id: z.coerce.number().int(), handout_id: z.coerce.number().int() }),
     async handler(input, cfg) {
       const { module_id, handout_id } = z

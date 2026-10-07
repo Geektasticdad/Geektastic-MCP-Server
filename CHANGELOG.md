@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.7.0] - 2026-10-07
+
+Catches the Geektastic Realms connector up with Realms v2.32–v3.0.1.
+
+### Added
+- **Player summary** — `gr_create_entry` and `gr_update_entry` take
+  `player_summary`, the spoiler-free teaser Realms' public portal shows
+  players instead of `summary`, and `gr_get_entry` returns it. Requires
+  Geektastic Realms v3.0.2 (older versions ignore it).
+- **Campaign visibility** — `gr_create_campaign` and `gr_update_campaign`
+  take `visibility` (`private`, `members`, `public`; defaults to `private`),
+  and campaign results include it. Only public campaigns appear on the
+  public portal. Requires Geektastic Realms v3.0.2.
+
+### Changed
+- **Deletes go to the Trash.** `gr_delete_entry`, `gr_delete_section`,
+  `gr_delete_encounter` and `gr_delete_handout` no longer say "no undo":
+  since Realms v2.35.0 they put what they delete in the world's Trash for
+  30 days, restorable by a DM in the web UI. See
+  [Docs/05-GR-Tools-Reference.md](Docs/05-GR-Tools-Reference.md#a-note-on-deletes).
+
 ## [1.6.6] - 2026-10-04
 
 ### Added

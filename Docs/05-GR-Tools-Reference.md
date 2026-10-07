@@ -69,7 +69,7 @@ A campaign is a named arc grouping several adventure modules together.
 |---|---|
 | `gr_list_campaigns` | List every campaign in the world (lightweight — no module list or stats). |
 | `gr_get_campaign` | Fetch one campaign by id, including its module list and rollup stats. |
-| `gr_create_campaign` | Create a new campaign (title, summary, description, status). |
+| `gr_create_campaign` | Create a new campaign (title, summary, description, status, visibility). Visibility defaults to `private`; only `public` campaigns appear on the world's public portal. |
 | `gr_update_campaign` | Update an existing campaign by id. |
 
 A campaign's cover image is web-editor-only — there's no tool to set it (same
@@ -98,7 +98,8 @@ differ per category.
 | `gr_create_entry` | Create a new entry in a given category. |
 | `gr_update_entry` | Update an existing entry by id. |
 
-An entry has a title, summary, body (HTML), status (draft/published/archived),
+An entry has a title, summary, an optional player summary (a spoiler-free teaser
+the public portal shows players instead of the summary), body (HTML), status (draft/published/archived),
 visibility (private/members/public), an optional parent entry, tags, and the
 category-specific `custom_fields` object — keyed by each field's stable name,
 not a numeric id. Image, gallery, and map fields can't be set through this API
@@ -160,7 +161,7 @@ section they came from — same behavior `gr_get_module`'s outline and
 | `gr_get_handout` | Fetch a single handout by id, without pulling the whole section. |
 | `gr_create_handout` | Create a handout inside a module — either module-level (no `section_id`) or attached to a specific section. |
 | `gr_update_handout` | Update an existing handout by id. |
-| `gr_delete_handout` | Permanently delete a handout. No undo. |
+| `gr_delete_handout` | Delete a handout. Goes to the world's Trash for 30 days (a DM can restore it in the web UI). |
 
 ### Encounters
 
@@ -169,7 +170,7 @@ section they came from — same behavior `gr_get_module`'s outline and
 | `gr_get_encounter` | Fetch a single encounter by id (with resolved adversaries), without pulling the whole section. |
 | `gr_create_encounter` | Create an encounter inside a specific section (typically a Scene). Can set its **adversaries** (the creatures fighting the party) in the same call. |
 | `gr_update_encounter` | Update an existing encounter by id, including its adversaries. |
-| `gr_delete_encounter` | Permanently delete an encounter (its adversary links go with it). No undo. |
+| `gr_delete_encounter` | Delete an encounter (its adversary links go with it). Goes to the world's Trash for 30 days (a DM can restore it in the web UI). |
 
 An encounter has a name, type (combat/social/exploration/puzzle/trap/other),
 difficulty, setup, tactics, rewards, and notes, plus an **adversaries** list —
@@ -186,7 +187,7 @@ encounter's resolved adversaries), then send the full updated list back.
 
 | Tool | What it does |
 |---|---|
-| `gr_delete_section` | Permanently delete an Act/Chapter/Scene/Appendix. Child sections and encounters attached to it go with it; handouts and roll tables attributed to it are detached (become adventure-level) rather than deleted. No undo. |
+| `gr_delete_section` | Delete an Act/Chapter/Scene/Appendix. Child sections and encounters attached to it go with it; handouts and roll tables attributed to it are detached (become adventure-level) rather than deleted. Goes to the world's Trash for 30 days (a DM can restore it in the web UI). |
 
 ## Roll tables
 
@@ -345,13 +346,15 @@ token's scopes on the Geektastic Realms side first (see
 
 | Tool | What it does |
 |---|---|
-| `gr_delete_entry` | Permanently delete a lore entry — its stat block, custom field values, tags, and relations are cascade-deleted too. No undo. |
+| `gr_delete_entry` | Delete a lore entry — its stat block, custom field values, tags, and relations go with it. Goes to the world's Trash for 30 days (a DM can restore it in the web UI). |
 
 ## A note on deletes
 
-None of the delete tools above (`gr_delete_entry`, `gr_delete_section`,
-`gr_delete_encounter`, `gr_delete_handout`, `gr_delete_related_article`) have
-an undo. If you'd rather your MCP clients couldn't delete anything, disable
+Since Geektastic Realms v2.35.0, `gr_delete_entry`, `gr_delete_section`,
+`gr_delete_encounter` and `gr_delete_handout` send what they delete to the
+world's **Trash**, where a DM can restore it from the web UI for 30 days —
+there's no restore tool. `gr_delete_quest_item`, `gr_delete_player_character`
+and `gr_delete_related_article` are still permanent. If you'd rather your MCP clients couldn't delete anything, disable
 these five tools individually under **Tools** (see
 [Administrator Guide](02-Admin-Guide.md#tools)) — every other tool on this
 page is unaffected. (`gr_delete_related_article` only removes the *link* —
