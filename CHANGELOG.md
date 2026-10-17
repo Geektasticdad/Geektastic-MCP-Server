@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.8.0] - 2026-10-16
+
+Adds a third connector: the My Ministry Mission **Podcast Management** app.
+
+### Added
+- **Podcast Management connector** (`podcast-management`, tools prefixed
+  `pm_`) against the app's new JSON API (Podcast Management v2.18.0+). 26
+  tools: episodes, series, guests, and recordings (list, get, create,
+  update), notes, guest intake submissions (read-only), lookups, the token
+  check, and **production documents** — versioned research briefs,
+  outlines, narratives, theology reviews, context logs, and publication
+  packs saved on an episode, series, guest, or recording.
+  `pm_get_series_context_log` assembles a series' context log from its
+  episodes. There are no delete tools; the app's API has no delete
+  endpoints. See [Docs/10-PM-Tools-Reference.md](Docs/10-PM-Tools-Reference.md).
+- Add-connection form hints for Podcast Management (base URL and `pma_`
+  token).
+
+### Changed
+- The Tools grid files `*_series` tools under "Series" instead of "Serie".
+
 ## [1.7.0] - 2026-10-07
 
 Catches the Geektastic Realms connector up with Realms v2.32–v3.0.1.

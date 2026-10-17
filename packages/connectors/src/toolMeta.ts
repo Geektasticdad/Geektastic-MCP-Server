@@ -40,7 +40,10 @@ const CATEGORY_OVERRIDES: Record<string, string> = {
 
 const ACRONYMS = new Set(["dna"]);
 
+const SAME_SINGULAR = new Set(["series"]);
+
 function singularize(word: string): string {
+  if (SAME_SINGULAR.has(word)) return word;
   if (word.endsWith("ies")) return `${word.slice(0, -3)}y`;
   if (/(ch|sh|x|ss)es$/.test(word)) return word.slice(0, -2);
   if (word.endsWith("s") && !word.endsWith("ss")) return word.slice(0, -1);

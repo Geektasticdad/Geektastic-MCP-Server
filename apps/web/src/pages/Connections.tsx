@@ -152,6 +152,7 @@ function AddConnectionForm({ onCancel }: { onCancel?: () => void }) {
             connectors?.connectors ?? [
               { id: "geektastic-realms", displayName: "Geektastic Realms" },
               { id: "family-tree", displayName: "Geektastic Family Tree" },
+              { id: "podcast-management", displayName: "Podcast Management" },
             ]
           ).map((c) => (
             <option key={c.id} value={c.id}>

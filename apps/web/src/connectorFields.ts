@@ -16,6 +16,12 @@ export const BASE_URL_APIKEY_CONNECTORS: Record<
     baseUrlHint: "Root URL of your Geektastic Family Tree instance — no `/api` suffix, that's added automatically.",
     apiKeyPlaceholder: "gtk_...",
   },
+  "podcast-management": {
+    baseUrlPlaceholder: "https://podcast.example.com",
+    baseUrlHint:
+      "Root URL of your Podcast Management app — no `/api` suffix, that's added automatically. Create the token under Admin → Settings → API Access.",
+    apiKeyPlaceholder: "pma_...",
+  },
 };
 
 export const inputClass = "w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white";
