@@ -121,7 +121,7 @@ deleted.
 |---|---|
 | `pm_list_documents` | Documents on a record (no bodies). `latest: true` keeps only the newest version of each type. |
 | `pm_get_document` | One document with its full body. |
-| `pm_save_document` | Save a document. Saving the same `doc_type` on the same record again adds a new **version**; nothing is overwritten. `narrative` and `discussion_guide` are converted from Markdown to formatted text for the app's script editor (`[Speaker note: ...]` lines become speaker notes). |
+| `pm_save_document` | Save a document. Saving the same `doc_type` on the same record again adds a new **version**; nothing is overwritten. `narrative`, `discussion_guide`, and `publication_stage` are converted from Markdown to formatted text for the app's editor (`[Speaker note: ...]` lines become speaker notes in scripts). |
 
 Document types: `episode_ideas`, `research_brief`, `outline`, `narrative`,
 `discussion_guide`, `theology_review`, `series_plan`, `series_consistency`,

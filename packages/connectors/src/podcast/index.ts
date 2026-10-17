@@ -433,8 +433,8 @@ const tools: ToolDefinition[] = [
     "pm_save_document",
     "Save a podcast skill's output (Markdown or plain text, up to ~2 MB) on an episode, series, guest, or " +
       "recording. Saving the same doc_type on the same record again adds a new version; earlier versions are kept " +
-      "and visible in the app's Production Documents panel. narrative and discussion_guide are converted to " +
-      "formatted HTML for the app's script editor (send Markdown; `[Speaker note: ...]` lines become speaker-note " +
+      "and visible in the app's Production Documents panel. narrative, discussion_guide, and publication_stage " +
+      "are converted to formatted HTML for the app's editor (send Markdown; `[Speaker note: ...]` lines become speaker-note " +
       "blocks) and come back from pm_get_document with body_format 'html'. Saving a document re-checks the record's " +
       "production stage and Stage Automation rules. Returns the saved document with its version.",
     z.object({

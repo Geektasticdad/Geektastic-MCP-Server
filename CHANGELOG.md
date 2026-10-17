@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.9.1] - 2026-10-17
+
+### Changed
+- `pm_save_document` notes that publication packs (`publication_stage`) are
+  stored as formatted text too (Podcast Management v2.20.0).
+
 ## [1.9.0] - 2026-10-17
 
 Producer workflow support for the Podcast Management connector (requires
