@@ -195,8 +195,8 @@ export class PodcastClient {
     return this.get("/documents", params);
   }
 
-  getDocument(id: number): Promise<PmRecord> {
-    return this.get(`/documents/${id}`);
+  getDocument(id: number, asText = false): Promise<PmRecord> {
+    return this.get(`/documents/${id}`, asText ? { format: "text" } : {});
   }
 
   saveDocument(doc: Record<string, unknown>): Promise<PmRecord> {

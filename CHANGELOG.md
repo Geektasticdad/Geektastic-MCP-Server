@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.10.0] - 2026-10-17
+
+### Added
+- `pm_get_document` takes `as_text` to return a document's body as plain
+  text (Podcast Management v2.23.0+), cheaper to read for transcripts.
+
+### Changed
+- Tool descriptions reflect that every production document is now rich text
+  in the app (Podcast Management v2.23.0).
+
 ## [1.9.1] - 2026-10-17
 
 ### Changed

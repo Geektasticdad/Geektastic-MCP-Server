@@ -425,17 +425,22 @@ const tools: ToolDefinition[] = [
   ),
   tool(
     "pm_get_document",
-    "One production document including its full body.",
-    z.object({ id }),
-    (i, cfg) => client(cfg).getDocument(i.id),
+    "One production document including its full body. Every document is rich text (body_format 'html'); set " +
+      "as_text to get plain text instead (paragraphs separated by blank lines), which is much cheaper for " +
+      "transcripts and long documents you only need to read.",
+    z.object({
+      id,
+      as_text: z.boolean().optional().describe("Return the body as plain text instead of HTML."),
+    }),
+    (i, cfg) => client(cfg).getDocument(i.id, i.as_text ?? false),
   ),
   tool(
     "pm_save_document",
     "Save a podcast skill's output (Markdown or plain text, up to ~2 MB) on an episode, series, guest, or " +
       "recording. Saving the same doc_type on the same record again adds a new version; earlier versions are kept " +
-      "and visible in the app's Production Documents panel. narrative, discussion_guide, and publication_stage " +
-      "are converted to formatted HTML for the app's editor (send Markdown; `[Speaker note: ...]` lines become speaker-note " +
-      "blocks) and come back from pm_get_document with body_format 'html'. Saving a document re-checks the record's " +
+      "and visible in the app's Production Documents panel. Every document is stored as rich text for the app's " +
+      "editor: send Markdown (converted on save; in scripts, `[Speaker note: ...]` lines become speaker-note blocks), " +
+      "or plain text for a transcript (kept verbatim). Saving a document re-checks the record's " +
       "production stage and Stage Automation rules. Returns the saved document with its version.",
     z.object({
       entity_type: entityType,
