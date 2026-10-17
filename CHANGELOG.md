@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.9.0] - 2026-10-17
+
+Producer workflow support for the Podcast Management connector (requires
+Podcast Management v2.19.0).
+
+### Added
+- `pm_get_pipeline` — what needs attention across the show: active episodes
+  with their derived production stage, next step (and the podcast skill to
+  run), blockers, and days until publish; guest work waiting; series
+  context-log gaps; and pending status suggestions.
+- `pm_list_status_suggestions`, `pm_apply_status_suggestion`,
+  `pm_dismiss_status_suggestion` for the app's Stage Automation suggestions.
+- `episode_format` (`solo`, `series`, `guest`, `cohost`, `fellowship`) on
+  `pm_create_episode` / `pm_update_episode`.
+- The connector's first prompt, **What needs my attention?**
+  (`pm_whats_next`), in a new "Producer" group.
+
+### Changed
+- `pm_get_episode` describes the new `production` and `status_suggestions`
+  fields; `pm_save_document` explains that narratives and discussion guides
+  are stored as formatted HTML for the app's script editor.
+
 ## [1.8.0] - 2026-10-16
 
 Adds a third connector: the My Ministry Mission **Podcast Management** app.

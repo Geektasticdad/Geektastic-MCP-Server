@@ -39,13 +39,32 @@ Markdown, which becomes paragraphs, or HTML, which the app sanitizes.
 | `pm_get_me` | Who the token acts as, its scope, and whether writes are allowed. |
 | `pm_list_lookups` | Ids and labels for episode, guest, recording, and series statuses, guest tags, and production document types. |
 
+## Producer
+
+These need Podcast Management v2.19.0 or later.
+
+| Tool | What it does |
+|---|---|
+| `pm_get_pipeline` | What needs attention: active episodes (most urgent first) with production stage, next step (`next.skill` is the podcast skill to run; `next.owner` is `claude`, `jason`, or `none`), blockers, and days until publish; guest work waiting; series context-log gaps; pending status suggestions. |
+| `pm_list_status_suggestions` | Pending Stage Automation suggestions, optionally for one record. |
+| `pm_apply_status_suggestion` | Apply one (changes the status). Claude only does this after Jason says yes. |
+| `pm_dismiss_status_suggestion` | Dismiss one permanently. |
+
+**Production stages** are worked out by the app from saved documents:
+Planned → Researched → Outlined → Drafted → Ready to Record → Transcribed →
+Staged → Live → Promoted. A theology review counts only if it passed and was
+saved after the latest Claude-written script.
+
+**Prompt:** *What needs my attention?* (`pm_whats_next`, group "Producer")
+starts a pipeline review, using the podcast-producer skill when it's installed.
+
 ## Episodes
 
 | Tool | What it does |
 |---|---|
 | `pm_list_episodes` | List episodes, highest number first. Filters: `q` (title or exact number), `status_id`, `series_id`. |
-| `pm_get_episode` | Full episode: status, series, linked recording and guests, notes, Captivate fields, and its production document index. |
-| `pm_create_episode` | Create an episode. Only `episode_title` is required; number defaults to the next one, status to "In Progress". |
+| `pm_get_episode` | Full episode: status, format, series, linked recording and guests, notes, Captivate fields, production document index, `production` (stage, next step, blockers), and pending status suggestions. |
+| `pm_create_episode` | Create an episode. Only `episode_title` is required; number defaults to the next one, status to "In Progress". Set `episode_format` (`solo`, `series`, `guest`, `cohost`, `fellowship`) so the producer knows which skill builds it. |
 | `pm_update_episode` | Change title, number, status, series, publish date, linked recording, or run time. |
 
 Example: link episode 42 to recording 17 and schedule it.
@@ -102,7 +121,7 @@ deleted.
 |---|---|
 | `pm_list_documents` | Documents on a record (no bodies). `latest: true` keeps only the newest version of each type. |
 | `pm_get_document` | One document with its full body. |
-| `pm_save_document` | Save a document. Saving the same `doc_type` on the same record again adds a new **version**; nothing is overwritten. |
+| `pm_save_document` | Save a document. Saving the same `doc_type` on the same record again adds a new **version**; nothing is overwritten. `narrative` and `discussion_guide` are converted from Markdown to formatted text for the app's script editor (`[Speaker note: ...]` lines become speaker notes). |
 
 Document types: `episode_ideas`, `research_brief`, `outline`, `narrative`,
 `discussion_guide`, `theology_review`, `series_plan`, `series_consistency`,
