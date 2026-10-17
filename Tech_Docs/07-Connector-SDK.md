@@ -1,11 +1,12 @@
 # Connector SDK
 
 `packages/connectors` defines the abstraction that lets this server expose
-tools and prompts from more than one backend application. Two connectors
-exist today: **Geektastic Realms** (`src/geektastic/`) and **Geektastic
-Family Tree** (`src/family-tree/`) — this doc focuses on the former, which
-has both tools and (as of Phase 8) prompts; Family Tree contributes tools
-only.
+tools and prompts from more than one backend application. Three connectors
+exist today: **Geektastic Realms** (`src/geektastic/`), **Geektastic
+Family Tree** (`src/family-tree/`), and **Podcast Management**
+(`src/podcast/`) — this doc focuses on the first, which has both tools and
+(as of Phase 8) prompts; Family Tree and Podcast Management contribute
+tools only.
 
 ## The `AppConnector` interface (`src/types.ts`)
 
@@ -98,7 +99,7 @@ MCP spec treats as possibly destructive — an update can still overwrite data.
 ## The registry (`src/registry.ts`)
 
 ```ts
-const CONNECTORS: AppConnector[] = [geektasticRealmsConnector, familyTreeConnector];
+const CONNECTORS: AppConnector[] = [geektasticRealmsConnector, familyTreeConnector, podcastManagementConnector];
 ```
 
 `getConnector(appType)` / `listConnectors()` — a flat, hardcoded array.
@@ -131,7 +132,7 @@ collision case.
 
 A connector's `configSchema` drives what the Web UI's "Add connection" form
 needs — `apps/web/src/pages/Connections.tsx` special-cases known connectors
-(`geektastic-realms`, `family-tree`) with a dedicated Base URL + API key form;
+(`geektastic-realms`, `family-tree`, `podcast-management`) with a dedicated Base URL + API key form;
 any other `appType` falls back to a raw JSON textarea for `config`. A more
 polished UI would render fields from `configSchema` generically, but that
 isn't built yet.

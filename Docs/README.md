@@ -30,6 +30,8 @@ instead.
    lists, tables, styled callout blocks (read-aloud, DM note, boxed text,
    DM secret, and more), and embedded encounter/handout/roll-table/quest
    reference cards.
+10. [Podcast Management Tools Reference](10-PM-Tools-Reference.md) — setting
+   up the Podcast Management connection and what each `pm_` tool does.
 
 ## What this server does, in one paragraph
 

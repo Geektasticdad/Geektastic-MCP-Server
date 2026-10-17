@@ -1,0 +1,441 @@
+import { z } from "zod";
+import type { AppConnector, ConnectorConfig, HealthCheckResult, ToolDefinition } from "../types.js";
+import { PodcastClient, parseConfig } from "./client.js";
+
+/**
+ * Connector for the My Ministry Mission Podcast Management app's JSON API
+ * (see API.md in the podcast-management-app repo). All routes live under
+ * `/api/v1/` on the app's root origin — the client prepends `/api/v1`, so
+ * `baseUrl` is just the origin. Auth is a Bearer token from Admin ->
+ * Settings -> API Access (prefix `pma_`); it acts as the user it was issued
+ * for. Read-only tokens (or tokens owned by a viewer) get 403 on every write.
+ *
+ * Besides the CRUD tools, the key workflow tools are:
+ * - pm_save_document: store a podcast skill's output (research brief,
+ *   outline, narrative, theology review, publication pack, context log...)
+ *   on an episode/series/guest/recording. Saving the same doc_type again
+ *   adds a new version rather than overwriting.
+ * - pm_get_series_context_log: the stacked Series Context Log for a series,
+ *   built from each episode's latest context_log document.
+ */
+
+const configSchema = z.object({
+  baseUrl: z
+    .string()
+    .url()
+    .describe("Root origin of the Podcast Management app, e.g. https://podcast.example.com (no /api suffix)"),
+  apiKey: z.string().min(1).describe("API token from Admin -> Settings -> API Access (prefix pma_)"),
+});
+
+const id = z.coerce.number().int().positive();
+const page = z.coerce.number().int().positive().optional().describe("1-based page number (default 1).");
+const perPage = z.coerce.number().int().min(1).max(100).optional().describe("Results per page, 1-100 (default 25).");
+const date = z
+  .string()
+  .regex(/^\d{4}-\d{2}-\d{2}$/, "YYYY-MM-DD")
+  .nullable()
+  .optional()
+  .describe("YYYY-MM-DD; null clears it.");
+
+const entityType = z
+  .enum(["episode", "series", "guest", "recording"])
+  .describe("Which kind of record the document or note belongs to.");
+
+const docType = z
+  .enum([
+    "episode_ideas",
+    "research_brief",
+    "outline",
+    "narrative",
+    "discussion_guide",
+    "theology_review",
+    "series_plan",
+    "series_consistency",
+    "context_log",
+    "guest_research_brief",
+    "guest_call_brief",
+    "guest_rundown_email",
+    "transcript",
+    "publication_stage",
+    "publication_live",
+    "other",
+  ])
+  .describe(
+    "What the document is. Typical owners: episode_ideas/research_brief/outline/narrative/discussion_guide/" +
+      "theology_review/context_log/transcript/publication_stage/publication_live on an episode; series_plan/" +
+      "series_consistency on a series; guest_research_brief/guest_call_brief on a guest; guest_call_brief/" +
+      "guest_rundown_email on a recording.",
+  );
+
+const richText =
+  "Plain text or Markdown is fine (converted to paragraphs); HTML is accepted and sanitized. null clears it.";
+
+const episodeFields = z.object({
+  episode_title: z.string().min(1).optional().describe("Must be unique across episodes."),
+  episode_number: z.coerce
+    .number()
+    .int()
+    .min(0)
+    .optional()
+    .describe("Must be unique. On create, omit to use the next number after the highest existing one."),
+  episode_status_id: id.optional().describe("See pm_list_lookups.episode_statuses. On create, defaults to 'In Progress'."),
+  series_id: id.nullable().optional().describe("Assign to a series (pm_list_series); null removes it from its series."),
+  publish_date: date,
+  guest_recording_id: id
+    .nullable()
+    .optional()
+    .describe("Link this episode to a guest recording (pm_list_recordings); null unlinks it."),
+  duration_seconds: z.coerce.number().int().min(0).nullable().optional().describe("Run time in seconds."),
+});
+
+const seriesFields = z.object({
+  title: z.string().min(1).optional(),
+  description: z.string().nullable().optional().describe(`Series description. ${richText}`),
+  external_link: z.string().url().nullable().optional(),
+  series_status_id: id
+    .nullable()
+    .optional()
+    .describe("See pm_list_lookups.series_statuses. On create, defaults to 'Not Started'."),
+});
+
+const otherLink = z.object({ label: z.string().optional(), url: z.string().url() });
+
+const guestFields = z.object({
+  first_name: z.string().min(1).optional(),
+  last_name: z.string().min(1).optional(),
+  email: z.string().email().optional().describe("Must be unique across guests."),
+  phone: z.string().nullable().optional(),
+  time_zone: z.string().nullable().optional().describe("IANA name, e.g. America/Los_Angeles."),
+  status_ids: z
+    .array(id)
+    .optional()
+    .describe("Replaces ALL of the guest's statuses (pm_list_lookups.guest_statuses). On create, defaults to the first status."),
+  tag_ids: z.array(id).optional().describe("Replaces ALL of the guest's tags (pm_list_lookups.guest_tags)."),
+  bible_verse: z.string().nullable().optional().describe("The guest's favorite verse."),
+  has_topic: z.boolean().optional(),
+  topic_details: z.string().nullable().optional().describe(richText),
+  great_guest: z.string().nullable().optional().describe(`Why they'd be a great guest / bio. ${richText}`),
+  faith_journey: z.string().nullable().optional().describe(richText),
+  willing_to_share: z.boolean().optional(),
+  has_product: z.boolean().optional(),
+  product_details: z.string().nullable().optional().describe(`Product, service, or event. ${richText}`),
+  website: z.string().url().nullable().optional(),
+  podcast: z.string().url().nullable().optional(),
+  facebook: z.string().url().nullable().optional(),
+  twitter: z.string().url().nullable().optional(),
+  instagram: z.string().url().nullable().optional(),
+  linkedin: z.string().url().nullable().optional(),
+  youtube: z.string().url().nullable().optional(),
+  headshot_logo_url: z.string().url().nullable().optional(),
+  other_links: z.array(otherLink).nullable().optional().describe("Replaces the whole Other Links list."),
+  guest_research: z
+    .string()
+    .nullable()
+    .optional()
+    .describe(
+      `The guest profile's Research Notes field. ${richText} For a full podcast-guest-research brief, prefer ` +
+        "pm_save_document (doc_type guest_research_brief) so earlier versions are kept.",
+    ),
+});
+
+const recordingFields = z.object({
+  title: z.string().min(1).optional(),
+  guest_ids: z
+    .array(id)
+    .optional()
+    .describe("Replaces all guests on the recording; the first id is the primary guest."),
+  recording_status_id: id.nullable().optional().describe("See pm_list_lookups.recording_statuses."),
+  interest_date: date,
+  intro_call_date: date,
+  recording_date: date,
+  interview_call_summary: z
+    .string()
+    .nullable()
+    .optional()
+    .describe(`The recording's Guest Interview Call Summary field. ${richText}`),
+});
+
+function toResult(data: unknown) {
+  return { content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }] };
+}
+
+function toErrorResult(err: unknown) {
+  const message = err instanceof Error ? err.message : String(err);
+  return { content: [{ type: "text" as const, text: message }], isError: true };
+}
+
+function client(cfg: ConnectorConfig): PodcastClient {
+  return new PodcastClient(parseConfig(cfg));
+}
+
+function tool<S extends z.ZodType>(
+  name: string,
+  description: string,
+  inputSchema: S,
+  run: (input: z.infer<S>, cfg: ConnectorConfig) => Promise<unknown>,
+  extra: Pick<ToolDefinition, "category" | "access"> = {},
+): ToolDefinition {
+  return {
+    name,
+    description,
+    inputSchema,
+    ...extra,
+    async handler(input, cfg) {
+      try {
+        const parsed = inputSchema.parse(input);
+        return toResult(await run(parsed, cfg));
+      } catch (err) {
+        return toErrorResult(err);
+      }
+    },
+  };
+}
+
+function requireFields<T extends Record<string, unknown>>(obj: T, keys: (keyof T)[], what: string): void {
+  const missing = keys.filter((k) => obj[k] === undefined || obj[k] === null || obj[k] === "");
+  if (missing.length) throw new Error(`${what} requires: ${missing.join(", ")}`);
+}
+
+const tools: ToolDefinition[] = [
+  // --- Account & lookups ---------------------------------------------------
+  tool(
+    "pm_get_me",
+    "Who the connection's API token acts as (user, role), its scope (read or write), and whether writes are " +
+      "allowed. Call this first if a write fails with 403.",
+    z.object({}),
+    (_i, cfg) => client(cfg).me(),
+    { category: "Account" },
+  ),
+  tool(
+    "pm_list_lookups",
+    "Ids and labels for episode statuses, guest statuses, guest tags, recording statuses, series statuses, and " +
+      "the production document types. Use these ids in the other tools.",
+    z.object({}),
+    (_i, cfg) => client(cfg).lookups(),
+    { category: "Lookup" },
+  ),
+
+  // --- Episodes --------------------------------------------------------------
+  tool(
+    "pm_list_episodes",
+    "List episodes, highest episode number first. Filter by text (title or exact number), status, or series.",
+    z.object({
+      q: z.string().optional(),
+      status_id: id.optional(),
+      series_id: id.optional(),
+      page,
+      per_page: perPage,
+    }),
+    (i, cfg) => client(cfg).listEpisodes(i),
+  ),
+  tool(
+    "pm_get_episode",
+    "One episode with its status, series, linked recording and guests, notes, Captivate fields (incl. shownotes), " +
+      "and an index of its production documents (bodies via pm_get_document).",
+    z.object({ id }),
+    (i, cfg) => client(cfg).getEpisode(i.id),
+  ),
+  tool(
+    "pm_create_episode",
+    "Create an episode. Only episode_title is required; the number defaults to the next one and the status to " +
+      "'In Progress'. Returns the new episode.",
+    episodeFields.extend({ episode_title: z.string().min(1) }),
+    (i, cfg) => client(cfg).createEpisode(i),
+  ),
+  tool(
+    "pm_update_episode",
+    "Change an episode. Only the fields you send change; send null to clear an optional field.",
+    z.object({ id, changes: episodeFields }),
+    (i, cfg) => client(cfg).updateEpisode(i.id, i.changes),
+  ),
+
+  // --- Series ----------------------------------------------------------------
+  tool(
+    "pm_list_series",
+    "List podcast series, newest first, with status and episode count.",
+    z.object({ q: z.string().optional(), status_id: id.optional(), page, per_page: perPage }),
+    (i, cfg) => client(cfg).listSeries(i),
+  ),
+  tool(
+    "pm_get_series",
+    "One series with its description, episodes (in episode order), notes, and production document index.",
+    z.object({ id }),
+    (i, cfg) => client(cfg).getSeries(i.id),
+  ),
+  tool(
+    "pm_create_series",
+    "Create a series (e.g. after podcast-series-design). Only title is required. Save the full series plan " +
+      "afterwards with pm_save_document (entity_type series, doc_type series_plan).",
+    seriesFields.extend({ title: z.string().min(1) }),
+    (i, cfg) => client(cfg).createSeries(i),
+  ),
+  tool(
+    "pm_update_series",
+    "Change a series. Only the fields you send change.",
+    z.object({ id, changes: seriesFields }),
+    (i, cfg) => client(cfg).updateSeries(i.id, i.changes),
+  ),
+  tool(
+    "pm_get_series_context_log",
+    "The Series Context Log for podcast-series-production: `log` stacks the latest context_log document from " +
+      "each episode in the series, most recent episode first. `missing` lists episodes that have no entry yet.",
+    z.object({ id }),
+    (i, cfg) => client(cfg).getSeriesContextLog(i.id),
+    { category: "Series" },
+  ),
+
+  // --- Guests ----------------------------------------------------------------
+  tool(
+    "pm_list_guests",
+    "List guests by last name. Filter by text (name or email) or by status.",
+    z.object({ q: z.string().optional(), status_id: id.optional(), page, per_page: perPage }),
+    (i, cfg) => client(cfg).listGuests(i),
+  ),
+  tool(
+    "pm_get_guest",
+    "One guest's full profile: contact info, links, favorite verse, faith journey, topic and product details, " +
+      "research notes, statuses, tags, recordings, notes, and production document index.",
+    z.object({ id }),
+    (i, cfg) => client(cfg).getGuest(i.id),
+  ),
+  tool(
+    "pm_create_guest",
+    "Create a guest. first_name, last_name, and email are required. To turn an intake submission into a guest, " +
+      "ask Jason to accept it in the app instead (that keeps the intake record linked).",
+    guestFields.extend({
+      first_name: z.string().min(1),
+      last_name: z.string().min(1),
+      email: z.string().email(),
+    }),
+    (i, cfg) => client(cfg).createGuest(i),
+  ),
+  tool(
+    "pm_update_guest",
+    "Change a guest. Only the fields you send change; status_ids, tag_ids, and other_links replace the whole list.",
+    z.object({ id, changes: guestFields }),
+    (i, cfg) => client(cfg).updateGuest(i.id, i.changes),
+  ),
+
+  // --- Recordings --------------------------------------------------------------
+  tool(
+    "pm_list_recordings",
+    "List guest recording sessions, most recent first. Filter by text, status, or guest.",
+    z.object({
+      q: z.string().optional(),
+      status_id: id.optional(),
+      guest_id: id.optional(),
+      page,
+      per_page: perPage,
+    }),
+    (i, cfg) => client(cfg).listRecordings(i),
+  ),
+  tool(
+    "pm_get_recording",
+    "One recording with its dates, status, guests, linked episode, interview call summary, notes, and " +
+      "production document index.",
+    z.object({ id }),
+    (i, cfg) => client(cfg).getRecording(i.id),
+  ),
+  tool(
+    "pm_create_recording",
+    "Create a recording session. title and at least one guest id are required. Link it to an episode " +
+      "afterwards with pm_update_episode (guest_recording_id).",
+    recordingFields.extend({ title: z.string().min(1), guest_ids: z.array(id).min(1) }),
+    (i, cfg) => client(cfg).createRecording(i),
+  ),
+  tool(
+    "pm_update_recording",
+    "Change a recording. Only the fields you send change. Use interview_call_summary to store the " +
+      "podcast-guest-interview call summary on the recording.",
+    z.object({ id, changes: recordingFields }),
+    (i, cfg) => client(cfg).updateRecording(i.id, i.changes),
+  ),
+
+  // --- Notes -------------------------------------------------------------------
+  tool(
+    "pm_list_notes",
+    "Notes on one episode, series, guest, or recording, oldest first.",
+    z.object({ entity_type: entityType, entity_id: id }),
+    (i, cfg) => client(cfg).listNotes(i.entity_type, i.entity_id),
+  ),
+  tool(
+    "pm_create_note",
+    "Add a short note to a record (shown in its Notes panel). For long skill outputs use pm_save_document.",
+    z.object({ entity_type: entityType, entity_id: id, body: z.string().min(1).describe(richText) }),
+    (i, cfg) => client(cfg).createNote(i),
+  ),
+
+  // --- Production documents --------------------------------------------------
+  tool(
+    "pm_list_documents",
+    "Production documents on a record (no bodies). latest=true keeps only the newest version of each doc_type.",
+    z.object({
+      entity_type: entityType,
+      entity_id: id,
+      doc_type: docType.optional(),
+      latest: z.boolean().optional(),
+    }),
+    (i, cfg) => client(cfg).listDocuments(i),
+  ),
+  tool(
+    "pm_get_document",
+    "One production document including its full body.",
+    z.object({ id }),
+    (i, cfg) => client(cfg).getDocument(i.id),
+  ),
+  tool(
+    "pm_save_document",
+    "Save a podcast skill's output (Markdown or plain text, up to ~2 MB) on an episode, series, guest, or " +
+      "recording. Saving the same doc_type on the same record again adds a new version; earlier versions are kept " +
+      "and visible in the app's Production Documents panel. Returns the saved document with its version.",
+    z.object({
+      entity_type: entityType,
+      entity_id: id,
+      doc_type: docType,
+      title: z.string().max(255).optional().describe("Defaults to the doc_type's label."),
+      body: z.string().min(1),
+    }),
+    (i, cfg) => {
+      requireFields(i, ["body"], "pm_save_document");
+      return client(cfg).saveDocument(i);
+    },
+    { category: "Document", access: "write" },
+  ),
+
+  // --- Intake submissions (read-only) -------------------------------------
+  tool(
+    "pm_list_intake_submissions",
+    "Guest intake form submissions, newest first. Accepting or rejecting happens in the app, not here.",
+    z.object({ status: z.enum(["pending", "accepted", "rejected"]).optional(), page, per_page: perPage }),
+    (i, cfg) => client(cfg).listIntakeSubmissions(i),
+  ),
+  tool(
+    "pm_get_intake_submission",
+    "One intake submission with everything the applicant entered (bio, faith journey, favorite verse, topic, " +
+      "product, links). Good input for podcast-guest-research.",
+    z.object({ id }),
+    (i, cfg) => client(cfg).getIntakeSubmission(i.id),
+  ),
+];
+
+export const podcastManagementConnector: AppConnector = {
+  id: "podcast-management",
+  displayName: "Podcast Management",
+  configSchema,
+  async healthCheck(cfg): Promise<HealthCheckResult> {
+    try {
+      const me = (await client(cfg).me()) as {
+        user?: { name?: string; role?: string };
+        token?: { scope?: string };
+        app_version?: string;
+      };
+      const who = me.user?.name ? `${me.user.name} (${me.user.role ?? "?"})` : "unknown user";
+      return { ok: true, detail: `v${me.app_version ?? "?"}, ${me.token?.scope ?? "?"} token as ${who}` };
+    } catch (err) {
+      return { ok: false, detail: err instanceof Error ? err.message : String(err) };
+    }
+  },
+  getTools(_cfg) {
+    return tools;
+  },
+};

@@ -5,7 +5,8 @@ exposes the **Geektastic Realms** and **Geektastic Family Tree** applications to
 clients (Claude Desktop/Code and others). Deploys as a Docker stack via **Portainer**,
 and is architected so additional applications can be plugged in over time.
 
-- **Integrations:** Geektastic Realms REST/HTTP API, Geektastic Family Tree JSON API
+- **Integrations:** Geektastic Realms REST/HTTP API, Geektastic Family Tree JSON API,
+  My Ministry Mission Podcast Management JSON API
 - **Stack:** TypeScript full-stack (Node + `@modelcontextprotocol/sdk` backend, React UI)
 - **MCP transport:** Streamable HTTP (remote clients, bearer-token auth)
 - **Storage:** PostgreSQL (Prisma ORM)
@@ -29,7 +30,7 @@ delivery plan.
 
 Deployed and running (see [CHANGELOG.md](CHANGELOG.md) for the release history: the
 initial scaffold, OAuth 2.1 support for Claude Desktop/Claude.ai, and a CSRF/session
-fix). Two connectors are implemented:
+fix). Three connectors are implemented:
 - **Geektastic Realms**, against the real `/api/v1/*` API (see
   `geektastic-realms/Docs/API.md`) — 46 tools covering statblocks, campaigns
   (read + write), generic lore entries (any category, with custom fields),
@@ -42,6 +43,11 @@ fix). Two connectors are implemented:
   sources/repositories, citations, notes, media metadata, research log, DNA matches,
   and the search/relationship/gap/duplicate research tools. Media upload/replace
   (multipart file upload) isn't exposed as a tool.
+- **Podcast Management**, against the app's `/api/v1/*` API (see `API.md` in
+  `podcast-management-app`) — episodes, series, guests, recordings, notes,
+  read-only guest intake submissions, and versioned production documents
+  (the podcast AI skills' saved outputs), plus the assembled series context
+  log. No delete tools. See [Docs/10-PM-Tools-Reference.md](Docs/10-PM-Tools-Reference.md).
 
 See **[ROADMAP.md](ROADMAP.md)** for the full architecture and tool lists.
 

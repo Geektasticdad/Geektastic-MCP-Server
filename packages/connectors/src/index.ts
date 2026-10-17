@@ -15,3 +15,4 @@ export { describePrompt, describeTool } from "./toolMeta.js";
 export type { ToolMeta } from "./toolMeta.js";
 export { geektasticRealmsConnector } from "./geektastic/index.js";
 export { familyTreeConnector } from "./family-tree/index.js";
+export { podcastManagementConnector } from "./podcast/index.js";
