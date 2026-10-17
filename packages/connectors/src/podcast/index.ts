@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { AppConnector, ConnectorConfig, HealthCheckResult, ToolDefinition } from "../types.js";
+import type { AppConnector, ConnectorConfig, HealthCheckResult, PromptDefinition, ToolDefinition } from "../types.js";
 import { PodcastClient, parseConfig } from "./client.js";
 
 /**
@@ -70,8 +70,16 @@ const docType = z
 const richText =
   "Plain text or Markdown is fine (converted to paragraphs); HTML is accepted and sanitized. null clears it.";
 
+const episodeFormat = z
+  .enum(["solo", "series", "guest", "cohost", "fellowship"])
+  .describe(
+    "Which podcast skill builds the episode: solo → podcast-episode, series → podcast-series-production, " +
+      "guest → podcast-guest-production, cohost → podcast-cohost, fellowship → podcast-fellowship-faith.",
+  );
+
 const episodeFields = z.object({
   episode_title: z.string().min(1).optional().describe("Must be unique across episodes."),
+  episode_format: episodeFormat.nullable().optional(),
   episode_number: z.coerce
     .number()
     .int()
@@ -215,6 +223,42 @@ const tools: ToolDefinition[] = [
     { category: "Lookup" },
   ),
 
+  // --- Producer ----------------------------------------------------------------
+  tool(
+    "pm_get_pipeline",
+    "What needs attention across the show: active episodes (soonest and most urgent first) with production stage, " +
+      "next step (`next.skill` is the podcast skill to run; `next.owner` is claude, jason, or none), blockers, and " +
+      "days until publish; guest work waiting (pending intake, guests needing research, intro calls without a call " +
+      "brief, recordings without an episode); series context-log gaps; and pending status suggestions. Start here " +
+      "for 'what needs my attention?'.",
+    z.object({}),
+    (_i, cfg) => client(cfg).pipeline(),
+    { category: "Pipeline", access: "read" },
+  ),
+  tool(
+    "pm_list_status_suggestions",
+    "Pending Stage Automation suggestions (e.g. 'Theology review passed → change status to Ready to Record'). " +
+      "Optionally for one record.",
+    z.object({ entity_type: z.enum(["episode", "recording", "guest"]).optional(), entity_id: id.optional() }),
+    (i, cfg) => client(cfg).listStatusSuggestions(i),
+    { category: "Status suggestion" },
+  ),
+  tool(
+    "pm_apply_status_suggestion",
+    "Apply a pending status suggestion (changes the record's status, or adds the guest status). Only after Jason " +
+      "says yes to that specific suggestion.",
+    z.object({ id }),
+    (i, cfg) => client(cfg).resolveStatusSuggestion(i.id, "apply"),
+    { category: "Status suggestion", access: "write" },
+  ),
+  tool(
+    "pm_dismiss_status_suggestion",
+    "Dismiss a pending status suggestion so it never comes back. Only when Jason asks.",
+    z.object({ id }),
+    (i, cfg) => client(cfg).resolveStatusSuggestion(i.id, "dismiss"),
+    { category: "Status suggestion", access: "write" },
+  ),
+
   // --- Episodes --------------------------------------------------------------
   tool(
     "pm_list_episodes",
@@ -230,8 +274,10 @@ const tools: ToolDefinition[] = [
   ),
   tool(
     "pm_get_episode",
-    "One episode with its status, series, linked recording and guests, notes, Captivate fields (incl. shownotes), " +
-      "and an index of its production documents (bodies via pm_get_document).",
+    "One episode with its status, format, series, linked recording and guests, notes, Captivate fields (incl. " +
+      "shownotes), an index of its production documents (bodies via pm_get_document), `production` (derived stage, " +
+      "documents present, theology review result, next step with the skill to run, blockers), and any pending " +
+      "`status_suggestions`.",
     z.object({ id }),
     (i, cfg) => client(cfg).getEpisode(i.id),
   ),
@@ -387,7 +433,10 @@ const tools: ToolDefinition[] = [
     "pm_save_document",
     "Save a podcast skill's output (Markdown or plain text, up to ~2 MB) on an episode, series, guest, or " +
       "recording. Saving the same doc_type on the same record again adds a new version; earlier versions are kept " +
-      "and visible in the app's Production Documents panel. Returns the saved document with its version.",
+      "and visible in the app's Production Documents panel. narrative and discussion_guide are converted to " +
+      "formatted HTML for the app's script editor (send Markdown; `[Speaker note: ...]` lines become speaker-note " +
+      "blocks) and come back from pm_get_document with body_format 'html'. Saving a document re-checks the record's " +
+      "production stage and Stage Automation rules. Returns the saved document with its version.",
     z.object({
       entity_type: entityType,
       entity_id: id,
@@ -418,6 +467,31 @@ const tools: ToolDefinition[] = [
   ),
 ];
 
+const prompts: PromptDefinition[] = [
+  {
+    name: "pm_whats_next",
+    title: "What needs my attention?",
+    category: "Producer",
+    description:
+      "Review the podcast pipeline and pick what to work on next (uses the podcast-producer skill when it's installed).",
+    async handler() {
+      return {
+        description: "Podcast producer: what needs attention",
+        messages: [
+          {
+            role: "user",
+            text:
+              "What needs my attention on the podcast? Use the podcast-producer skill if it's available. Otherwise " +
+              "call pm_get_pipeline and give me a short prioritized list: episodes whose next step is for Claude " +
+              "(with the skill to run), things waiting on me, guest work, and pending status suggestions. Then ask " +
+              "which one to work on. Don't change anything until I choose.",
+          },
+        ],
+      };
+    },
+  },
+];
+
 export const podcastManagementConnector: AppConnector = {
   id: "podcast-management",
   displayName: "Podcast Management",
@@ -437,5 +511,8 @@ export const podcastManagementConnector: AppConnector = {
   },
   getTools(_cfg) {
     return tools;
+  },
+  getPrompts(_cfg) {
+    return prompts;
   },
 };

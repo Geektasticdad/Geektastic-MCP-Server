@@ -89,6 +89,20 @@ export class PodcastClient {
     return this.get("/lookups");
   }
 
+  // --- Producer: pipeline and stage-automation suggestions ---------------------
+
+  pipeline(): Promise<PmRecord> {
+    return this.get("/pipeline");
+  }
+
+  listStatusSuggestions(params: Record<string, unknown>): Promise<PmList> {
+    return this.get("/status-suggestions", params);
+  }
+
+  resolveStatusSuggestion(id: number, action: "apply" | "dismiss"): Promise<PmRecord> {
+    return this.post(`/status-suggestions/${id}/${action}`, {});
+  }
+
   // --- Episodes -----------------------------------------------------------------
 
   listEpisodes(params: Record<string, unknown>): Promise<PmList> {
