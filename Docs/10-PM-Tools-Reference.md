@@ -37,7 +37,7 @@ Markdown, which becomes paragraphs, or HTML, which the app sanitizes.
 | Tool | What it does |
 |---|---|
 | `pm_get_me` | Who the token acts as, its scope, and whether writes are allowed. |
-| `pm_list_lookups` | Ids and labels for episode, guest, recording, and series statuses, guest tags, and production document types. |
+| `pm_list_lookups` | Ids and labels for episode, guest, recording, and series statuses, guest tags, production stages, guest workflow stages, email draft kinds, and production document types. |
 
 ## Producer
 
@@ -45,7 +45,7 @@ These need Podcast Management v2.19.0 or later.
 
 | Tool | What it does |
 |---|---|
-| `pm_get_pipeline` | What needs attention: active episodes (most urgent first) with production stage, next step (`next.skill` is the podcast skill to run; `next.owner` is `claude`, `jason`, or `none`), blockers, and days until publish; guest work waiting; series context-log gaps; pending status suggestions. |
+| `pm_get_pipeline` | What needs attention: active episodes (most urgent first) with production stage, next step (`next.skill` is the podcast skill to run; `next.owner` is `claude`, `jason`, or `none`), blockers, and days until publish; guests in progress (`guests.active`, each with its workflow stage and next step); email drafts waiting for review; series context-log gaps; pending status suggestions. |
 | `pm_list_status_suggestions` | Pending Stage Automation suggestions, optionally for one record. |
 | `pm_apply_status_suggestion` | Apply one (changes the status). Claude only does this after Jason says yes. |
 | `pm_dismiss_status_suggestion` | Dismiss one permanently. |
@@ -88,7 +88,7 @@ Example: link episode 42 to recording 17 and schedule it.
 | Tool | What it does |
 |---|---|
 | `pm_list_guests` | List guests by last name. Filters: `q` (name or email), `status_id`. |
-| `pm_get_guest` | Full profile: contact info, links, favorite verse, faith journey, topic and product details, research notes, statuses, tags, recordings, notes, documents. |
+| `pm_get_guest` | Full profile: contact info, links, favorite verse, faith journey, topic and product details, research notes, statuses, tags, recordings, notes, documents, email drafts, and `guest_stage` (workflow stage, next step, blockers). |
 | `pm_create_guest` | Create a guest (`first_name`, `last_name`, `email` required). |
 | `pm_update_guest` | Change any profile field. `status_ids`, `tag_ids`, and `other_links` replace the whole list. |
 
@@ -97,9 +97,9 @@ Example: link episode 42 to recording 17 and schedule it.
 | Tool | What it does |
 |---|---|
 | `pm_list_recordings` | List recording sessions, most recent first. Filters: `q`, `status_id`, `guest_id`. |
-| `pm_get_recording` | Dates, status, guests, linked episode, interview call summary, notes, documents. |
+| `pm_get_recording` | Dates, status, guests, linked episode, interview call summary (`interview_call_summary_edited_in_app` is true when Jason edited it), notes, documents, email drafts, and `guest_stage`. |
 | `pm_create_recording` | Create a recording (`title` and at least one `guest_ids`; the first guest is primary). |
-| `pm_update_recording` | Change title, guests, status, dates, or the Guest Interview Call Summary. |
+| `pm_update_recording` | Change title, guests, status, dates, or the Guest Interview Call Summary (ask first only if Jason edited it in the app). |
 
 ## Notes
 
@@ -125,9 +125,23 @@ deleted.
 
 Document types: `episode_ideas`, `research_brief`, `outline`, `narrative`,
 `discussion_guide`, `theology_review`, `series_plan`, `series_consistency`,
-`context_log`, `guest_research_brief`, `guest_call_brief`,
+`context_log`, `guest_research_brief`, `call_transcript`, `guest_call_brief`,
 `guest_rundown_email`, `transcript`, `publication_stage`,
 `publication_live`, `other`.
+
+## Guest email drafts
+
+Claude drafts guest emails; Jason sends them. There is no tool that sends
+email. Drafts appear under **Emails to Review** in the app (dashboard alert,
+guest and recording pages), where Jason opens each one on the Send Email page,
+edits it, and sends it. Sending marks the draft sent and logs it.
+
+| Tool | What it does |
+|---|---|
+| `pm_create_email_draft` | Save an email for review. `kind`: `intro_invite`, `decline`, `rundown`, `thank_you`, or `other`. Needs `guest_id` or `recording_id` (the guest defaults to the recording's primary guest). Body in Markdown; merge tags such as `{{first_name}}` are filled in when Jason opens it. Returns `review_url`. |
+| `pm_list_email_drafts` | Drafts without bodies. Filter: `status` (`draft`, `sent`, `discarded`), `guest_id`, `recording_id`. |
+| `pm_get_email_draft` | One draft with its body. |
+| `pm_list_email_templates` | Jason's saved email templates and the available merge tags, to start a draft from his own wording. |
 
 ## Guest intake submissions (read-only)
 

@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.12.0] - 2026-10-18
+
+### Added
+- **Guest email drafts** (Podcast Management v2.28.0+): `pm_create_email_draft`,
+  `pm_list_email_drafts`, `pm_get_email_draft`, and `pm_list_email_templates`.
+  Claude can save intro call invitations, declines, rundowns, and thank-you
+  emails for Jason to review; nothing can be sent through the connector.
+- `call_transcript` document type for an intro call's Descript transcript on
+  a recording.
+
+### Changed
+- `pm_get_pipeline`, `pm_get_guest`, and `pm_get_recording` describe the new
+  guest workflow stage (`guests.active`, `guest_stage`) and email drafts.
+- `pm_update_recording`: the call summary can be written without asking unless
+  `interview_call_summary_edited_in_app` is true.
+
 ## [1.11.0] - 2026-10-17
 
 ### Changed

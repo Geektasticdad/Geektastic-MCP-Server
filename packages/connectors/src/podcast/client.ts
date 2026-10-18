@@ -203,6 +203,24 @@ export class PodcastClient {
     return this.post("/documents", doc);
   }
 
+  // --- Guest email drafts (create only; Jason reviews and sends in the app) -------
+
+  listEmailDrafts(params: Record<string, unknown>): Promise<PmRecord> {
+    return this.get("/email-drafts", params);
+  }
+
+  getEmailDraft(id: number): Promise<PmRecord> {
+    return this.get(`/email-drafts/${id}`);
+  }
+
+  createEmailDraft(draft: Record<string, unknown>): Promise<PmRecord> {
+    return this.post("/email-drafts", draft);
+  }
+
+  listEmailTemplates(): Promise<PmRecord> {
+    return this.get("/email-templates");
+  }
+
   // --- Guest intake submissions (read-only) -------------------------------------
 
   listIntakeSubmissions(params: Record<string, unknown>): Promise<PmList> {

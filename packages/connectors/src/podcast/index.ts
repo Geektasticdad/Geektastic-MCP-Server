@@ -53,6 +53,7 @@ const docType = z
     "series_consistency",
     "context_log",
     "guest_research_brief",
+    "call_transcript",
     "guest_call_brief",
     "guest_rundown_email",
     "transcript",
@@ -63,8 +64,8 @@ const docType = z
   .describe(
     "What the document is. Typical owners: episode_ideas/research_brief/outline/narrative/discussion_guide/" +
       "theology_review/context_log/transcript/publication_stage/publication_live on an episode; series_plan/" +
-      "series_consistency on a series; guest_research_brief/guest_call_brief on a guest; guest_call_brief/" +
-      "guest_rundown_email on a recording.",
+      "series_consistency on a series; guest_research_brief/guest_call_brief on a guest; call_transcript (the " +
+      "intro call's Descript transcript, kept verbatim)/guest_call_brief/guest_rundown_email on a recording.",
   );
 
 const richText =
@@ -164,7 +165,10 @@ const recordingFields = z.object({
     .string()
     .nullable()
     .optional()
-    .describe(`The recording's Guest Interview Call Summary field. ${richText}`),
+    .describe(
+      `The recording's Guest Interview Call Summary field. ${richText} If pm_get_recording shows ` +
+        "interview_call_summary_edited_in_app: true, Jason edited it himself: ask before replacing it.",
+    ),
 });
 
 function toResult(data: unknown) {
@@ -220,8 +224,9 @@ const tools: ToolDefinition[] = [
   ),
   tool(
     "pm_list_lookups",
-    "Ids and labels for episode statuses, guest statuses, guest tags, recording statuses, series statuses, and " +
-      "the production document types. Use these ids in the other tools.",
+    "Ids and labels for episode statuses, guest statuses, guest tags, recording statuses, series statuses, " +
+      "production stages, guest workflow stages, email draft kinds, and the production document types. Use these " +
+      "ids in the other tools.",
     z.object({}),
     (_i, cfg) => client(cfg).lookups(),
     { category: "Lookup" },
@@ -232,9 +237,10 @@ const tools: ToolDefinition[] = [
     "pm_get_pipeline",
     "What needs attention across the show: active episodes (soonest and most urgent first) with production stage, " +
       "next step (`next.skill` is the podcast skill to run; `next.owner` is claude, jason, or none), blockers, and " +
-      "days until publish; guest work waiting (pending intake, guests needing research, intro calls without a call " +
-      "brief, recordings without an episode); series context-log gaps; and pending status suggestions. Start here " +
-      "for 'what needs my attention?'.",
+      "days until publish; guests in progress (`guests.active`: each guest's workflow stage, from Accepted to " +
+      "Thanked, with the same next/blockers shape), pending intake, recordings without an episode; email drafts " +
+      "waiting for Jason's review; series context-log gaps; and pending status suggestions. Start here for " +
+      "'what needs my attention?'.",
     z.object({}),
     (_i, cfg) => client(cfg).pipeline(),
     { category: "Pipeline", access: "read" },
@@ -352,7 +358,8 @@ const tools: ToolDefinition[] = [
   tool(
     "pm_get_guest",
     "One guest's full profile: contact info, links, favorite verse, faith journey, topic and product details, " +
-      "research notes, statuses, tags, recordings, notes, and production document index.",
+      "research notes, statuses, tags, recordings, notes, production document index, email drafts, and " +
+      "guest_stage (workflow stage for their latest recording, with the next step and blockers).",
     z.object({ id }),
     (i, cfg) => client(cfg).getGuest(i.id),
   ),
@@ -389,8 +396,9 @@ const tools: ToolDefinition[] = [
   ),
   tool(
     "pm_get_recording",
-    "One recording with its dates, status, guests, linked episode, interview call summary, notes, and " +
-      "production document index.",
+    "One recording with its dates, status, guests, linked episode, interview call summary (and whether Jason " +
+      "edited it in the app), notes, production document index, email drafts, and guest_stage (the primary " +
+      "guest's workflow stage for this recording, with the next step and blockers).",
     z.object({ id }),
     (i, cfg) => client(cfg).getRecording(i.id),
   ),
@@ -404,7 +412,7 @@ const tools: ToolDefinition[] = [
   tool(
     "pm_update_recording",
     "Change a recording. Only the fields you send change. Use interview_call_summary to store the " +
-      "podcast-guest-interview call summary on the recording.",
+      "podcast-guest-interview call summary on the recording (no need to ask first unless Jason edited it in the app).",
     z.object({ id, changes: recordingFields }),
     (i, cfg) => client(cfg).updateRecording(i.id, i.changes),
   ),
@@ -466,6 +474,58 @@ const tools: ToolDefinition[] = [
       return client(cfg).saveDocument(i);
     },
     { category: "Document", access: "write" },
+  ),
+
+  // --- Guest email drafts ----------------------------------------------------
+  tool(
+    "pm_create_email_draft",
+    "Save a guest email for Jason to review. It is NEVER sent from here: it appears under Emails to Review in " +
+      "the app, where Jason edits and sends it himself (returns review_url). kind: intro_invite (after a Book " +
+      "verdict), decline (after Do Not Book), rundown (before recording, from podcast-guest-production), " +
+      "thank_you (after recording), or other. Send the body as Markdown or plain text; merge tags like " +
+      "{{first_name}} are filled in when Jason opens it. Give recording_id for rundown and thank_you emails; " +
+      "guest_id defaults to the recording's primary guest.",
+    z.object({
+      kind: z.enum(["intro_invite", "decline", "rundown", "thank_you", "other"]),
+      subject: z.string().min(1).max(500),
+      body: z.string().min(1),
+      guest_id: id.optional(),
+      recording_id: id.optional(),
+    }),
+    (i, cfg) => {
+      if (i.guest_id === undefined && i.recording_id === undefined) {
+        throw new Error("pm_create_email_draft requires guest_id or recording_id");
+      }
+      return client(cfg).createEmailDraft(i);
+    },
+    { category: "Email draft", access: "write" },
+  ),
+  tool(
+    "pm_list_email_drafts",
+    "Guest email drafts (no bodies), newest first. Filter by status (draft = waiting for Jason's review, sent, " +
+      "discarded), guest, or recording. Check this before drafting so you don't write the same email twice.",
+    z.object({
+      status: z.enum(["draft", "sent", "discarded"]).optional(),
+      guest_id: id.optional(),
+      recording_id: id.optional(),
+    }),
+    (i, cfg) => client(cfg).listEmailDrafts(i),
+    { category: "Email draft", access: "read" },
+  ),
+  tool(
+    "pm_get_email_draft",
+    "One guest email draft with its full body.",
+    z.object({ id }),
+    (i, cfg) => client(cfg).getEmailDraft(i.id),
+    { category: "Email draft", access: "read" },
+  ),
+  tool(
+    "pm_list_email_templates",
+    "Jason's saved email templates (subject and body) and the merge tags they can use. Start from a matching " +
+      "template's wording and structure when drafting a guest email.",
+    z.object({}),
+    (_i, cfg) => client(cfg).listEmailTemplates(),
+    { category: "Email draft", access: "read" },
   ),
 
   // --- Intake submissions (read-only) -------------------------------------
