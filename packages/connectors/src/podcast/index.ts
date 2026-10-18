@@ -84,8 +84,12 @@ const episodeFields = z.object({
     .number()
     .int()
     .min(0)
+    .nullable()
     .optional()
-    .describe("Must be unique. On create, omit to use the next number after the highest existing one."),
+    .describe(
+      "Must be unique. Omit on create to make a Draft (no number yet; assign it later in the app or here). " +
+        "On update, null turns the episode back into a Draft.",
+    ),
   episode_status_id: id.optional().describe("See pm_list_lookups.episode_statuses. On create, defaults to 'In Progress'."),
   series_id: id.nullable().optional().describe("Assign to a series (pm_list_series); null removes it from its series."),
   publish_date: date,
@@ -283,9 +287,17 @@ const tools: ToolDefinition[] = [
   ),
   tool(
     "pm_create_episode",
-    "Create an episode. Only episode_title is required; the number defaults to the next one and the status to " +
-      "'In Progress'. Returns the new episode.",
-    episodeFields.extend({ episode_title: z.string().min(1) }),
+    "Create an episode. Only episode_title is required. Without episode_number it's a Draft: all pre-production " +
+      "work (research, outline, script, review, recording) can happen before it gets a number and publish date, " +
+      "which are only required before publishing. Set assign_next_number to give it the next number now. Status " +
+      "defaults to 'In Progress'. Returns the new episode (is_draft tells you whether it has a number).",
+    episodeFields.extend({
+      episode_title: z.string().min(1),
+      assign_next_number: z
+        .boolean()
+        .optional()
+        .describe("Give the new episode the next number after the highest existing one, instead of making a Draft."),
+    }),
     (i, cfg) => client(cfg).createEpisode(i),
   ),
   tool(

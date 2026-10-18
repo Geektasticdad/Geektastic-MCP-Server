@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.11.0] - 2026-10-17
+
+### Changed
+- **Episodes can be Drafts** (Podcast Management v2.26.0+): `pm_create_episode`
+  without `episode_number` creates a Draft with no number instead of taking
+  the next number. `assign_next_number: true` keeps the old behavior.
+  `pm_update_episode` with `episode_number: null` turns an episode back into
+  a Draft. Episode results include `is_draft`.
+
 ## [1.10.0] - 2026-10-17
 
 ### Added

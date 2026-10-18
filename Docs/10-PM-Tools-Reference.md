@@ -64,7 +64,7 @@ starts a pipeline review, using the podcast-producer skill when it's installed.
 |---|---|
 | `pm_list_episodes` | List episodes, highest number first. Filters: `q` (title or exact number), `status_id`, `series_id`. |
 | `pm_get_episode` | Full episode: status, format, series, linked recording and guests, notes, Captivate fields, production document index, `production` (stage, next step, blockers), and pending status suggestions. |
-| `pm_create_episode` | Create an episode. Only `episode_title` is required; number defaults to the next one, status to "In Progress". Set `episode_format` (`solo`, `series`, `guest`, `cohost`, `fellowship`) so the producer knows which skill builds it. |
+| `pm_create_episode` | Create an episode. Only `episode_title` is required. Without `episode_number` it's a **Draft** (number and publish date assigned later, before publishing); `assign_next_number: true` gives it the next number now. Status defaults to "In Progress". Set `episode_format` (`solo`, `series`, `guest`, `cohost`, `fellowship`) so the producer knows which skill builds it. |
 | `pm_update_episode` | Change title, number, status, series, publish date, linked recording, or run time. |
 
 Example: link episode 42 to recording 17 and schedule it.
