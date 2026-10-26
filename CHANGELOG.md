@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ## [1.14.0] - 2026-10-25
 
 ### Added
-- **Performance** (Podcast Management v2.34.0+): `pm_get_performance` returns the monthly
+- **Performance** (Podcast Management v3.0.0+): `pm_get_performance` returns the monthly
   review (downloads against the previous month, the 3-month average and a year earlier;
   episodes released that month) and which themes, formats and lengths hold listeners,
   with the strongest and weakest episodes and plain-English findings. Optional `month`
@@ -19,7 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ## [1.13.0] - 2026-10-25
 
 ### Added
-- **Coverage and themes** (Podcast Management v2.33.0+): `pm_get_coverage`
+- **Coverage and themes** (Podcast Management v3.0.0+): `pm_get_coverage`
   (scripture by book, uncovered books, repeated passages, theme coverage and gaps),
   `pm_list_themes`, `pm_list_untagged_episodes`, and `pm_set_episode_themes`
   (tag up to 50 episodes at a time).
@@ -29,9 +29,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ## [1.12.1] - 2026-10-25
 
 ### Changed
-- `pm_get_episode` describes `guest_track` (Podcast Management v2.30.0+): for a guest
+- `pm_get_episode` describes `guest_track` (Podcast Management v3.0.0+): for a guest
   episode, one track merging production with the guest's workflow.
-- `pm_get_pipeline` describes the merged track and `next2` (Podcast Management v2.32.0+).
+- `pm_get_pipeline` describes the merged track and `next2` (Podcast Management v3.0.0+).
 
 ## [1.12.0] - 2026-10-18
 
