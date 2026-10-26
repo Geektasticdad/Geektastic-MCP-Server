@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.14.0] - 2026-10-25
+
+### Added
+- **Performance** (Podcast Management v2.34.0+): `pm_get_performance` returns the monthly
+  review (downloads against the previous month, the 3-month average and a year earlier;
+  episodes released that month) and which themes, formats and lengths hold listeners,
+  with the strongest and weakest episodes and plain-English findings. Optional `month`
+  (YYYY-MM) and `window` (`12m` or `all`). Admin tokens only.
+
 ## [1.13.0] - 2026-10-25
 
 ### Added

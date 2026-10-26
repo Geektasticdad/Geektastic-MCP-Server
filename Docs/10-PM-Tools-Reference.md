@@ -134,6 +134,7 @@ Document types: `episode_ideas`, `research_brief`, `outline`, `narrative`,
 | Tool | What it does |
 |---|---|
 | `pm_get_coverage` | Scripture by Bible book (episodes, last used), books never covered, most repeated passages, and theme coverage (episodes, last covered, by format), plus how many episodes are untagged. |
+| `pm_get_performance` | The monthly review and which themes, formats and lengths hold listeners (1.0 = a typical episode), with the strongest and weakest episodes and findings. Optional `month` (YYYY-MM, default last full month) and `window` (`12m` or `all`). Admin tokens only. |
 | `pm_list_themes` | The theme labels to tag with (up to 3 per episode). |
 | `pm_list_untagged_episodes` | Episodes with no themes yet, each with a short description. Optional `limit` (default 40). |
 | `pm_set_episode_themes` | Set 1 to 3 themes on up to 50 episodes at a time. |

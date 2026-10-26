@@ -553,6 +553,28 @@ const tools: ToolDefinition[] = [
     { category: "Coverage", access: "read" },
   ),
   tool(
+    "pm_get_performance",
+    "Content performance and the monthly review (admin only). Each published episode gets an index (1.0 = a typical " +
+      "episode) from its OP3 first-30-day downloads, or its Captivate lifetime total against episodes from the same period. " +
+      "Returns the month's downloads against the previous month, the 3-month average and a year earlier; the episodes " +
+      "released that month; the median index by theme, format and length (too_few = fewer than 3 episodes, treat as " +
+      "unknown); the strongest and weakest episodes; and plain-English findings. Use for the monthly review, and alongside " +
+      "pm_get_coverage when suggesting ideas or a series.",
+    z.object({
+      month: z
+        .string()
+        .regex(/^\d{4}-(0[1-9]|1[0-2])$/)
+        .optional()
+        .describe("YYYY-MM to review (default: last full month)."),
+      window: z
+        .enum(["12m", "all"])
+        .optional()
+        .describe("Compare themes, formats and episodes over the last 12 months (default) or all time."),
+    }),
+    (i, cfg) => client(cfg).performance({ month: i.month, window: i.window }),
+    { category: "Coverage", access: "read" },
+  ),
+  tool(
     "pm_list_themes",
     "The theme list (labels and ids) used to tag episodes, and the most themes allowed per episode (3). Only use these labels.",
     z.object({}),

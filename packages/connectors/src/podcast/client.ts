@@ -227,6 +227,10 @@ export class PodcastClient {
     return this.get("/coverage");
   }
 
+  performance(params: { month?: string; window?: string }): Promise<PmRecord> {
+    return this.get("/performance", params);
+  }
+
   listThemes(): Promise<PmRecord> {
     return this.get("/themes");
   }
