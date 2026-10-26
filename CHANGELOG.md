@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.13.0] - 2026-10-25
+
+### Added
+- **Coverage and themes** (Podcast Management v2.33.0+): `pm_get_coverage`
+  (scripture by book, uncovered books, repeated passages, theme coverage and gaps),
+  `pm_list_themes`, `pm_list_untagged_episodes`, and `pm_set_episode_themes`
+  (tag up to 50 episodes at a time).
+- Episode fields include `series_slot` (which episode of the series plan it is),
+  readable and settable on create and update; episodes also list their `themes`.
+
 ## [1.12.1] - 2026-10-25
 
 ### Changed

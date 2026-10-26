@@ -92,6 +92,17 @@ const episodeFields = z.object({
         "On update, null turns the episode back into a Draft.",
     ),
   episode_status_id: id.optional().describe("See pm_list_lookups.episode_statuses. On create, defaults to 'In Progress'."),
+  series_slot: z.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(500)
+    .nullable()
+    .optional()
+    .describe(
+      "Which episode of the series plan this is (the N in \"Episode N of M\" on the series page's Series Plan). " +
+        "Set it when creating or working on a planned series episode; null takes it out of the plan.",
+    ),
   series_id: id.nullable().optional().describe("Assign to a series (pm_list_series); null removes it from its series."),
   publish_date: date,
   guest_recording_id: id
@@ -528,6 +539,51 @@ const tools: ToolDefinition[] = [
     z.object({}),
     (_i, cfg) => client(cfg).listEmailTemplates(),
     { category: "Email draft", access: "read" },
+  ),
+
+  // --- Coverage and themes --------------------------------------------------
+  tool(
+    "pm_get_coverage",
+    "Scripture and theme coverage across the whole catalog: episodes per Bible book (with last used date), books never " +
+      "covered, the most repeated passages, and per theme the episode count, last covered date, days since, and split by " +
+      "format, plus how many episodes have no themes yet. Check it before suggesting episode ideas or a series so you can " +
+      "point to gaps (e.g. 'no episodes from Lamentations', 'Grief & Loss not covered in 18 months') and avoid overused passages.",
+    z.object({}),
+    (_i, cfg) => client(cfg).coverage(),
+    { category: "Coverage", access: "read" },
+  ),
+  tool(
+    "pm_list_themes",
+    "The theme list (labels and ids) used to tag episodes, and the most themes allowed per episode (3). Only use these labels.",
+    z.object({}),
+    (_i, cfg) => client(cfg).listThemes(),
+    { category: "Coverage", access: "read" },
+  ),
+  tool(
+    "pm_list_untagged_episodes",
+    "Episodes that have no themes yet, newest first, each with a short description (from its publication pack or " +
+      "Captivate show notes) to tag from. Use with pm_set_episode_themes to tag the back catalog in batches.",
+    z.object({ limit: z.coerce.number().int().min(1).max(100).optional().describe("How many (default 40, max 100).") }),
+    (i, cfg) => client(cfg).listUntaggedEpisodes(i.limit),
+    { category: "Coverage", access: "read" },
+  ),
+  tool(
+    "pm_set_episode_themes",
+    "Set one to three themes on each of up to 50 episodes (replaces each episode's themes). Use labels from " +
+      "pm_list_themes exactly. Returns per-episode results; unknown labels are rejected for that episode only.",
+    z.object({
+      items: z
+        .array(
+          z.object({
+            episode_id: id,
+            themes: z.array(z.union([z.string().min(1), id])).min(1).max(3),
+          }),
+        )
+        .min(1)
+        .max(50),
+    }),
+    (i, cfg) => client(cfg).setEpisodeThemes(i.items),
+    { category: "Coverage", access: "write" },
   ),
 
   // --- Intake submissions (read-only) -------------------------------------

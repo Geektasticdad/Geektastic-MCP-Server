@@ -221,6 +221,24 @@ export class PodcastClient {
     return this.get("/email-templates");
   }
 
+  // --- Coverage and themes -----------------------------------------------------------
+
+  coverage(): Promise<PmRecord> {
+    return this.get("/coverage");
+  }
+
+  listThemes(): Promise<PmRecord> {
+    return this.get("/themes");
+  }
+
+  listUntaggedEpisodes(limit?: number): Promise<PmRecord> {
+    return this.get("/coverage/untagged", { limit });
+  }
+
+  setEpisodeThemes(items: Record<string, unknown>[]): Promise<PmRecord> {
+    return this.post("/episode-themes", { items });
+  }
+
   // --- Guest intake submissions (read-only) -------------------------------------
 
   listIntakeSubmissions(params: Record<string, unknown>): Promise<PmList> {
