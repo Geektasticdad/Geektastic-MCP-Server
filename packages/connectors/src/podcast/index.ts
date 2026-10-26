@@ -297,7 +297,7 @@ const tools: ToolDefinition[] = [
   tool(
     "pm_get_episode",
     "One episode with its status, format, series, linked recording and guests, notes, Captivate fields (incl. " +
-      "shownotes), an index of its production documents (bodies via pm_get_document), `production` (derived stage, " +
+      "shownotes, and `listen_url`: the episode's public page, filled once it's live), an index of its production documents (bodies via pm_get_document), `production` (derived stage, " +
       "documents present, theology review result, next step with the skill to run, blockers), `guest_track` for a guest " +
       "episode (one track merging production with the guest's workflow, with next and next2), and any pending " +
       "`status_suggestions`.",

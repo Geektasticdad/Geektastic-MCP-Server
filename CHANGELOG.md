@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.14.1] - 2026-10-26
+
+### Changed
+- `pm_get_episode` describes `listen_url` (Podcast Management v3.2.0+): the episode's public
+  page from the Captivate feed, so `/podcast-publication-live` doesn't need to ask for it.
+
 ## [1.14.0] - 2026-10-25
 
 ### Added
