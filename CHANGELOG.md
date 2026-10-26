@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.12.1] - 2026-10-25
+
+### Changed
+- `pm_get_episode` describes `guest_track` (Podcast Management v2.30.0+): for a guest
+  episode, one track merging production with the guest's workflow.
+- `pm_get_pipeline` describes the merged track and `next2` (Podcast Management v2.32.0+).
+
 ## [1.12.0] - 2026-10-18
 
 ### Added

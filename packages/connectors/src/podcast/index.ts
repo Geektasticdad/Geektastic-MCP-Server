@@ -237,7 +237,8 @@ const tools: ToolDefinition[] = [
     "pm_get_pipeline",
     "What needs attention across the show: active episodes (soonest and most urgent first) with production stage, " +
       "next step (`next.skill` is the podcast skill to run; `next.owner` is claude, jason, or none), blockers, and " +
-      "days until publish; guests in progress (`guests.active`: each guest's workflow stage, from Accepted to " +
+      "days until publish (guest episodes on one merged track; `next2` is a second step when one is due, e.g. record " +
+      "the episode and send the rundown); guests in progress (`guests.active`: each guest's workflow stage, from Accepted to " +
       "Thanked, with the same next/blockers shape), pending intake, recordings without an episode; email drafts " +
       "waiting for Jason's review; series context-log gaps; and pending status suggestions. Start here for " +
       "'what needs my attention?'.",
@@ -286,7 +287,8 @@ const tools: ToolDefinition[] = [
     "pm_get_episode",
     "One episode with its status, format, series, linked recording and guests, notes, Captivate fields (incl. " +
       "shownotes), an index of its production documents (bodies via pm_get_document), `production` (derived stage, " +
-      "documents present, theology review result, next step with the skill to run, blockers), and any pending " +
+      "documents present, theology review result, next step with the skill to run, blockers), `guest_track` for a guest " +
+      "episode (one track merging production with the guest's workflow, with next and next2), and any pending " +
       "`status_suggestions`.",
     z.object({ id }),
     (i, cfg) => client(cfg).getEpisode(i.id),
